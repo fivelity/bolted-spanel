@@ -1,0 +1,174 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Custom CSS Variables for Themes */
+:root {
+	--primary-color: #00ff88;
+	--secondary-color: #ff0080;
+	--accent-color: #00d4ff;
+	--background-color: #0a0a0f;
+	--surface-color: #1a1a2e;
+	--text-color: #ffffff;
+}
+
+/* Gaming Theme */
+.gaming {
+	--primary-color: #00ff88;
+	--secondary-color: #ff0080;
+	--accent-color: #00d4ff;
+	--background-color: #0a0a0f;
+	--surface-color: #1a1a2e;
+	--text-color: #ffffff;
+}
+
+/* Crimson Theme */
+.crimson {
+	--primary-color: #dc2626;
+	--secondary-color: #7c2d12;
+	--accent-color: #f59e0b;
+	--background-color: #0f0f0f;
+	--surface-color: #1f1f1f;
+	--text-color: #ffffff;
+}
+
+/* Light Theme */
+.light {
+	--primary-color: #3b82f6;
+	--secondary-color: #8b5cf6;
+	--accent-color: #06b6d4;
+	--background-color: #ffffff;
+	--surface-color: #f8fafc;
+	--text-color: #1e293b;
+}
+
+/* Dark Theme */
+.dark {
+	--primary-color: #6366f1;
+	--secondary-color: #8b5cf6;
+	--accent-color: #06b6d4;
+	--background-color: #0f172a;
+	--surface-color: #1e293b;
+	--text-color: #f8fafc;
+}
+
+/* Global Styles */
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	font-family: 'Orbitron', 'Inter', system-ui, -apple-system, sans-serif;
+	background-color: var(--background-color);
+	color: var(--text-color);
+}
+
+/* Monospace font for all numeric content */
+.font-mono,
+.digital-display,
+[class*="text-"][class*="xl"],
+[class*="text-"][class*="lg"],
+[class*="text-"][class*="2xl"],
+[class*="text-"][class*="3xl"],
+[class*="text-"][class*="4xl"],
+[class*="text-"][class*="5xl"],
+[class*="text-"][class*="6xl"] {
+	font-variant-numeric: tabular-nums;
+}
+
+/* Ensure all numeric displays use monospace */
+.numeric-display {
+	font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.05em;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: rgba(var(--color-surface-300), 0.1);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(var(--color-surface-500), 0.5);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(var(--color-surface-500), 0.7);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+	0%, 100% {
+		box-shadow: 0 0 5px rgba(var(--color-primary-500), 0.5);
+	}
+	50% {
+		box-shadow: 0 0 20px rgba(var(--color-primary-500), 0.8);
+	}
+}
+
+.animate-pulse-glow {
+	animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Utility Classes */
+.glass-effect {
+	background: rgba(255, 255, 255, 0.05);
+	backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-gradient {
+	background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+/* Widget Specific Styles */
+.widget-container {
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.widget-container:hover {
+	transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.dashboard-grid {
+		padding: 1rem;
+	}
+	
+	.toolbar {
+		padding: 0.75rem 1rem;
+	}
+	
+	.toolbar h1 {
+		font-size: 1rem;
+	}
+}
+
+/* Print Styles */
+@media print {
+	.toolbar,
+	.status-bar,
+	.widget-actions,
+	.selection-outline {
+		display: none !important;
+	}
+	
+	.dashboard-grid {
+		background: white !important;
+	}
+	
+	.widget-container {
+		break-inside: avoid;
+	}
+}
