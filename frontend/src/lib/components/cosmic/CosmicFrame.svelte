@@ -46,18 +46,20 @@
   // Process percentage-based coordinates for responsive frames
   function processPath(pathString: string, width: number, height: number): string {
     return pathString
+      .replace(/100%-(\d+)/g, (match, offset) => {
+        return `${width - parseFloat(offset)}`;
+      })
+      .replace(/(\d+)%-(\d+)/g, (match, percent, offset) => {
+        const num = parseFloat(percent);
+        return `${(num / 100) * width - parseFloat(offset)}`;
+      })
+      .replace(/(\d+)%\+(\d+)/g, (match, percent, offset) => {
+        const num = parseFloat(percent);
+        return `${(num / 100) * width + parseFloat(offset)}`;
+      })
       .replace(/(\d+)%/g, (match, percent) => {
         const num = parseFloat(percent);
         return `${(num / 100) * width}`;
-      })
-      .replace(/100% - (\d+)/g, (match, offset) => {
-        return `${width - parseFloat(offset)}`;
-      })
-      .replace(/50% \+ (\d+)/g, (match, offset) => {
-        return `${width / 2 + parseFloat(offset)}`;
-      })
-      .replace(/50% - (\d+)/g, (match, offset) => {
-        return `${width / 2 - parseFloat(offset)}`;
       });
   }
 
