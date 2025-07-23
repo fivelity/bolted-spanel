@@ -8,4 +8,4 @@ export { default as CosmicPanel } from './CosmicPanel.svelte';
 export { default as CosmicToolbar } from './CosmicToolbar.svelte';
 
 // Re-export cosmic theme utilities
-export * from './theme'; 
+export * from './theme.js'; 

@@ -1638,6 +1638,9 @@ function clsx(value) {
 const whitespace = [..." 	\n\r\f \v\uFEFF"];
 function to_class(value, hash, directives) {
   var classname = value == null ? "" : "" + value;
+  if (hash) {
+    classname = classname ? classname + " " + hash : hash;
+  }
   if (directives) {
     for (var key in directives) {
       if (directives[key]) {
@@ -1899,6 +1902,9 @@ function spread_attributes(attrs, css_hash, classes, styles, flags = 0) {
   if (attrs.class) {
     attrs.class = clsx(attrs.class);
   }
+  if (css_hash || classes) {
+    attrs.class = to_class(attrs.class, css_hash, classes);
+  }
   let attr_str = "";
   let name;
   const is_html = (flags & ELEMENT_IS_NAMESPACED) === 0;
@@ -1983,7 +1989,11 @@ function ensure_array_like(array_like_or_iterator) {
   }
   return [];
 }
+function maybe_selected(payload, value) {
+  return value === payload.select_value ? " selected" : "";
+}
 export {
+  safe_not_equal as $,
   push as A,
   setContext as B,
   COMMENT_NODE as C,
@@ -2003,14 +2013,14 @@ export {
   noop as Q,
   getContext as R,
   escape_html as S,
-  store_get as T,
-  unsubscribe_stores as U,
+  ensure_array_like as T,
+  spread_attributes as U,
   attr as V,
-  ensure_array_like as W,
-  spread_attributes as X,
-  head as Y,
-  subscribe_to_store as Z,
-  safe_not_equal as _,
+  store_get as W,
+  unsubscribe_stores as X,
+  maybe_selected as Y,
+  head as Z,
+  subscribe_to_store as _,
   set_active_effect as a,
   active_effect as b,
   active_reaction as c,

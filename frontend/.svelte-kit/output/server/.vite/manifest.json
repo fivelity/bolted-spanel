@@ -63,7 +63,7 @@
       "_index2.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.CWuPd5VR.css"
+      "_app/immutable/assets/_layout.V8cWWXCT.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -76,7 +76,7 @@
       "_index2.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.DBi7m25r.css"
+      "_app/immutable/assets/_page.DSBF52_T.css"
     ]
   },
   "src/routes/api/ai-layout/+server.ts": {

@@ -323,33 +323,59 @@
   
   /* Corner brackets for gaming themes */
   .corner-brackets {
-    @apply absolute inset-0 pointer-events-none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
   }
   
   .bracket {
-    @apply absolute w-4 h-4 border-current;
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    border-color: currentColor;
     opacity: 0.6;
   }
   
   .bracket.top-left {
-    @apply top-2 left-2 border-t-2 border-l-2;
+    top: 0.5rem;
+    left: 0.5rem;
+    border-top: 2px solid;
+    border-left: 2px solid;
   }
   
   .bracket.top-right {
-    @apply top-2 right-2 border-t-2 border-r-2;
+    top: 0.5rem;
+    right: 0.5rem;
+    border-top: 2px solid;
+    border-right: 2px solid;
   }
   
   .bracket.bottom-left {
-    @apply bottom-2 left-2 border-b-2 border-l-2;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    border-bottom: 2px solid;
+    border-left: 2px solid;
   }
   
   .bracket.bottom-right {
-    @apply bottom-2 right-2 border-b-2 border-r-2;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    border-bottom: 2px solid;
+    border-right: 2px solid;
   }
   
   /* Pulse overlay for high values */
   .pulse-overlay {
-    @apply absolute inset-0 rounded-full pointer-events-none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 50%;
+    pointer-events: none;
     animation: pulse-glow 2s ease-in-out infinite;
   }
   

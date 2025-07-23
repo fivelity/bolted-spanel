@@ -1,4 +1,4 @@
-import { Q as noop, J as attr_class, T as store_get, S as escape_html, N as attr_style, U as unsubscribe_stores, E as pop, A as push, P as stringify, V as attr, W as ensure_array_like, X as spread_attributes, Y as head } from "../../chunks/index.js";
+import { Q as noop, T as ensure_array_like, U as spread_attributes, V as attr, E as pop, A as push, P as stringify, S as escape_html, J as attr_class, N as attr_style, W as store_get, X as unsubscribe_stores, Y as maybe_selected, Z as head } from "../../chunks/index.js";
 import "clsx";
 import { w as writable, g as get$1, r as readable } from "../../chunks/index2.js";
 import { nanoid } from "nanoid";
@@ -64,6 +64,102 @@ const currentLayout = writable(null);
 const selectedWidgets = writable([]);
 const dragState = writable(initialState.dragState);
 const widgetBuilder = writable(initialState.widgetBuilder);
+const widgetTemplates = [
+  {
+    id: "circular-gauge-cpu",
+    name: "CPU Gauge",
+    description: "Circular gauge showing CPU usage with customizable thresholds",
+    type: "circular-gauge",
+    preview: "/templates/circular-gauge.png",
+    category: "system",
+    config: {
+      size: { width: 200, height: 200 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "%",
+        colors: ["#22c55e", "#f59e0b", "#ef4444"],
+        thresholds: [70, 90]
+      },
+      dataSource: "cpu.usage"
+    }
+  },
+  {
+    id: "gauge-gpu",
+    name: "GPU Usage",
+    description: "Simple gauge for GPU monitoring",
+    type: "gauge",
+    preview: "/templates/gauge.png",
+    category: "system",
+    config: {
+      size: { width: 200, height: 200 },
+      config: {
+        colors: ["#3b82f6", "#8b5cf6", "#ef4444"],
+        thresholds: [75, 90]
+      },
+      dataSource: "gpu.usage"
+    }
+  },
+  {
+    id: "meter-memory",
+    name: "Memory Bar",
+    description: "Linear meter showing memory usage",
+    type: "meter",
+    preview: "/templates/meter.png",
+    category: "system",
+    config: {
+      size: { width: 300, height: 80 },
+      config: {
+        colors: ["#06b6d4", "#f59e0b", "#ef4444"],
+        thresholds: [80, 95]
+      },
+      dataSource: "memory.usage"
+    }
+  },
+  {
+    id: "simple-temp",
+    name: "Temperature Display",
+    description: "Simple text display for temperature values",
+    type: "simple",
+    preview: "/templates/simple.png",
+    category: "system",
+    config: {
+      size: { width: 150, height: 100 },
+      config: { unit: "°C" },
+      dataSource: "cpu.temperature"
+    }
+  },
+  {
+    id: "speedometer-perf",
+    name: "Performance Speedometer",
+    description: "Speedometer-style gauge for performance monitoring",
+    type: "speedometer",
+    preview: "/templates/speedometer.png",
+    category: "performance",
+    config: {
+      size: { width: 250, height: 250 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "%",
+        colors: ["#10b981", "#f59e0b", "#ef4444"]
+      },
+      dataSource: "cpu.usage"
+    }
+  },
+  {
+    id: "kpi-card-overview",
+    name: "System Overview",
+    description: "KPI card showing multiple system metrics",
+    type: "kpi-card",
+    preview: "/templates/kpi-card.png",
+    category: "system",
+    config: {
+      size: { width: 280, height: 160 },
+      config: { metrics: ["cpu.usage", "memory.usage", "gpu.usage"] }
+    }
+  }
+];
 const dashboardActions = {
   createLayout: (name, description) => {
     const newLayout = {
@@ -359,23 +455,23 @@ function generateMockSensorData() {
 }
 const sensorData = writable(generateMockSensorData());
 const websocket = writable(null);
-const connectionStatus$1 = writable("disconnected");
+const connectionStatus = writable("disconnected");
 const historicalData = writable([]);
 let _mockInterval = null;
 const sensorStore = {
   // Export stores for reactive access
   data: sensorData,
-  status: connectionStatus$1,
+  status: connectionStatus,
   history: historicalData,
   connect() {
-    const ws2 = get$1(websocket);
-    if (ws2?.readyState === WebSocket.OPEN) return;
-    connectionStatus$1.set("connecting");
+    const ws = get$1(websocket);
+    if (ws?.readyState === WebSocket.OPEN) return;
+    connectionStatus.set("connecting");
     try {
       const newWebSocket = new WebSocket("ws://localhost:8000/sensors");
       websocket.set(newWebSocket);
       newWebSocket.onopen = () => {
-        connectionStatus$1.set("connected");
+        connectionStatus.set("connected");
         console.log("WebSocket connected to sensor backend");
       };
       newWebSocket.onmessage = (event) => {
@@ -389,31 +485,31 @@ const sensorStore = {
         }
       };
       newWebSocket.onclose = () => {
-        connectionStatus$1.set("disconnected");
+        connectionStatus.set("disconnected");
         console.log("WebSocket disconnected, attempting to reconnect...");
         setTimeout(() => this.connect(), 5e3);
       };
       newWebSocket.onerror = (error) => {
-        connectionStatus$1.set("error");
+        connectionStatus.set("error");
         console.error("WebSocket error:", error);
       };
     } catch (error) {
-      connectionStatus$1.set("error");
+      connectionStatus.set("error");
       console.error("Failed to create WebSocket connection:", error);
       this.startMockDataStream();
     }
   },
   disconnect() {
-    const ws2 = get$1(websocket);
-    if (ws2) {
-      ws2.close();
+    const ws = get$1(websocket);
+    if (ws) {
+      ws.close();
       websocket.set(null);
     }
-    connectionStatus$1.set("disconnected");
+    connectionStatus.set("disconnected");
   },
   startMockDataStream() {
     console.log("Starting mock data stream for development");
-    connectionStatus$1.set("connected");
+    connectionStatus.set("connected");
     if (_mockInterval) {
       clearInterval(_mockInterval);
     }
@@ -482,166 +578,515 @@ const sensorStore = {
 };
 const currentTheme = writable("gaming");
 const alertHistory = writable([]);
-const connectionStatus = writable("disconnected");
-const hardwareData = writable(null);
-let ws = null;
-let reconnectAttempts = 0;
-const maxReconnectAttempts = 5;
-const reconnectDelay = 3e3;
-class WebSocketService {
-  static instance;
-  static getInstance() {
-    if (!WebSocketService.instance) {
-      WebSocketService.instance = new WebSocketService();
-    }
-    return WebSocketService.instance;
-  }
-  connect(url = "ws://localhost:8000/ws") {
-    if (ws?.readyState === WebSocket.OPEN) {
-      return;
-    }
-    connectionStatus.set("connecting");
-    try {
-      ws = new WebSocket(url);
-      ws.onopen = () => {
-        console.log("WebSocket connected");
-        connectionStatus.set("connected");
-        reconnectAttempts = 0;
-      };
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          hardwareData.set(data);
-        } catch (error) {
-          console.error("Failed to parse WebSocket message:", error);
-        }
-      };
-      ws.onclose = () => {
-        console.log("WebSocket disconnected");
-        connectionStatus.set("disconnected");
-        this.handleReconnect(url);
-      };
-      ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        connectionStatus.set("error");
-      };
-    } catch (error) {
-      console.error("Failed to create WebSocket connection:", error);
-      connectionStatus.set("error");
-    }
-  }
-  handleReconnect(url) {
-    if (reconnectAttempts < maxReconnectAttempts) {
-      reconnectAttempts++;
-      console.log(`Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
-      setTimeout(() => {
-        this.connect(url);
-      }, reconnectDelay);
-    } else {
-      console.error("Max reconnection attempts reached");
-      connectionStatus.set("error");
-    }
-  }
-  disconnect() {
-    if (ws) {
-      ws.close();
-      ws = null;
-    }
-    connectionStatus.set("disconnected");
-  }
-  send(data) {
-    if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(data));
-    } else {
-      console.warn("WebSocket is not connected");
-    }
-  }
+function createPathData(show, strokeWidth, stroke, fill, path) {
+  return {
+    show,
+    style: {
+      strokeWidth,
+      stroke,
+      fill
+    },
+    path
+  };
 }
-if (typeof window !== "undefined") {
-  const wsService = WebSocketService.getInstance();
-  wsService.connect();
-}
-function Toolbar($$payload, $$props) {
+const defaultFramePaths = {
+  // Standard rectangular frame with clipped corners
+  standard: [
+    createPathData(true, "2", "var(--color-frame-1-stroke)", "var(--color-frame-1-fill)", [
+      ["M", "15", "15"],
+      ["L", "85%", "15"],
+      ["L", "100% - 15", "30"],
+      ["L", "100% - 15", "85%"],
+      ["L", "85%", "100% - 15"],
+      ["L", "15", "100% - 15"],
+      ["L", "15", "15"]
+    ])
+  ],
+  // Highlighted frame for active states
+  highlighted: [
+    createPathData(true, "2", "var(--color-frame-2-stroke)", "var(--color-frame-2-fill)", [
+      ["M", "10", "10"],
+      ["L", "90%", "10"],
+      ["L", "100% - 10", "25"],
+      ["L", "100% - 10", "90%"],
+      ["L", "90%", "100% - 10"],
+      ["L", "10", "100% - 10"],
+      ["L", "10", "10"]
+    ])
+  ]
+};
+function CosmicFrame($$payload, $$props) {
   push();
-  var $$store_subs;
-  [
+  let {
+    paths = [],
+    className = "",
+    style = "",
+    $$slots,
+    $$events,
+    ...restProps
+  } = $$props;
+  function pathToString(pathArray) {
+    return pathArray.map((segment) => segment.join(" ")).join(" ");
+  }
+  function processPath(pathString, width, height) {
+    return pathString.replace(/(\d+)%/g, (match2, percent) => {
+      const num2 = parseFloat(percent);
+      return `${num2 / 100 * width}`;
+    }).replace(/100% - (\d+)/g, (match2, offset) => {
+      return `${width - parseFloat(offset)}`;
+    }).replace(/50% \+ (\d+)/g, (match2, offset) => {
+      return `${width / 2 + parseFloat(offset)}`;
+    }).replace(/50% - (\d+)/g, (match2, offset) => {
+      return `${width / 2 - parseFloat(offset)}`;
+    });
+  }
+  let frameWidth = 300;
+  let frameHeight = 200;
+  const processedPaths = paths.map((pathData) => ({
+    ...pathData,
+    processedPath: processPath(pathToString(pathData.path), frameWidth)
+  }));
+  const each_array = ensure_array_like(processedPaths);
+  $$payload.out.push(`<svg${spread_attributes(
     {
-      id: nanoid(),
-      type: "gauge",
-      title: "CPU Usage",
-      position: { x: 20, y: 20 },
-      size: { width: 200, height: 200 },
-      config: {
-        dataSource: "cpu.usage",
-        unit: "%",
-        colors: ["#22c55e", "#f59e0b", "#ef4444"],
-        thresholds: [70, 90]
-      }
+      class: `absolute inset-0 size-full ${stringify(className)}`,
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: `0 0 ${stringify(frameWidth)} ${stringify(frameHeight)}`,
+      style,
+      ...restProps
     },
-    {
-      id: nanoid(),
-      type: "gauge",
-      title: "GPU Usage",
-      position: { x: 240, y: 20 },
-      size: { width: 200, height: 200 },
-      config: {
-        dataSource: "gpu.usage",
-        unit: "%",
-        colors: ["#3b82f6", "#8b5cf6", "#ef4444"],
-        thresholds: [75, 90]
-      }
-    },
-    {
-      id: nanoid(),
-      type: "meter",
-      title: "Memory Usage",
-      position: { x: 20, y: 240 },
-      size: { width: 420, height: 80 },
-      config: {
-        dataSource: "memory.usage",
-        unit: "%",
-        colors: ["#06b6d4", "#f59e0b", "#ef4444"],
-        thresholds: [80, 95]
-      }
-    },
-    {
-      id: nanoid(),
-      type: "simple",
-      title: "CPU Temperature",
-      position: { x: 460, y: 20 },
-      size: { width: 150, height: 100 },
-      config: { dataSource: "cpu.temperature", unit: "°C" }
+    null,
+    void 0,
+    void 0,
+    3
+  )}><!--[-->`);
+  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+    let pathData = each_array[$$index];
+    if (pathData.show) {
+      $$payload.out.push("<!--[-->");
+      $$payload.out.push(`<path${attr("d", pathData.processedPath)}${attr("stroke-width", pathData.style.strokeWidth)}${attr("stroke", pathData.style.stroke)}${attr("fill", pathData.style.fill)} class="transition-all duration-300"></path>`);
+    } else {
+      $$payload.out.push("<!--[!-->");
     }
-  ];
-  $$payload.out.push(`<div class="toolbar flex items-center justify-between w-full px-6 py-3 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-sm border-b border-gray-700/50 svelte-1u6pfs1"><div class="flex items-center gap-6"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center"><svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div> <div><h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">SenseCanvas</h1> <p class="text-xs text-gray-400">Real-time Monitoring</p></div></div> <div class="flex items-center gap-2"><div${attr_class("w-2 h-2 rounded-full transition-colors relative", void 0, {
-    "bg-success-500": store_get($$store_subs ??= {}, "$connectionStatus", connectionStatus) === "connected",
-    "bg-warning-500": store_get($$store_subs ??= {}, "$connectionStatus", connectionStatus) === "connecting",
-    "bg-error-500": store_get($$store_subs ??= {}, "$connectionStatus", connectionStatus) === "error" || store_get($$store_subs ??= {}, "$connectionStatus", connectionStatus) === "disconnected"
-  })}>`);
-  if (store_get($$store_subs ??= {}, "$connectionStatus", connectionStatus) === "connected") {
+    $$payload.out.push(`<!--]-->`);
+  }
+  $$payload.out.push(`<!--]--></svg>`);
+  pop();
+}
+function is_date(obj) {
+  return Object.prototype.toString.call(obj) === "[object Date]";
+}
+function get_interpolator(a, b) {
+  if (a === b || a !== a) return () => a;
+  const type = typeof a;
+  if (type !== typeof b || Array.isArray(a) !== Array.isArray(b)) {
+    throw new Error("Cannot interpolate values of different type");
+  }
+  if (Array.isArray(a)) {
+    const arr = (
+      /** @type {Array<any>} */
+      b.map((bi, i) => {
+        return get_interpolator(
+          /** @type {Array<any>} */
+          a[i],
+          bi
+        );
+      })
+    );
+    return (t) => arr.map((fn2) => fn2(t));
+  }
+  if (type === "object") {
+    if (!a || !b) {
+      throw new Error("Object cannot be null");
+    }
+    if (is_date(a) && is_date(b)) {
+      const an = a.getTime();
+      const bn = b.getTime();
+      const delta = bn - an;
+      return (t) => new Date(an + t * delta);
+    }
+    const keys = Object.keys(b);
+    const interpolators = {};
+    keys.forEach((key) => {
+      interpolators[key] = get_interpolator(a[key], b[key]);
+    });
+    return (t) => {
+      const result = {};
+      keys.forEach((key) => {
+        result[key] = interpolators[key](t);
+      });
+      return result;
+    };
+  }
+  if (type === "number") {
+    const delta = (
+      /** @type {number} */
+      b - /** @type {number} */
+      a
+    );
+    return (t) => a + t * delta;
+  }
+  return () => b;
+}
+function tweened(value, defaults = {}) {
+  const store = writable(value);
+  let task;
+  let target_value = value;
+  function set2(new_value, opts) {
+    target_value = new_value;
+    if (value == null) {
+      store.set(value = new_value);
+      return Promise.resolve();
+    }
+    let previous_task = task;
+    let started = false;
+    let {
+      delay = 0,
+      duration = 400,
+      easing = linear,
+      interpolate = get_interpolator
+    } = { ...defaults, ...opts };
+    if (duration === 0) {
+      if (previous_task) {
+        previous_task.abort();
+        previous_task = null;
+      }
+      store.set(value = target_value);
+      return Promise.resolve();
+    }
+    const start = raf.now() + delay;
+    let fn2;
+    task = loop((now2) => {
+      if (now2 < start) return true;
+      if (!started) {
+        fn2 = interpolate(
+          /** @type {any} */
+          value,
+          new_value
+        );
+        if (typeof duration === "function")
+          duration = duration(
+            /** @type {any} */
+            value,
+            new_value
+          );
+        started = true;
+      }
+      if (previous_task) {
+        previous_task.abort();
+        previous_task = null;
+      }
+      const elapsed = now2 - start;
+      if (elapsed > /** @type {number} */
+      duration) {
+        store.set(value = new_value);
+        return false;
+      }
+      store.set(value = fn2(easing(elapsed / duration)));
+      return true;
+    });
+    return task.promise;
+  }
+  return {
+    set: set2,
+    update: (fn2, opts) => set2(fn2(
+      /** @type {any} */
+      target_value,
+      /** @type {any} */
+      value
+    ), opts),
+    subscribe: store.subscribe
+  };
+}
+function CosmicPanel($$payload, $$props) {
+  push();
+  let {
+    variant = "default",
+    title,
+    subtitle,
+    className = "",
+    contentClass = "",
+    showGlow = false,
+    scrollable = false,
+    children,
+    header,
+    footer,
+    $$slots,
+    $$events,
+    ...restProps
+  } = $$props;
+  const currentFrames = () => {
+    switch (variant) {
+      case "highlighted":
+        return defaultFramePaths.highlighted;
+      case "minimal":
+        return [
+          {
+            show: true,
+            style: {
+              strokeWidth: "1",
+              stroke: "rgba(255, 255, 255, 0.2)",
+              fill: "rgba(0, 0, 0, 0.2)"
+            },
+            path: [
+              ["M", "0", "0"],
+              ["L", "100%", "0"],
+              ["L", "100%", "100%"],
+              ["L", "0", "100%"],
+              ["L", "0", "0"]
+            ]
+          }
+        ];
+      default:
+        return defaultFramePaths.standard;
+    }
+  };
+  $$payload.out.push(`<div${spread_attributes({ class: `relative ${stringify(className)}`, ...restProps }, null)}>`);
+  CosmicFrame($$payload, {
+    paths: currentFrames(),
+    className: showGlow ? "drop-shadow-lg" : ""
+  });
+  $$payload.out.push(`<!----> <div class="relative z-10 flex flex-col h-full">`);
+  if (title || subtitle || header) {
     $$payload.out.push("<!--[-->");
-    $$payload.out.push(`<div class="absolute inset-0 bg-green-400 rounded-full animate-ping"></div>`);
+    $$payload.out.push(`<div class="p-4 border-b border-white/10">`);
+    if (header) {
+      $$payload.out.push("<!--[-->");
+      header($$payload);
+      $$payload.out.push(`<!---->`);
+    } else {
+      $$payload.out.push("<!--[!-->");
+      $$payload.out.push(`<div class="space-y-1">`);
+      if (title) {
+        $$payload.out.push("<!--[-->");
+        $$payload.out.push(`<h3 class="font-orbitron font-semibold text-white text-lg">${escape_html(title)}</h3>`);
+      } else {
+        $$payload.out.push("<!--[!-->");
+      }
+      $$payload.out.push(`<!--]--> `);
+      if (subtitle) {
+        $$payload.out.push("<!--[-->");
+        $$payload.out.push(`<p class="text-gray-400 text-sm">${escape_html(subtitle)}</p>`);
+      } else {
+        $$payload.out.push("<!--[!-->");
+      }
+      $$payload.out.push(`<!--]--></div>`);
+    }
+    $$payload.out.push(`<!--]--></div>`);
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]--></div> <span class="text-gray-300 font-medium">${escape_html(store_get($$store_subs ??= {}, "$connectionStatus", connectionStatus) === "connected" ? "Connected" : store_get($$store_subs ??= {}, "$connectionStatus", connectionStatus) === "connecting" ? "Connecting..." : "Disconnected")}</span></div></div> <div class="flex items-center gap-3">`);
-  {
+  $$payload.out.push(`<!--]--> <div${attr_class(`flex-1 p-4 ${stringify(contentClass)} ${stringify(scrollable ? "overflow-auto" : "")}`)}>`);
+  children($$payload);
+  $$payload.out.push(`<!----></div> `);
+  if (footer) {
     $$payload.out.push("<!--[-->");
-    $$payload.out.push(`<div class="relative"><button class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-cyan-500/25"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg> Add Widget</button> `);
-    {
-      $$payload.out.push("<!--[!-->");
-    }
-    $$payload.out.push(`<!--]--></div>`);
-  }
-  $$payload.out.push(`<!--]--> <button class="bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white p-2 rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50" title="Export Layout" aria-label="Export Layout"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></button> <button class="bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white p-2 rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50" title="Import Layout" aria-label="Import Layout"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg></button></div> <div class="flex items-center gap-3"><button class="bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50 flex items-center gap-2" title="Change Theme" aria-label="Change Theme"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg></button> <button${attr_class(`px-3 py-2 rounded-lg flex items-center gap-2 transition-all duration-200 font-medium ${stringify(
-    "bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white border border-orange-400/50"
-  )}`)}${attr_style(
-    "box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.25), 0 4px 6px -2px rgba(249, 115, 22, 0.05);"
-  )}><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg> ${escape_html("Exit Edit")}</button> <button class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-all" title="AI Layout Suggestions"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path></svg> AI Layouts</button></div></div> `);
-  {
+    $$payload.out.push(`<div class="p-4 border-t border-white/10">`);
+    footer($$payload);
+    $$payload.out.push(`<!----></div>`);
+  } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]-->`);
+  $$payload.out.push(`<!--]--></div> `);
+  if (showGlow) {
+    $$payload.out.push("<!--[-->");
+    $$payload.out.push(`<div class="absolute inset-0 opacity-20 pointer-events-none" style="filter: blur(20px); background: radial-gradient(circle at center, var(--color-primary)30 0%, transparent 70%);"></div>`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--></div>`);
+  pop();
+}
+function CosmicToolbar($$payload, $$props) {
+  let {
+    className = "",
+    left,
+    center,
+    right,
+    children,
+    showScanLines = true,
+    $$slots,
+    $$events,
+    ...restProps
+  } = $$props;
+  const toolbarFramePaths = [
+    {
+      show: true,
+      style: {
+        strokeWidth: "2",
+        stroke: "var(--color-frame-1-stroke)",
+        fill: "rgba(0, 0, 0, 0.8)"
+      },
+      path: [
+        ["M", "0", "0"],
+        ["L", "100%", "0"],
+        ["L", "100%", "100%"],
+        ["L", "20", "100%"],
+        ["L", "0", "80%"],
+        ["L", "0", "0"]
+      ]
+    },
+    {
+      show: true,
+      style: {
+        strokeWidth: "1",
+        stroke: "rgba(255, 255, 255, 0.3)",
+        fill: "transparent"
+      },
+      path: [
+        ["M", "100% - 50", "0"],
+        ["L", "100%", "0"],
+        ["L", "100%", "100%"],
+        ["L", "100% - 30", "100%"]
+      ]
+    }
+  ];
+  $$payload.out.push(`<div${spread_attributes(
+    {
+      class: `relative h-16 bg-gray-900/90 backdrop-blur-sm border-b border-gray-700/50 ${stringify(className)}`,
+      ...restProps
+    },
+    "svelte-rabmgl"
+  )}>`);
+  CosmicFrame($$payload, { paths: toolbarFramePaths, className: "opacity-80" });
+  $$payload.out.push(`<!----> `);
+  if (showScanLines) {
+    $$payload.out.push("<!--[-->");
+    $$payload.out.push(`<div class="absolute inset-0 overflow-hidden pointer-events-none svelte-rabmgl"><div class="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-scan-slow svelte-rabmgl"></div> <div class="absolute right-0 top-0 w-px h-full bg-gradient-to-b from-transparent via-blue-400/20 to-transparent animate-scan-vertical-slow svelte-rabmgl"></div></div>`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> <div class="relative z-10 h-full flex items-center justify-between px-6 svelte-rabmgl"><div class="flex items-center gap-4 svelte-rabmgl">`);
+  if (left) {
+    $$payload.out.push("<!--[-->");
+    left($$payload);
+    $$payload.out.push(`<!---->`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--></div> <div class="flex items-center gap-4 svelte-rabmgl">`);
+  if (center) {
+    $$payload.out.push("<!--[-->");
+    center($$payload);
+    $$payload.out.push(`<!---->`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--></div> <div class="flex items-center gap-4 svelte-rabmgl">`);
+  if (right) {
+    $$payload.out.push("<!--[-->");
+    right($$payload);
+    $$payload.out.push(`<!---->`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--></div> `);
+  if (children) {
+    $$payload.out.push("<!--[-->");
+    children($$payload);
+    $$payload.out.push(`<!---->`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--></div></div>`);
+}
+function CosmicSensorGauge($$payload, $$props) {
+  push();
+  var $$store_subs;
+  let {
+    value = 0,
+    label = "Sensor",
+    config = {
+      min: 0,
+      max: 100,
+      warningThreshold: 70,
+      criticalThreshold: 90,
+      unit: "%",
+      icon: "🔥"
+    },
+    size = 200,
+    showFrame = true,
+    glowEffect = true
+  } = $$props;
+  const animatedValue = tweened(0, { duration: 800, easing: cubicOut });
+  const normalizedValue = Math.max(0, Math.min(100, (value - config.min) / (config.max - config.min) * 100));
+  const angle = normalizedValue / 100 * 270 - 135;
+  const radius = size * 0.35;
+  const centerX = size / 2;
+  const centerY = size / 2;
+  const statusColor = () => {
+    if (value >= config.criticalThreshold) return "var(--color-accent)";
+    if (value >= config.warningThreshold) return "orange";
+    return "var(--color-success)";
+  };
+  const gaugeFramePaths = [
+    {
+      show: true,
+      style: {
+        strokeWidth: "2",
+        stroke: "var(--color-frame-1-stroke)",
+        fill: "var(--color-frame-1-fill)"
+      },
+      path: [
+        ["M", "15", "15"],
+        ["L", "85%", "15"],
+        ["L", "100% - 15", "30"],
+        ["L", "100% - 15", "85%"],
+        ["L", "85%", "100% - 15"],
+        ["L", "15", "100% - 15"],
+        ["L", "15", "15"]
+      ]
+    },
+    {
+      show: showFrame,
+      style: { strokeWidth: "1", stroke: statusColor(), fill: "transparent" },
+      path: [
+        ["M", "10", "10"],
+        ["L", "90%", "10"],
+        ["L", "100% - 10", "25"],
+        ["L", "100% - 10", "90%"],
+        ["L", "90%", "100% - 10"],
+        ["L", "10", "100% - 10"],
+        ["L", "10", "10"]
+      ]
+    }
+  ];
+  function createArcPath(startAngle, endAngle, radius2, cx, cy) {
+    const start = {
+      x: cx + radius2 * Math.cos(startAngle * Math.PI / 180),
+      y: cy + radius2 * Math.sin(startAngle * Math.PI / 180)
+    };
+    const end = {
+      x: cx + radius2 * Math.cos(endAngle * Math.PI / 180),
+      y: cy + radius2 * Math.sin(endAngle * Math.PI / 180)
+    };
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+    return `M ${start.x} ${start.y} A ${radius2} ${radius2} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+  }
+  const backgroundArc = createArcPath(-135, 135, radius, centerX, centerY);
+  const valueArc = createArcPath(-135, angle, radius, centerX, centerY);
+  $$payload.out.push(`<div class="relative inline-block svelte-1in9g11"${attr_style(`width: ${stringify(size)}px; height: ${stringify(size)}px;`)}>`);
+  if (showFrame) {
+    $$payload.out.push("<!--[-->");
+    CosmicFrame($$payload, {
+      paths: gaugeFramePaths,
+      className: glowEffect ? "drop-shadow-xl" : "",
+      style: `filter: ${stringify(glowEffect ? `drop-shadow(0 0 20px ${statusColor()}40)` : "none")}`
+    });
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> <div class="absolute inset-4 flex items-center justify-center svelte-1in9g11"><svg${attr("width", size - 32)}${attr("height", size - 32)}${attr("viewBox", `0 0 ${stringify(size)} ${stringify(size)}`)} class="overflow-visible svelte-1in9g11"><path${attr("d", backgroundArc)} stroke="rgba(255, 255, 255, 0.1)" stroke-width="8" fill="none" stroke-linecap="round" class="svelte-1in9g11"></path><path${attr("d", valueArc)}${attr("stroke", statusColor())} stroke-width="8" fill="none" stroke-linecap="round" class="transition-all duration-800 ease-out svelte-1in9g11"${attr_style(`filter: ${stringify(glowEffect ? `drop-shadow(0 0 8px ${statusColor()})` : "none")}`)}></path><circle${attr("cx", centerX)}${attr("cy", centerY)} r="12" fill="var(--color-background)"${attr("stroke", statusColor())} stroke-width="2" class="svelte-1in9g11"></circle><text${attr("x", centerX)}${attr("y", centerY - 10)} text-anchor="middle" fill="var(--color-foreground)" font-size="18" font-weight="bold" font-family="monospace" class="svelte-1in9g11">${escape_html(Math.round(store_get($$store_subs ??= {}, "$animatedValue", animatedValue)))}</text><text${attr("x", centerX)}${attr("y", centerY + 8)} text-anchor="middle" fill="var(--color-foreground)" font-size="10" opacity="0.7" font-family="monospace" class="svelte-1in9g11">${escape_html(config.unit)}</text></svg></div> <div class="absolute bottom-2 left-0 right-0 text-center svelte-1in9g11"><div class="text-xs font-medium text-white/80 flex items-center justify-center gap-1 font-orbitron svelte-1in9g11">`);
+  if (config.icon) {
+    $$payload.out.push("<!--[-->");
+    $$payload.out.push(`<span class="svelte-1in9g11">${escape_html(config.icon)}</span>`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> ${escape_html(label)}</div></div> <div class="absolute top-2 right-2 svelte-1in9g11"><div${attr_class(
+    `w-2 h-2 rounded-full ${stringify(value >= config.criticalThreshold ? "bg-red-400 critical-glow" : value >= config.warningThreshold ? "bg-yellow-400" : "bg-green-400")}`,
+    "svelte-1in9g11"
+  )}></div></div></div>`);
   if ($$store_subs) unsubscribe_stores($$store_subs);
   pop();
 }
@@ -6052,7 +6497,7 @@ function toe_inv(x) {
   return (x * x + k_1 * x) / (k_3 * (x + k_2));
 }
 function compute_max_saturation(a, b) {
-  let k0, k1, k2, k3, k4, wl, wm, ws2;
+  let k0, k1, k2, k3, k4, wl, wm, ws;
   if (-1.88170328 * a - 0.80936493 * b > 1) {
     k0 = 1.19086277;
     k1 = 1.76576728;
@@ -6061,7 +6506,7 @@ function compute_max_saturation(a, b) {
     k4 = 0.56771245;
     wl = 4.0767416621;
     wm = -3.3077115913;
-    ws2 = 0.2309699292;
+    ws = 0.2309699292;
   } else if (1.81444104 * a - 1.19445276 * b > 1) {
     k0 = 0.73956515;
     k1 = -0.45954404;
@@ -6070,7 +6515,7 @@ function compute_max_saturation(a, b) {
     k4 = 0.14503204;
     wl = -1.2684380046;
     wm = 2.6097574011;
-    ws2 = -0.3413193965;
+    ws = -0.3413193965;
   } else {
     k0 = 1.35733652;
     k1 = -915799e-8;
@@ -6079,7 +6524,7 @@ function compute_max_saturation(a, b) {
     k4 = 692167e-8;
     wl = -0.0041960863;
     wm = -0.7034186147;
-    ws2 = 1.707614701;
+    ws = 1.707614701;
   }
   let S = k0 + k1 * a + k2 * b + k3 * a * a + k4 * a * b;
   let k_l = 0.3963377774 * a + 0.2158037573 * b;
@@ -6098,9 +6543,9 @@ function compute_max_saturation(a, b) {
     let l_dS2 = 6 * k_l * k_l * l_;
     let m_dS2 = 6 * k_m * k_m * m_;
     let s_dS2 = 6 * k_s * k_s * s_;
-    let f2 = wl * l + wm * m + ws2 * s;
-    let f1 = wl * l_dS + wm * m_dS + ws2 * s_dS;
-    let f22 = wl * l_dS2 + wm * m_dS2 + ws2 * s_dS2;
+    let f2 = wl * l + wm * m + ws * s;
+    let f1 = wl * l_dS + wm * m_dS + ws * s_dS;
+    let f22 = wl * l_dS2 + wm * m_dS2 + ws * s_dS2;
     S = S - f2 * f1 / (f1 * f1 - 0.5 * f2 * f22);
   }
   return S;
@@ -7831,131 +8276,6 @@ var typeMap = {
 Object.keys(typeMap).forEach(function(key) {
   typeMap[key.toLowerCase()] = typeMap[key];
 });
-function is_date(obj) {
-  return Object.prototype.toString.call(obj) === "[object Date]";
-}
-function get_interpolator(a, b) {
-  if (a === b || a !== a) return () => a;
-  const type = typeof a;
-  if (type !== typeof b || Array.isArray(a) !== Array.isArray(b)) {
-    throw new Error("Cannot interpolate values of different type");
-  }
-  if (Array.isArray(a)) {
-    const arr = (
-      /** @type {Array<any>} */
-      b.map((bi, i) => {
-        return get_interpolator(
-          /** @type {Array<any>} */
-          a[i],
-          bi
-        );
-      })
-    );
-    return (t) => arr.map((fn2) => fn2(t));
-  }
-  if (type === "object") {
-    if (!a || !b) {
-      throw new Error("Object cannot be null");
-    }
-    if (is_date(a) && is_date(b)) {
-      const an = a.getTime();
-      const bn = b.getTime();
-      const delta = bn - an;
-      return (t) => new Date(an + t * delta);
-    }
-    const keys = Object.keys(b);
-    const interpolators = {};
-    keys.forEach((key) => {
-      interpolators[key] = get_interpolator(a[key], b[key]);
-    });
-    return (t) => {
-      const result = {};
-      keys.forEach((key) => {
-        result[key] = interpolators[key](t);
-      });
-      return result;
-    };
-  }
-  if (type === "number") {
-    const delta = (
-      /** @type {number} */
-      b - /** @type {number} */
-      a
-    );
-    return (t) => a + t * delta;
-  }
-  return () => b;
-}
-function tweened(value, defaults = {}) {
-  const store = writable(value);
-  let task;
-  let target_value = value;
-  function set2(new_value, opts) {
-    target_value = new_value;
-    if (value == null) {
-      store.set(value = new_value);
-      return Promise.resolve();
-    }
-    let previous_task = task;
-    let started = false;
-    let {
-      delay = 0,
-      duration = 400,
-      easing = linear,
-      interpolate = get_interpolator
-    } = { ...defaults, ...opts };
-    if (duration === 0) {
-      if (previous_task) {
-        previous_task.abort();
-        previous_task = null;
-      }
-      store.set(value = target_value);
-      return Promise.resolve();
-    }
-    const start = raf.now() + delay;
-    let fn2;
-    task = loop((now2) => {
-      if (now2 < start) return true;
-      if (!started) {
-        fn2 = interpolate(
-          /** @type {any} */
-          value,
-          new_value
-        );
-        if (typeof duration === "function")
-          duration = duration(
-            /** @type {any} */
-            value,
-            new_value
-          );
-        started = true;
-      }
-      if (previous_task) {
-        previous_task.abort();
-        previous_task = null;
-      }
-      const elapsed = now2 - start;
-      if (elapsed > /** @type {number} */
-      duration) {
-        store.set(value = new_value);
-        return false;
-      }
-      store.set(value = fn2(easing(elapsed / duration)));
-      return true;
-    });
-    return task.promise;
-  }
-  return {
-    set: set2,
-    update: (fn2, opts) => set2(fn2(
-      /** @type {any} */
-      target_value,
-      /** @type {any} */
-      value
-    ), opts),
-    subscribe: store.subscribe
-  };
-}
 const defaultTranslate = writable({ x: 0, y: 0 });
 const defaultScale = writable(1);
 ({
@@ -8654,156 +8974,9 @@ function ArcMeter($$payload, $$props) {
   $$payload.out.push(`<!--]--></div>`);
   pop();
 }
-function CosmicFrame($$payload, $$props) {
-  push();
-  let { paths = [], className = "", $$slots, $$events, ...restProps } = $$props;
-  function pathToString(pathArray) {
-    return pathArray.map((segment) => segment.join(" ")).join(" ");
-  }
-  function processPath(pathString, width, height) {
-    return pathString.replace(/(\d+)%/g, (match2, percent) => {
-      const num2 = parseFloat(percent);
-      return `${num2 / 100 * width}`;
-    }).replace(/100% - (\d+)/g, (match2, offset) => {
-      return `${width - parseFloat(offset)}`;
-    }).replace(/50% \+ (\d+)/g, (match2, offset) => {
-      return `${width / 2 + parseFloat(offset)}`;
-    }).replace(/50% - (\d+)/g, (match2, offset) => {
-      return `${width / 2 - parseFloat(offset)}`;
-    });
-  }
-  let frameWidth = 300;
-  let frameHeight = 200;
-  const processedPaths = paths.map((pathData) => ({
-    ...pathData,
-    processedPath: processPath(pathToString(pathData.path), frameWidth)
-  }));
-  const each_array = ensure_array_like(processedPaths);
-  $$payload.out.push(`<svg${spread_attributes(
-    {
-      class: `absolute inset-0 size-full ${stringify(className)}`,
-      xmlns: "http://www.w3.org/2000/svg",
-      viewBox: `0 0 ${stringify(frameWidth)} ${stringify(frameHeight)}`,
-      ...restProps
-    },
-    null,
-    void 0,
-    void 0,
-    3
-  )}><!--[-->`);
-  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-    let pathData = each_array[$$index];
-    if (pathData.show) {
-      $$payload.out.push("<!--[-->");
-      $$payload.out.push(`<path${attr("d", pathData.processedPath)}${attr("stroke-width", pathData.style.strokeWidth)}${attr("stroke", pathData.style.stroke)}${attr("fill", pathData.style.fill)} class="transition-all duration-300"></path>`);
-    } else {
-      $$payload.out.push("<!--[!-->");
-    }
-    $$payload.out.push(`<!--]-->`);
-  }
-  $$payload.out.push(`<!--]--></svg>`);
-  pop();
-}
-function CosmicSensorGauge($$payload, $$props) {
-  push();
-  var $$store_subs;
-  let {
-    value = 0,
-    label = "Sensor",
-    config = {
-      min: 0,
-      max: 100,
-      warningThreshold: 70,
-      criticalThreshold: 90,
-      unit: "%",
-      icon: "🔥"
-    },
-    size = 200,
-    showFrame = true,
-    glowEffect = true
-  } = $$props;
-  const animatedValue = tweened(0, { duration: 800, easing: cubicOut });
-  const normalizedValue = Math.max(0, Math.min(100, (value - config.min) / (config.max - config.min) * 100));
-  const angle = normalizedValue / 100 * 270 - 135;
-  const radius = size * 0.35;
-  const centerX = size / 2;
-  const centerY = size / 2;
-  const statusColor = () => {
-    if (value >= config.criticalThreshold) return "var(--color-accent)";
-    if (value >= config.warningThreshold) return "orange";
-    return "var(--color-success)";
-  };
-  const gaugeFramePaths = [
-    {
-      show: true,
-      style: {
-        strokeWidth: "2",
-        stroke: "var(--color-frame-1-stroke)",
-        fill: "var(--color-frame-1-fill)"
-      },
-      path: [
-        ["M", "15", "15"],
-        ["L", "85%", "15"],
-        ["L", "100% - 15", "30"],
-        ["L", "100% - 15", "85%"],
-        ["L", "85%", "100% - 15"],
-        ["L", "15", "100% - 15"],
-        ["L", "15", "15"]
-      ]
-    },
-    {
-      show: showFrame,
-      style: { strokeWidth: "1", stroke: statusColor, fill: "transparent" },
-      path: [
-        ["M", "10", "10"],
-        ["L", "90%", "10"],
-        ["L", "100% - 10", "25"],
-        ["L", "100% - 10", "90%"],
-        ["L", "90%", "100% - 10"],
-        ["L", "10", "100% - 10"],
-        ["L", "10", "10"]
-      ]
-    }
-  ];
-  function createArcPath(startAngle, endAngle, radius2, cx, cy) {
-    const start = {
-      x: cx + radius2 * Math.cos(startAngle * Math.PI / 180),
-      y: cy + radius2 * Math.sin(startAngle * Math.PI / 180)
-    };
-    const end = {
-      x: cx + radius2 * Math.cos(endAngle * Math.PI / 180),
-      y: cy + radius2 * Math.sin(endAngle * Math.PI / 180)
-    };
-    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-    return `M ${start.x} ${start.y} A ${radius2} ${radius2} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
-  }
-  const backgroundArc = createArcPath(-135, 135, radius, centerX, centerY);
-  const valueArc = createArcPath(-135, angle, radius, centerX, centerY);
-  $$payload.out.push(`<div class="relative inline-block svelte-t4xo3c"${attr_style(`width: ${stringify(size)}px; height: ${stringify(size)}px;`)}>`);
-  if (showFrame) {
-    $$payload.out.push("<!--[-->");
-    CosmicFrame($$payload, {
-      paths: gaugeFramePaths,
-      className: glowEffect ? "drop-shadow-xl" : "",
-      style: `filter: ${stringify(glowEffect ? `drop-shadow(0 0 20px ${statusColor}40)` : "none")}`
-    });
-  } else {
-    $$payload.out.push("<!--[!-->");
-  }
-  $$payload.out.push(`<!--]--> <div class="absolute inset-4 flex items-center justify-center svelte-t4xo3c"><svg${attr("width", size - 32)}${attr("height", size - 32)}${attr("viewBox", `0 0 ${stringify(size)} ${stringify(size)}`)} class="overflow-visible svelte-t4xo3c"><path${attr("d", backgroundArc)} stroke="rgba(255, 255, 255, 0.1)" stroke-width="8" fill="none" stroke-linecap="round" class="svelte-t4xo3c"></path><path${attr("d", valueArc)}${attr("stroke", statusColor)} stroke-width="8" fill="none" stroke-linecap="round" class="transition-all duration-800 ease-out svelte-t4xo3c"${attr_style(`filter: ${stringify(glowEffect ? `drop-shadow(0 0 8px ${statusColor})` : "none")}`)}></path><circle${attr("cx", centerX)}${attr("cy", centerY)} r="12" fill="var(--color-background)"${attr("stroke", statusColor)} stroke-width="2" class="svelte-t4xo3c"></circle><text${attr("x", centerX)}${attr("y", centerY - 10)} text-anchor="middle" fill="var(--color-foreground)" font-size="18" font-weight="bold" font-family="monospace" class="svelte-t4xo3c">${escape_html(Math.round(store_get($$store_subs ??= {}, "$animatedValue", animatedValue)))}</text><text${attr("x", centerX)}${attr("y", centerY + 8)} text-anchor="middle" fill="var(--color-foreground)" font-size="10" opacity="0.7" font-family="monospace" class="svelte-t4xo3c">${escape_html(config.unit)}</text></svg></div> <div class="absolute bottom-2 left-0 right-0 text-center svelte-t4xo3c"><div class="text-xs font-medium text-white/80 flex items-center justify-center gap-1 svelte-t4xo3c">`);
-  if (config.icon) {
-    $$payload.out.push("<!--[-->");
-    $$payload.out.push(`<span class="svelte-t4xo3c">${escape_html(config.icon)}</span>`);
-  } else {
-    $$payload.out.push("<!--[!-->");
-  }
-  $$payload.out.push(`<!--]--> ${escape_html(label)}</div></div></div>`);
-  if ($$store_subs) unsubscribe_stores($$store_subs);
-  pop();
-}
 function WidgetRenderer($$payload, $$props) {
   push();
-  let { widget: config, data } = $$props;
+  let { widget: config, data, isPreview = false } = $$props;
   function getSensorValue(data2, path) {
     if (!data2 || !path) return null;
     try {
@@ -8921,10 +9094,331 @@ function GridOverlay($$payload, $$props) {
   let adjustedGridSize = gridSize * zoom;
   $$payload.out.push(`<div class="grid-overlay absolute inset-0 pointer-events-none opacity-20 svelte-1gs4wbk"${attr_style(` background-image: linear-gradient(to right, #cbd5e1 1px, transparent 1px), linear-gradient(to bottom, #cbd5e1 1px, transparent 1px); background-size: ${stringify(adjustedGridSize)}px ${stringify(adjustedGridSize)}px; `)}></div>`);
 }
+class MockDataService {
+  static instance;
+  baseData = null;
+  updateInterval = null;
+  subscribers = [];
+  static getInstance() {
+    if (!MockDataService.instance) {
+      MockDataService.instance = new MockDataService();
+    }
+    return MockDataService.instance;
+  }
+  constructor() {
+    this.generateBaseData();
+  }
+  generateBaseData() {
+    const cpuUsage = Math.random() * 80 + 10;
+    const gpuUsage = Math.random() * 70 + 20;
+    const memoryUsage = Math.random() * 60 + 30;
+    this.baseData = {
+      cpu: {
+        usage: cpuUsage,
+        temperature: 35 + cpuUsage * 0.8 + Math.random() * 15,
+        frequency: 3.8 + Math.random() * 0.4,
+        voltage: 1.2 + Math.random() * 0.3,
+        cores: Array.from({ length: 12 }, (_, i) => ({
+          core: i,
+          usage: Math.max(0, Math.min(100, cpuUsage + (Math.random() - 0.5) * 30)),
+          temperature: 35 + cpuUsage * 0.8 + Math.random() * 15
+        }))
+      },
+      gpu: {
+        usage: gpuUsage,
+        temperature: 50 + gpuUsage * 0.4 + Math.random() * 8,
+        memory: Math.max(0, Math.min(100, gpuUsage * 0.8 + Math.random() * 20)),
+        fanSpeed: Math.max(30, Math.min(100, gpuUsage * 0.7 + Math.random() * 20)),
+        voltage: 1 + Math.random() * 0.2,
+        powerUsage: Math.max(50, Math.min(320, gpuUsage * 2.5 + Math.random() * 30))
+      },
+      memory: {
+        usage: memoryUsage,
+        available: Math.max(0, 32768 * (100 - memoryUsage) / 100),
+        total: 32768,
+        cached: Math.max(0, 32768 * 0.15 + Math.random() * 1e3),
+        swapUsage: Math.max(0, Math.min(50, memoryUsage * 0.3 + Math.random() * 10))
+      },
+      storage: {
+        usage: Math.random() * 60 + 20,
+        temperature: 35 + Math.random() * 15,
+        readSpeed: 400 + Math.random() * 100,
+        writeSpeed: 300 + Math.random() * 150,
+        devices: [
+          {
+            device: "NVMe SSD",
+            usage: Math.random() * 60 + 20,
+            readSpeed: 400 + Math.random() * 100,
+            writeSpeed: 300 + Math.random() * 150,
+            temperature: 35 + Math.random() * 15
+          }
+        ]
+      },
+      network: {
+        upload: Math.random() * 50 + 5,
+        download: Math.random() * 100 + 10,
+        latency: Math.random() * 20 + 5,
+        packetLoss: Math.random() * 2
+      },
+      sensors: {
+        case_temp: 25 + Math.random() * 15,
+        ambient_temp: 22 + Math.random() * 5,
+        humidity: 40 + Math.random() * 20,
+        pressure: 1013 + (Math.random() - 0.5) * 20
+      }
+    };
+  }
+  // Generate realistic hardware data with subtle variations
+  generateRealisticData() {
+    if (!this.baseData) {
+      this.generateBaseData();
+    }
+    const data = { ...this.baseData };
+    const variation = () => 0.95 + Math.random() * 0.1;
+    data.cpu.usage = Math.max(0, Math.min(100, data.cpu.usage * variation()));
+    data.gpu.usage = Math.max(0, Math.min(100, data.gpu.usage * variation()));
+    data.memory.usage = Math.max(0, Math.min(100, data.memory.usage * variation()));
+    data.cpu.temperature = 35 + data.cpu.usage * 0.8 + Math.random() * 5;
+    data.gpu.temperature = 50 + data.gpu.usage * 0.4 + Math.random() * 5;
+    data.memory.available = Math.max(0, data.memory.total * (100 - data.memory.usage) / 100);
+    return data;
+  }
+  // Get current hardware data
+  getCurrentData() {
+    return this.generateRealisticData();
+  }
+  // Subscribe to data updates
+  subscribe(callback) {
+    this.subscribers.push(callback);
+    if (this.subscribers.length === 1) {
+      this.startAutoUpdate();
+    }
+    return () => {
+      const index = this.subscribers.indexOf(callback);
+      if (index > -1) {
+        this.subscribers.splice(index, 1);
+      }
+      if (this.subscribers.length === 0) {
+        this.stopAutoUpdate();
+      }
+    };
+  }
+  // Start automatic data updates
+  startAutoUpdate() {
+    if (this.updateInterval !== null) return;
+    this.updateInterval = window.setInterval(() => {
+      const data = this.generateRealisticData();
+      this.subscribers.forEach((callback) => callback(data));
+    }, 1e3);
+  }
+  // Stop automatic data updates
+  stopAutoUpdate() {
+    if (this.updateInterval !== null) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
+  }
+  // Generate historical data for charts
+  generateHistoricalData(hours = 24) {
+    const history = [];
+    const baseTime = Date.now() - hours * 60 * 60 * 1e3;
+    for (let i = 0; i < hours * 60; i++) {
+      const baseData = this.generateRealisticData();
+      const timestamp = baseTime + i * 60 * 1e3;
+      history.push({
+        ...baseData,
+        timestamp
+      });
+    }
+    return history;
+  }
+  // Simulate stress test data
+  generateStressTestData() {
+    const baseData = this.generateRealisticData();
+    baseData.cpu.usage = 85 + Math.random() * 15;
+    baseData.gpu.usage = 90 + Math.random() * 10;
+    baseData.memory.usage = 80 + Math.random() * 15;
+    baseData.cpu.temperature = 75 + Math.random() * 15;
+    baseData.gpu.temperature = 80 + Math.random() * 10;
+    return baseData;
+  }
+  // Clean up resources
+  destroy() {
+    this.stopAutoUpdate();
+    this.subscribers = [];
+  }
+}
+function WidgetBuilder($$payload, $$props) {
+  push();
+  var $$store_subs;
+  const mockDataService = MockDataService.getInstance();
+  let widgetConfig = {
+    title: "",
+    size: { width: 200, height: 200 },
+    config: {
+      min: 0,
+      max: 100,
+      unit: "%",
+      colors: ["#22c55e", "#f59e0b", "#ef4444"],
+      thresholds: [70, 90]
+    },
+    dataSource: "",
+    thresholds: [],
+    styling: {
+      backgroundColor: "#ffffff",
+      borderColor: "#e5e7eb",
+      borderWidth: 1,
+      borderRadius: 8
+    }
+  };
+  let previewWidget = () => {
+    const selectedTemplateId = store_get($$store_subs ??= {}, "$dashboardState", dashboardState).widgetBuilder.selectedWidget;
+    if (!selectedTemplateId) return null;
+    const selectedTemplate = widgetTemplates.find((t) => t.id === selectedTemplateId);
+    if (!selectedTemplate) return null;
+    return {
+      id: "preview",
+      type: selectedTemplate.type,
+      title: selectedTemplate.name,
+      position: { x: 0, y: 0 },
+      size: widgetConfig.size || selectedTemplate.config?.size || { width: 200, height: 200 },
+      config: {
+        ...selectedTemplate.config?.config,
+        ...widgetConfig.config || {}
+      },
+      dataSource: selectedTemplate.config?.dataSource || "",
+      thresholds: widgetConfig.thresholds || selectedTemplate.config?.thresholds || [],
+      styling: {
+        ...selectedTemplate.config?.styling,
+        ...widgetConfig.styling || {}
+      }
+    };
+  };
+  let mockData = () => mockDataService.getCurrentData();
+  const widgetCategories = {
+    "system": [
+      "circular-gauge-cpu",
+      "gauge-gpu",
+      "meter-memory",
+      "simple-temp"
+    ],
+    "performance": ["speedometer-perf", "kpi-card-overview"]
+  };
+  const colorPresets = [
+    { name: "Default", colors: ["#22c55e", "#f59e0b", "#ef4444"] },
+    { name: "Blue", colors: ["#3b82f6", "#8b5cf6", "#ef4444"] },
+    { name: "Purple", colors: ["#8b5cf6", "#ec4899", "#ef4444"] },
+    { name: "Cyan", colors: ["#06b6d4", "#3b82f6", "#ef4444"] },
+    { name: "Orange", colors: ["#f97316", "#eab308", "#ef4444"] }
+  ];
+  if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).widgetBuilder.isOpen) {
+    $$payload.out.push("<!--[-->");
+    const each_array = ensure_array_like(Object.entries(widgetCategories));
+    $$payload.out.push(`<div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"><div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-full max-h-[90vh] flex overflow-hidden"><div class="flex-none"><div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700"><h2 class="text-2xl font-bold text-gray-900 dark:text-white">Widget Builder</h2> <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors" aria-label="Close widget builder"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg></button></div></div> <div class="flex flex-1 overflow-hidden"><div class="w-80 border-r border-gray-200 dark:border-gray-700 overflow-y-auto"><div class="p-6"><h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Choose Widget Type</h3> <!--[-->`);
+    for (let $$index_1 = 0, $$length = each_array.length; $$index_1 < $$length; $$index_1++) {
+      let [category, categoryName] = each_array[$$index_1];
+      const categoryTemplates = widgetTemplates.filter((t) => t.category === category);
+      if (categoryTemplates.length > 0) {
+        $$payload.out.push("<!--[-->");
+        const each_array_1 = ensure_array_like(categoryTemplates);
+        $$payload.out.push(`<div class="mb-6"><h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">${escape_html(categoryName)}</h4> <div class="space-y-2"><!--[-->`);
+        for (let $$index = 0, $$length2 = each_array_1.length; $$index < $$length2; $$index++) {
+          let template = each_array_1[$$index];
+          $$payload.out.push(`<button${attr_class(`w-full p-4 text-left border rounded-lg transition-all hover:border-blue-500 dark:hover:border-blue-400 ${stringify(store_get($$store_subs ??= {}, "$dashboardState", dashboardState).widgetBuilder.selectedWidget === template.id ? "border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20" : "border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50")}`)}><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">${escape_html(template.type.charAt(0).toUpperCase())}</div> <div><div class="font-medium text-gray-900 dark:text-white">${escape_html(template.name)}</div> <div class="text-sm text-gray-500 dark:text-gray-400">${escape_html(template.description)}</div></div></div></button>`);
+        }
+        $$payload.out.push(`<!--]--></div></div>`);
+      } else {
+        $$payload.out.push("<!--[!-->");
+      }
+      $$payload.out.push(`<!--]-->`);
+    }
+    $$payload.out.push(`<!--]--></div></div> <div class="flex-1 overflow-y-auto"><div class="p-6">`);
+    if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).widgetBuilder.selectedWidget) {
+      $$payload.out.push("<!--[-->");
+      const each_array_2 = ensure_array_like(dataSources);
+      const each_array_3 = ensure_array_like(colorPresets);
+      $$payload.out.push(`<div class="space-y-6"><div><h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">General Settings</h3> <div class="grid grid-cols-1 gap-4"><div><label for="widget-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label> <input id="widget-title" type="text"${attr("value", widgetConfig.title)} placeholder="Widget title" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"/></div> <div class="grid grid-cols-2 gap-4"><div><label for="widget-width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Width</label> <input id="widget-width" type="number" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"${attr("value", widgetConfig.size.width)} min="100" step="10"/></div> <div><label for="widget-height" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Height</label> <input id="widget-height" type="number" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"${attr("value", widgetConfig.size.height)} min="80" step="10"/></div></div></div></div> <div><label for="data-source" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Data Source</label> <select id="data-source" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">`);
+      $$payload.select_value = widgetConfig.dataSource;
+      $$payload.out.push(`<option value=""${maybe_selected($$payload, "")}>Select data source</option><!--[-->`);
+      for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
+        let source = each_array_2[$$index_2];
+        $$payload.out.push(`<option${attr("value", source.value)}${maybe_selected($$payload, source.value)}>${escape_html(source.label)}</option>`);
+      }
+      $$payload.out.push(`<!--]-->`);
+      $$payload.select_value = void 0;
+      $$payload.out.push(`</select></div> <div><h4 class="text-md font-medium text-gray-900 dark:text-white mb-3">Thresholds</h4> <div class="grid grid-cols-2 gap-4"><div><label for="min-value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Min Value</label> <input id="min-value" type="number" placeholder="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"/></div> <div><label for="max-value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Max Value</label> <input id="max-value" type="number" placeholder="100" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"/></div></div> <div><label for="unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unit</label> <input id="unit" type="text"${attr("value", widgetConfig.config.unit)} placeholder="%, °C, MB/s, etc." class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"/></div></div> <div><h4 class="text-md font-medium text-gray-900 dark:text-white mb-3">Styling</h4> <div><label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color Preset</label> <div class="grid grid-cols-1 gap-2"><!--[-->`);
+      for (let $$index_4 = 0, $$length = each_array_3.length; $$index_4 < $$length; $$index_4++) {
+        let preset = each_array_3[$$index_4];
+        const each_array_4 = ensure_array_like(preset.colors);
+        $$payload.out.push(`<button class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"><div class="flex gap-1"><!--[-->`);
+        for (let $$index_3 = 0, $$length2 = each_array_4.length; $$index_3 < $$length2; $$index_3++) {
+          let color = each_array_4[$$index_3];
+          $$payload.out.push(`<div class="w-4 h-4 rounded-full"${attr_style(`background-color: ${stringify(color)}`)}></div>`);
+        }
+        $$payload.out.push(`<!--]--></div> <span class="text-gray-900 dark:text-white">${escape_html(preset.name)}</span></button>`);
+      }
+      $$payload.out.push(`<!--]--></div></div> <div><label for="bg-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Background Color</label> <input id="bg-color" type="color"${attr("value", widgetConfig.styling.backgroundColor)} class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"/></div> <div class="grid grid-cols-2 gap-4"><div><label for="border-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Border Color</label> <input id="border-color" type="color"${attr("value", widgetConfig.styling.borderColor)} class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"/></div> <div><label for="border-width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Border Width</label> <input id="border-width" type="number"${attr("value", widgetConfig.styling.borderWidth)} min="0" max="10" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"/></div></div> <div><label for="border-radius" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Border Radius</label> <input id="border-radius" type="number"${attr("value", widgetConfig.styling.borderRadius)} min="0" max="50" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"/></div></div></div>`);
+    } else {
+      $$payload.out.push("<!--[!-->");
+      $$payload.out.push(`<div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"><p class="text-lg">Select a widget template to begin configuration</p></div>`);
+    }
+    $$payload.out.push(`<!--]--></div></div> <div class="w-80 border-l border-gray-200 dark:border-gray-700 overflow-y-auto"><div class="p-6"><h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Preview</h3> `);
+    if (previewWidget) {
+      $$payload.out.push("<!--[-->");
+      $$payload.out.push(`<div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/30">`);
+      WidgetRenderer($$payload, { widget: previewWidget(), data: mockData(), isPreview: true });
+      $$payload.out.push(`<!----></div> <div class="mt-6 flex gap-3"><button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">Add Widget</button> <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">Cancel</button></div>`);
+    } else {
+      $$payload.out.push("<!--[!-->");
+      $$payload.out.push(`<div class="flex items-center justify-center h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg"><p class="text-gray-500 dark:text-gray-400">No preview available</p></div>`);
+    }
+    $$payload.out.push(`<!--]--></div></div></div></div></div>`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]-->`);
+  if ($$store_subs) unsubscribe_stores($$store_subs);
+  pop();
+}
 function DashboardCanvas($$payload, $$props) {
   push();
   var $$store_subs;
-  $$payload.out.push(`<div class="dashboard-canvas relative w-full h-full overflow-hidden bg-gray-50 dark:bg-gray-900 svelte-169ig1q"${attr_style(`transform: scale(${stringify(store_get($$store_subs ??= {}, "$dashboardState", dashboardState).zoom)}); transform-origin: top left;`)} role="application" tabindex="0" aria-label="Dashboard canvas for placing and arranging widgets">`);
+  const demoSensors = [
+    {
+      label: "CPU Usage",
+      value: 65,
+      unit: "%",
+      icon: "🔥",
+      critical: 90,
+      warning: 70
+    },
+    {
+      label: "GPU Usage",
+      value: 82,
+      unit: "%",
+      icon: "⚡",
+      critical: 95,
+      warning: 80
+    },
+    {
+      label: "Memory",
+      value: 74,
+      unit: "%",
+      icon: "💾",
+      critical: 90,
+      warning: 75
+    },
+    {
+      label: "CPU Temp",
+      value: 68,
+      unit: "°C",
+      icon: "🌡️",
+      critical: 85,
+      warning: 70
+    }
+  ];
+  const each_array = ensure_array_like(demoSensors);
+  $$payload.out.push(`<div class="relative w-full h-full overflow-hidden" style="background: radial-gradient(ellipse at center, rgba(20, 160, 230, 0.05) 0%, transparent 70%)">`);
   if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).isGridVisible) {
     $$payload.out.push("<!--[-->");
     GridOverlay($$payload, {
@@ -8934,21 +9428,67 @@ function DashboardCanvas($$payload, $$props) {
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]--> `);
+  $$payload.out.push(`<!--]--> <div class="absolute inset-0 p-8">`);
+  CosmicPanel($$payload, {
+    variant: "highlighted",
+    title: "SenseCanvas Dashboard",
+    subtitle: "Real-time Hardware Monitoring with Cosmic UI",
+    className: "w-full max-w-2xl mx-auto mb-8",
+    showGlow: true,
+    children: ($$payload2) => {
+      $$payload2.out.push(`<div class="text-center space-y-4"><p class="text-gray-300 font-orbitron">Welcome to the enhanced SenseCanvas dashboard featuring the new Cosmic UI design system.</p> <p class="text-sm text-gray-400">Sci-fi inspired components with SVG-first design and real-time hardware monitoring.</p></div>`);
+    },
+    $$slots: { default: true }
+  });
+  $$payload.out.push(`<!----> <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto svelte-16wspn5"><!--[-->`);
+  for (let index = 0, $$length = each_array.length; index < $$length; index++) {
+    let sensor = each_array[index];
+    $$payload.out.push(`<div class="flex justify-center svelte-16wspn5">`);
+    CosmicSensorGauge($$payload, {
+      value: sensor.value,
+      label: sensor.label,
+      config: {
+        min: 0,
+        max: 100,
+        warningThreshold: sensor.warning,
+        criticalThreshold: sensor.critical,
+        unit: sensor.unit,
+        icon: sensor.icon
+      },
+      size: 180,
+      showFrame: true,
+      glowEffect: true
+    });
+    $$payload.out.push(`<!----></div>`);
+  }
+  $$payload.out.push(`<!--]--></div> `);
+  CosmicPanel($$payload, {
+    variant: "default",
+    className: "w-full max-w-4xl mx-auto mt-8",
+    title: "System Status",
+    children: ($$payload2) => {
+      $$payload2.out.push(`<div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center svelte-16wspn5"><div class="space-y-2 svelte-16wspn5"><div class="text-2xl font-orbitron text-green-400">ONLINE</div> <div class="text-sm text-gray-400">Connection Status</div></div> <div class="space-y-2 svelte-16wspn5"><div class="text-2xl font-orbitron text-blue-400">${escape_html(demoSensors.length)}</div> <div class="text-sm text-gray-400">Active Sensors</div></div> <div class="space-y-2 svelte-16wspn5"><div class="text-2xl font-orbitron text-purple-400">COSMIC UI</div> <div class="text-sm text-gray-400">Design System</div></div></div>`);
+    },
+    $$slots: { default: true }
+  });
+  $$payload.out.push(`<!----></div> `);
   if (store_get($$store_subs ??= {}, "$currentLayout", currentLayout)) {
     $$payload.out.push("<!--[-->");
-    const each_array = ensure_array_like(store_get($$store_subs ??= {}, "$currentLayout", currentLayout).widgets);
+    const each_array_1 = ensure_array_like(store_get($$store_subs ??= {}, "$currentLayout", currentLayout).widgets);
     $$payload.out.push(`<!--[-->`);
-    for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-      let widget = each_array[$$index];
+    for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
+      let widget = each_array_1[$$index_1];
       DraggableWidget($$payload, { widget });
     }
     $$payload.out.push(`<!--]-->`);
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]--> `);
-  {
+  $$payload.out.push(`<!--]-->  `);
+  if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).widgetBuilder.isOpen) {
+    $$payload.out.push("<!--[-->");
+    WidgetBuilder($$payload);
+  } else {
     $$payload.out.push("<!--[!-->");
   }
   $$payload.out.push(`<!--]--></div>`);
@@ -8969,7 +9509,21 @@ function Dashboard($$payload, $$props) {
   push();
   var $$store_subs;
   $$payload.out.push(`<div class="dashboard h-screen flex flex-col bg-surface-50-900-token svelte-bi9bz2">`);
-  Toolbar($$payload);
+  {
+    let left = function($$payload2) {
+      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-bi9bz2"><h1 class="font-orbitron font-bold text-xl text-white svelte-bi9bz2">SenseCanvas</h1> <div class="text-xs text-blue-400/80 font-orbitron svelte-bi9bz2">Real-time Monitoring</div></div>`);
+    }, center = function($$payload2) {
+      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-bi9bz2"><button class="cosmic-button px-4 py-2 text-sm font-orbitron text-blue-200 border border-blue-400/30 hover:border-blue-400 transition-colors rounded svelte-bi9bz2">+ Add Widget</button> <button class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-colors rounded svelte-bi9bz2">AI Layouts</button></div>`);
+    }, right = function($$payload2) {
+      $$payload2.out.push(`<div class="flex items-center gap-4 text-xs text-gray-300 svelte-bi9bz2"><span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Connected</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Theme: ${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span></div>`);
+    };
+    CosmicToolbar($$payload, {
+      left,
+      center,
+      right,
+      $$slots: { left: true, center: true, right: true }
+    });
+  }
   $$payload.out.push(`<!----> <div class="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 svelte-bi9bz2"><div class="absolute inset-0 overflow-hidden pointer-events-none svelte-bi9bz2"><div class="absolute inset-0 opacity-10 svelte-bi9bz2" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0); background-size: 20px 20px;"></div> <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-30 animate-float-1 svelte-bi9bz2"></div> <div class="absolute top-3/4 right-1/4 w-1 h-1 bg-green-400 rounded-full opacity-40 animate-float-2 svelte-bi9bz2"></div> <div class="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-20 animate-float-3 svelte-bi9bz2"></div> <div class="absolute inset-0 svelte-bi9bz2"><div class="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-scan-horizontal svelte-bi9bz2"></div> <div class="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent animate-scan-vertical svelte-bi9bz2"></div></div></div> `);
   DashboardCanvas($$payload);
   $$payload.out.push(`<!----></div> <div class="status-bar bg-gray-900/80 border-t border-gray-700/50 px-4 py-2 text-xs text-gray-300 backdrop-blur-sm svelte-bi9bz2"><div class="flex items-center justify-between svelte-bi9bz2"><div class="flex items-center gap-4 svelte-bi9bz2"><span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Widgets:</span> <span class="font-mono svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.widgets?.length || 0)}</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Layout:</span> <span class="font-orbitron svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.name || "Default")}</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-purple-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Grid:</span> <span class="font-mono svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.gridSize || 20)}px</span></span></div> <div class="flex items-center gap-4 svelte-bi9bz2"><span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-yellow-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Theme:</span> <span class="capitalize font-orbitron svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-red-400 rounded-full animate-pulse svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Alerts:</span> <span class="font-mono svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$alertHistory", alertHistory)?.length || 0)}</span></span></div></div></div> `);

@@ -222,7 +222,7 @@
   
   <!-- Status indicator -->
   <div class="absolute top-2 right-2">
-    <div class="w-2 h-2 rounded-full {value >= config.criticalThreshold ? 'bg-red-400 cosmic-glow' : value >= config.warningThreshold ? 'bg-yellow-400' : 'bg-green-400'}"></div>
+    <div class="w-2 h-2 rounded-full {value >= config.criticalThreshold ? 'bg-red-400 critical-glow' : value >= config.warningThreshold ? 'bg-yellow-400' : 'bg-green-400'}"></div>
   </div>
 </div>
 
