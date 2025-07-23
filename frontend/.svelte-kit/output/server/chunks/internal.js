@@ -1,37 +1,4 @@
-import {
-  H as HYDRATION_ERROR,
-  g as get_next_sibling,
-  d as define_property,
-  s as set_active_reaction,
-  a as set_active_effect,
-  i as is_array,
-  b as active_effect,
-  c as active_reaction,
-  e as init_operations,
-  f as get_first_child,
-  C as COMMENT_NODE,
-  h as HYDRATION_START,
-  j as HYDRATION_END,
-  k as hydration_failed,
-  l as clear_text_content,
-  m as array_from,
-  n as component_root,
-  o as is_passive_event,
-  p as create_text,
-  q as branch,
-  r as push,
-  t as component_context,
-  u as pop,
-  v as set,
-  L as LEGACY_PROPS,
-  w as get,
-  x as flushSync,
-  y as mutable_source,
-  z as render,
-  A as push$1,
-  B as setContext,
-  E as pop$1,
-} from "./index.js";
+import { H as HYDRATION_ERROR, g as get_next_sibling, d as define_property, s as set_active_reaction, a as set_active_effect, i as is_array, b as active_effect, c as active_reaction, e as init_operations, f as get_first_child, C as COMMENT_NODE, h as HYDRATION_START, j as HYDRATION_END, k as hydration_failed, l as clear_text_content, m as array_from, n as component_root, o as is_passive_event, p as create_text, q as branch, r as push, t as component_context, u as pop, v as set, L as LEGACY_PROPS, w as get, x as flushSync, y as mutable_source, z as render, A as push$1, D as setContext, E as pop$1 } from "./index.js";
 import "clsx";
 let base = "";
 let assets = base;
@@ -50,7 +17,8 @@ function set_assets(path) {
 }
 let public_env = {};
 let safe_public_env = {};
-function set_private_env(environment) {}
+function set_private_env(environment) {
+}
 function set_public_env(environment) {
   public_env = environment;
 }
@@ -72,35 +40,34 @@ function set_hydrate_node(node) {
     hydration_mismatch();
     throw HYDRATION_ERROR;
   }
-  return (hydrate_node = node);
+  return hydrate_node = node;
 }
 function hydrate_next() {
   return set_hydrate_node(
     /** @type {TemplateNode} */
-    get_next_sibling(hydrate_node),
+    get_next_sibling(hydrate_node)
   );
 }
 const all_registered_events = /* @__PURE__ */ new Set();
 const root_event_handles = /* @__PURE__ */ new Set();
 function handle_event_propagation(event) {
   var handler_element = this;
-  var owner_document =
+  var owner_document = (
     /** @type {Node} */
-    handler_element.ownerDocument;
+    handler_element.ownerDocument
+  );
   var event_name = event.type;
   var path = event.composedPath?.() || [];
-  var current_target =
+  var current_target = (
     /** @type {null | Element} */
-    path[0] || event.target;
+    path[0] || event.target
+  );
   var path_idx = 0;
   var handled_at = event.__root;
   if (handled_at) {
     var at_idx = path.indexOf(handled_at);
-    if (
-      at_idx !== -1 &&
-      (handler_element === document ||
-        handler_element === /** @type {any} */ window)
-    ) {
+    if (at_idx !== -1 && (handler_element === document || handler_element === /** @type {any} */
+    window)) {
       event.__root = handler_element;
       return;
     }
@@ -112,13 +79,14 @@ function handle_event_propagation(event) {
       path_idx = at_idx;
     }
   }
-  current_target = /** @type {Element} */ path[path_idx] || event.target;
+  current_target = /** @type {Element} */
+  path[path_idx] || event.target;
   if (current_target === handler_element) return;
   define_property(event, "currentTarget", {
     configurable: true,
     get() {
       return current_target || owner_document;
-    },
+    }
   });
   var previous_reaction = active_reaction;
   var previous_effect = active_effect;
@@ -128,20 +96,14 @@ function handle_event_propagation(event) {
     var throw_error;
     var other_errors = [];
     while (current_target !== null) {
-      var parent_element =
-        current_target.assignedSlot ||
-        current_target.parentNode ||
-        /** @type {any} */
-        current_target.host ||
-        null;
+      var parent_element = current_target.assignedSlot || current_target.parentNode || /** @type {any} */
+      current_target.host || null;
       try {
         var delegated = current_target["__" + event_name];
-        if (
-          delegated != null &&
-          (!(/** @type {any} */ current_target.disabled) || // DOM could've been updated already by the time this is reached, so we check this as well
-            // -> the target could not have been disabled because it emits the event in the first place
-            event.target === current_target)
-        ) {
+        if (delegated != null && (!/** @type {any} */
+        current_target.disabled || // DOM could've been updated already by the time this is reached, so we check this as well
+        // -> the target could not have been disabled because it emits the event in the first place
+        event.target === current_target)) {
           if (is_array(delegated)) {
             var [fn, ...data] = delegated;
             fn.apply(current_target, [event, ...data]);
@@ -156,11 +118,7 @@ function handle_event_propagation(event) {
           throw_error = error;
         }
       }
-      if (
-        event.cancelBubble ||
-        parent_element === handler_element ||
-        parent_element === null
-      ) {
+      if (event.cancelBubble || parent_element === handler_element || parent_element === null) {
         break;
       }
       current_target = parent_element;
@@ -181,9 +139,10 @@ function handle_event_propagation(event) {
   }
 }
 function assign_nodes(start, end) {
-  var effect =
+  var effect = (
     /** @type {Effect} */
-    active_effect;
+    active_effect
+  );
   if (effect.nodes_start === null) {
     effect.nodes_start = start;
     effect.nodes_end = end;
@@ -199,16 +158,14 @@ function hydrate(component, options2) {
   const was_hydrating = hydrating;
   const previous_hydrate_node = hydrate_node;
   try {
-    var anchor =
+    var anchor = (
       /** @type {TemplateNode} */
-      get_first_child(target);
-    while (
-      anchor &&
-      (anchor.nodeType !== COMMENT_NODE ||
-        /** @type {Comment} */
-        anchor.data !== HYDRATION_START)
-    ) {
-      anchor = /** @type {TemplateNode} */ get_next_sibling(anchor);
+      get_first_child(target)
+    );
+    while (anchor && (anchor.nodeType !== COMMENT_NODE || /** @type {Comment} */
+    anchor.data !== HYDRATION_START)) {
+      anchor = /** @type {TemplateNode} */
+      get_next_sibling(anchor);
     }
     if (!anchor) {
       throw HYDRATION_ERROR;
@@ -216,16 +173,12 @@ function hydrate(component, options2) {
     set_hydrating(true);
     set_hydrate_node(
       /** @type {Comment} */
-      anchor,
+      anchor
     );
     hydrate_next();
     const instance = _mount(component, { ...options2, anchor });
-    if (
-      hydrate_node === null ||
-      hydrate_node.nodeType !== COMMENT_NODE ||
-      /** @type {Comment} */
-      hydrate_node.data !== HYDRATION_END
-    ) {
+    if (hydrate_node === null || hydrate_node.nodeType !== COMMENT_NODE || /** @type {Comment} */
+    hydrate_node.data !== HYDRATION_END) {
       hydration_mismatch();
       throw HYDRATION_ERROR;
     }
@@ -251,10 +204,7 @@ function hydrate(component, options2) {
   }
 }
 const document_listeners = /* @__PURE__ */ new Map();
-function _mount(
-  Component,
-  { target, anchor, props = {}, events, context, intro = true },
-) {
+function _mount(Component, { target, anchor, props = {}, events, context, intro = true }) {
   init_operations();
   var registered_events = /* @__PURE__ */ new Set();
   var event_handle = (events2) => {
@@ -263,14 +213,10 @@ function _mount(
       if (registered_events.has(event_name)) continue;
       registered_events.add(event_name);
       var passive = is_passive_event(event_name);
-      target.addEventListener(event_name, handle_event_propagation, {
-        passive,
-      });
+      target.addEventListener(event_name, handle_event_propagation, { passive });
       var n = document_listeners.get(event_name);
       if (n === void 0) {
-        document.addEventListener(event_name, handle_event_propagation, {
-          passive,
-        });
+        document.addEventListener(event_name, handle_event_propagation, { passive });
         document_listeners.set(event_name, 1);
       } else {
         document_listeners.set(event_name, n + 1);
@@ -285,9 +231,10 @@ function _mount(
     branch(() => {
       if (context) {
         push({});
-        var ctx =
+        var ctx = (
           /** @type {ComponentContext} */
-          component_context;
+          component_context
+        );
         ctx.c = context;
       }
       if (events) {
@@ -297,7 +244,7 @@ function _mount(
         assign_nodes(
           /** @type {TemplateNode} */
           anchor_node,
-          null,
+          null
         );
       }
       component = Component(anchor_node, props) || {};
@@ -311,9 +258,10 @@ function _mount(
     return () => {
       for (var event_name of registered_events) {
         target.removeEventListener(event_name, handle_event_propagation);
-        var n =
+        var n = (
           /** @type {number} */
-          document_listeners.get(event_name);
+          document_listeners.get(event_name)
+        );
         if (--n === 0) {
           document.removeEventListener(event_name, handle_event_propagation);
           document_listeners.delete(event_name);
@@ -345,7 +293,7 @@ function asClassComponent$1(component) {
     constructor(options2) {
       super({
         component,
-        ...options2,
+        ...options2
       });
     }
   };
@@ -368,12 +316,10 @@ class Svelte4Component {
       return s;
     };
     const props = new Proxy(
-      { ...(options2.props || {}), $$events: {} },
+      { ...options2.props || {}, $$events: {} },
       {
         get(target, prop) {
-          return get(
-            sources.get(prop) ?? add_source(prop, Reflect.get(target, prop)),
-          );
+          return get(sources.get(prop) ?? add_source(prop, Reflect.get(target, prop)));
         },
         has(target, prop) {
           if (prop === LEGACY_PROPS) return true;
@@ -383,8 +329,8 @@ class Svelte4Component {
         set(target, prop, value) {
           set(sources.get(prop) ?? add_source(prop, value), value);
           return Reflect.set(target, prop, value);
-        },
-      },
+        }
+      }
     );
     this.#instance = (options2.hydrate ? hydrate : mount)(options2.component, {
       target: options2.target,
@@ -392,7 +338,7 @@ class Svelte4Component {
       props,
       context: options2.context,
       intro: options2.intro ?? false,
-      recover: options2.recover,
+      recover: options2.recover
     });
     if (!options2?.props?.$$host || options2.sync === false) {
       flushSync();
@@ -408,14 +354,13 @@ class Svelte4Component {
         set(value) {
           this.#instance[key] = value;
         },
-        enumerable: true,
+        enumerable: true
       });
     }
-    this.#instance.$set =
-      /** @param {Record<string, any>} next */
-      (next) => {
-        Object.assign(props, next);
-      };
+    this.#instance.$set = /** @param {Record<string, any>} next */
+    (next) => {
+      Object.assign(props, next);
+    };
     this.#instance.$destroy = () => {
       unmount(this.#instance);
     };
@@ -436,7 +381,7 @@ class Svelte4Component {
     return () => {
       this.#events[event] = this.#events[event].filter(
         /** @param {any} fn */
-        (fn) => fn !== cb,
+        (fn) => fn !== cb
       );
     };
   }
@@ -448,7 +393,8 @@ let read_implementation = null;
 function set_read_implementation(fn) {
   read_implementation = fn;
 }
-function set_manifest(_) {}
+function set_manifest(_) {
+}
 function asClassComponent(component) {
   const component_constructor = asClassComponent$1(component);
   const _render = (props, { context } = {}) => {
@@ -456,14 +402,15 @@ function asClassComponent(component) {
     return {
       css: { code: "", map: null },
       head: result.head,
-      html: result.body,
+      html: result.body
     };
   };
   component_constructor.render = _render;
   return component_constructor;
 }
 let prerendering = false;
-function set_building() {}
+function set_building() {
+}
 function set_prerendering() {
   prerendering = true;
 }
@@ -476,7 +423,7 @@ function Root($$payload, $$props) {
     components = [],
     form,
     data_0 = null,
-    data_1 = null,
+    data_1 = null
   } = $$props;
   {
     setContext("__svelte__", stores);
@@ -498,7 +445,7 @@ function Root($$payload, $$props) {
         Pyramid_1($$payload2, { data: data_1, form, params: page.params });
         $$payload2.out.push(`<!---->`);
       },
-      $$slots: { default: true },
+      $$slots: { default: true }
     });
     $$payload.out.push(`<!---->`);
   } else {
@@ -518,17 +465,7 @@ function Root($$payload, $$props) {
 const root = asClassComponent(Root);
 const options = {
   app_template_contains_nonce: false,
-  csp: {
-    mode: "auto",
-    directives: {
-      "upgrade-insecure-requests": false,
-      "block-all-mixed-content": false,
-    },
-    reportOnly: {
-      "upgrade-insecure-requests": false,
-      "block-all-mixed-content": false,
-    },
-  },
+  csp: { "mode": "auto", "directives": { "upgrade-insecure-requests": false, "block-all-mixed-content": false }, "reportOnly": { "upgrade-insecure-requests": false, "block-all-mixed-content": false } },
   csrf_check_origin: true,
   embedded: false,
   env_public_prefix: "PUBLIC_",
@@ -540,18 +477,8 @@ const options = {
   root,
   service_worker: false,
   templates: {
-    app: ({ head, body, assets: assets2, nonce, env }) =>
-      '<!doctype html>\n<html lang="en" class="%sveltekit.theme%">\n	<head>\n		<meta charset="utf-8" />\n		<link rel="icon" href="' +
-      assets2 +
-      '/favicon.png" />\n		<meta name="viewport" content="width=device-width, initial-scale=1" />\n		<link rel="preconnect" href="https://fonts.googleapis.com">\n		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n		<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">\n		<title>SenseCanvas - PC Sensor Dashboard</title>\n		<meta name="description" content="Real-time PC hardware monitoring dashboard with AI-powered layout suggestions" />\n		' +
-      head +
-      '\n	</head>\n	<body data-sveltekit-preload-data="hover" class="bg-surface-50-900-token">\n		<div style="display: contents" class="%sveltekit.theme%">' +
-      body +
-      "</div>\n	</body>\n</html>",
-    error: ({ status, message }) =>
-      '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' +
-      message +
-      `</title>
+    app: ({ head, body, assets: assets2, nonce, env }) => '<!doctype html>\n<html lang="en" class="%sveltekit.theme%">\n  <head>\n    <meta charset="utf-8" />\n    <link rel="icon" href="' + assets2 + '/favicon.png" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <link rel="preconnect" href="https://fonts.googleapis.com" />\n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n    <link\n      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap"\n      rel="stylesheet"\n    />\n    <title>SenseCanvas - PC Sensor Dashboard</title>\n    <meta\n      name="description"\n      content="Real-time PC hardware monitoring dashboard with AI-powered layout suggestions"\n    />\n    ' + head + '\n  </head>\n  <body data-sveltekit-preload-data="hover" class="bg-surface-50-900-token">\n    <div style="display: contents" class="%sveltekit.theme%">\n      ' + body + "\n    </div>\n  </body>\n</html>\n",
+    error: ({ status, message }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' + message + `</title>
 
 		<style>
 			body {
@@ -620,13 +547,9 @@ const options = {
 	</head>
 	<body>
 		<div class="error">
-			<span class="status">` +
-      status +
-      '</span>\n			<div class="message">\n				<h1>' +
-      message +
-      "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n",
+			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "78srx7",
+  version_hash: "a48vi5"
 };
 async function get_hooks() {
   let handle;
@@ -641,7 +564,7 @@ async function get_hooks() {
     handleError,
     init,
     reroute,
-    transport,
+    transport
   };
 }
 export {
@@ -663,5 +586,5 @@ export {
   public_env as p,
   set_prerendering as q,
   reset as r,
-  safe_public_env as s,
+  safe_public_env as s
 };

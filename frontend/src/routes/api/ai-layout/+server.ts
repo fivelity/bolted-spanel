@@ -1,14 +1,21 @@
-import { genkit } from "@genkit/core";
-import { json } from "@sveltejs/kit";
-import { z } from "zod";
-import type { RequestHandler } from "./$types";
-import { generateLayoutSuggestions } from "$lib/utils/aiLayoutSuggestions";
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 
-export async function POST({ request }) {
-  const input = await request.json();
-  const schema = z.object({ layout: z.array(z.object({})) });
-  const validated = schema.parse(input);
-  // Use Genkit to generate layout suggestions
-  const suggestions: any[] = []; // Placeholder
-  return json({ suggestions });
-}
+export const POST: RequestHandler = async ({ request }) => {
+	try {
+		const { sensorData, currentLayout } = await request.json();
+		
+		// Mock AI layout generation for now
+		// TODO: Implement actual AI layout generation
+		const aiSuggestion = {
+			layout: currentLayout, // Return current layout for now
+			reasoning: "This is a placeholder AI response. The layout optimization will be implemented later.",
+			confidence: 0.8
+		};
+
+		return json(aiSuggestion);
+	} catch (error) {
+		console.error('AI Layout API Error:', error);
+		return json({ error: 'Failed to generate AI layout' }, { status: 500 });
+	}
+};

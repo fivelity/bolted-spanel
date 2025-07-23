@@ -17,6 +17,26 @@
 
 	let previewWidget = $derived(null as WidgetConfig | null); // TODO: implement logic from original to create preview
 
+	// Default widget config for the form
+	let defaultWidget: WidgetConfig = {
+		id: '',
+		type: 'gauge',
+		title: 'New Widget',
+		position: { x: 0, y: 0 },
+		size: { width: 200, height: 200 },
+		config: {}
+	};
+
+	function handleSaveConfig(config: WidgetConfig) {
+		// Update preview widget or store config
+		console.log('Widget config saved:', config);
+	}
+
+	function handleCancelConfig() {
+		// Reset or close config form
+		console.log('Widget config cancelled');
+	}
+
 	function createWidget() {
 		// Logic from original
 		const selectedId = $dashboardState.widgetBuilder.selectedWidget;
@@ -43,7 +63,11 @@
 
 			<div class="flex flex-1 overflow-hidden">
 				<WidgetTemplateSelector onselect={selectTemplate} />
-				<WidgetConfigForm />
+				<WidgetConfigForm 
+					widget={defaultWidget} 
+					onSave={handleSaveConfig} 
+					onCancel={handleCancelConfig} 
+				/>
 				<WidgetPreview previewWidget={previewWidget} onadd={createWidget} onclose={closeBuilder} />
 			</div>
 		</div>
