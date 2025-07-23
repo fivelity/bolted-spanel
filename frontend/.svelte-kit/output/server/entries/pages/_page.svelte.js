@@ -1169,7 +1169,7 @@ function CircularGauge($$payload, $$props) {
   let circumference = 2 * Math.PI * radius;
   let arcLength = percentage / 100 * circumference * 0.75;
   let dashArray = `${arcLength} ${circumference}`;
-  $$payload.out.push(`<div class="gauge-container relative svelte-1d44noz"><svg${attr("width", size)}${attr("height", size)} class="transform -rotate-90"><circle${attr("cx", center)}${attr("cy", center)}${attr("r", radius)} fill="none" stroke="currentColor"${attr("stroke-width", gaugeConfig.strokeWidth)} class="text-gray-200 dark:text-gray-700"></circle><circle${attr("cx", center)}${attr("cy", center)}${attr("r", radius)} fill="none"${attr("stroke", currentColor())}${attr("stroke-width", gaugeConfig.strokeWidth)} stroke-linecap="round"${attr("stroke-dasharray", dashArray)}${attr("stroke-dashoffset", circumference * 0.125)} class="transition-all duration-1000 ease-out"></circle></svg> `);
+  $$payload.out.push(`<div class="gauge-container relative svelte-v4zwwo"><svg${attr("width", size)}${attr("height", size)} class="transform -rotate-90"><circle${attr("cx", center)}${attr("cy", center)}${attr("r", radius)} fill="none" stroke="currentColor"${attr("stroke-width", gaugeConfig.strokeWidth)} class="text-gray-200 dark:text-gray-700"></circle><circle${attr("cx", center)}${attr("cy", center)}${attr("r", radius)} fill="none"${attr("stroke", currentColor())}${attr("stroke-width", gaugeConfig.strokeWidth)} stroke-linecap="round"${attr("stroke-dasharray", dashArray)}${attr("stroke-dashoffset", circumference * 0.125)} class="transition-all duration-1000 ease-out"></circle></svg> `);
   if (gaugeConfig.showValue) {
     $$payload.out.push("<!--[-->");
     $$payload.out.push(`<div class="absolute inset-0 flex flex-col items-center justify-center"><div class="text-2xl font-bold text-gray-900 dark:text-white">${escape_html(displayValue.toFixed(1))}</div> <div class="text-xs text-gray-500 dark:text-gray-400">${escape_html(gaugeConfig.unit)}</div></div>`);
@@ -1219,7 +1219,7 @@ function LinearGauge($$payload, $$props) {
     }
     return colors[colors.length - 1] || colors[0];
   };
-  $$payload.out.push(`<div class="linear-gauge flex flex-col h-full p-4 svelte-2sjcr1">`);
+  $$payload.out.push(`<div class="linear-gauge flex flex-col h-full p-4 svelte-12ungl1">`);
   if (gaugeConfig.showTitle) {
     $$payload.out.push("<!--[-->");
     $$payload.out.push(`<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">${escape_html(config.title)}</h3>`);
@@ -1390,14 +1390,14 @@ function Speedometer($$payload, $$props) {
     return segmentData;
   };
   const each_array_1 = ensure_array_like(tickMarks);
-  $$payload.out.push(`<div class="speedometer flex flex-col items-center justify-center h-full p-4 svelte-wwfm74">`);
+  $$payload.out.push(`<div class="speedometer flex flex-col items-center justify-center h-full p-4 svelte-1v4zcuw">`);
   if (speedometerConfig.showTitle) {
     $$payload.out.push("<!--[-->");
     $$payload.out.push(`<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">${escape_html(config.title)}</h3>`);
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]--> <div class="speedometer-container relative svelte-wwfm74"><svg${attr("width", size)}${attr("height", size * 0.7)} class="overflow-visible"><path${attr("d", `M ${stringify(center - radius)} ${stringify(center)} A ${stringify(radius)} ${stringify(radius)} 0 0 1 ${stringify(center + radius)} ${stringify(center)}`)} fill="none"${attr("stroke", speedometerConfig.colors.background)} stroke-width="20" stroke-linecap="round"></path>`);
+  $$payload.out.push(`<!--]--> <div class="speedometer-container relative svelte-1v4zcuw"><svg${attr("width", size)}${attr("height", size * 0.7)} class="overflow-visible"><path${attr("d", `M ${stringify(center - radius)} ${stringify(center)} A ${stringify(radius)} ${stringify(radius)} 0 0 1 ${stringify(center + radius)} ${stringify(center)}`)} fill="none"${attr("stroke", speedometerConfig.colors.background)} stroke-width="20" stroke-linecap="round"></path>`);
   if (speedometerConfig.showZones) {
     $$payload.out.push("<!--[-->");
     const each_array = ensure_array_like(segments);
@@ -1493,7 +1493,7 @@ function KpiCard($$payload, $$props) {
     return val.toFixed(kpiConfig.precision);
   }
   let animatedValue = 0;
-  $$payload.out.push(`<div class="kpi-card h-full p-4 flex flex-col justify-between svelte-2vugh9"><div class="flex items-start justify-between mb-2"><div class="flex items-center gap-2">`);
+  $$payload.out.push(`<div class="kpi-card h-full p-4 flex flex-col justify-between svelte-r5ijsg"><div class="flex items-start justify-between mb-2"><div class="flex items-center gap-2">`);
   if (
     // Update animated value when displayValue changes
     kpiConfig.showIcon
@@ -2223,14 +2223,14 @@ function AILayoutModal($$payload, $$props) {
 function Dashboard($$payload, $$props) {
   push();
   var $$store_subs;
-  $$payload.out.push(`<div class="dashboard h-screen flex flex-col bg-surface-50-900-token svelte-bi9bz2">`);
+  $$payload.out.push(`<div class="dashboard h-screen flex flex-col bg-surface-50-900-token svelte-18txp9r">`);
   {
     let left = function($$payload2) {
-      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-bi9bz2"><h1 class="font-orbitron font-bold text-xl text-white svelte-bi9bz2">SenseCanvas</h1> <div class="text-xs text-blue-400/80 font-orbitron svelte-bi9bz2">Real-time Monitoring</div></div>`);
+      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-18txp9r"><h1 class="font-orbitron font-bold text-xl text-white svelte-18txp9r">SenseCanvas</h1> <div class="text-xs text-blue-400/80 font-orbitron svelte-18txp9r">Real-time Monitoring</div></div>`);
     }, center = function($$payload2) {
-      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-bi9bz2"><button class="cosmic-button px-4 py-2 text-sm font-orbitron text-blue-200 border border-blue-400/30 hover:border-blue-400 transition-colors rounded svelte-bi9bz2">+ Add Widget</button> <button class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-colors rounded svelte-bi9bz2">AI Layouts</button></div>`);
+      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-18txp9r"><button class="cosmic-button px-4 py-2 text-sm font-orbitron text-blue-200 border border-blue-400/30 hover:border-blue-400 transition-colors rounded svelte-18txp9r">+ Add Widget</button> <button class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-colors rounded svelte-18txp9r">AI Layouts</button></div>`);
     }, right = function($$payload2) {
-      $$payload2.out.push(`<div class="flex items-center gap-4 text-xs text-gray-300 svelte-bi9bz2"><span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Connected</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Theme: ${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span></div>`);
+      $$payload2.out.push(`<div class="flex items-center gap-4 text-xs text-gray-300 svelte-18txp9r"><span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Connected</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Theme: ${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span></div>`);
     };
     CosmicToolbar($$payload, {
       left,
@@ -2239,9 +2239,9 @@ function Dashboard($$payload, $$props) {
       $$slots: { left: true, center: true, right: true }
     });
   }
-  $$payload.out.push(`<!----> <div class="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 svelte-bi9bz2"><div class="absolute inset-0 overflow-hidden pointer-events-none svelte-bi9bz2"><div class="absolute inset-0 opacity-10 svelte-bi9bz2" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0); background-size: 20px 20px;"></div> <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-30 animate-float-1 svelte-bi9bz2"></div> <div class="absolute top-3/4 right-1/4 w-1 h-1 bg-green-400 rounded-full opacity-40 animate-float-2 svelte-bi9bz2"></div> <div class="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-20 animate-float-3 svelte-bi9bz2"></div> <div class="absolute inset-0 svelte-bi9bz2"><div class="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-scan-horizontal svelte-bi9bz2"></div> <div class="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent animate-scan-vertical svelte-bi9bz2"></div></div></div> `);
+  $$payload.out.push(`<!----> <div class="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 svelte-18txp9r"><div class="absolute inset-0 overflow-hidden pointer-events-none svelte-18txp9r"><div class="absolute inset-0 opacity-10 svelte-18txp9r" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0); background-size: 20px 20px;"></div> <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-30 animate-float-1 svelte-18txp9r"></div> <div class="absolute top-3/4 right-1/4 w-1 h-1 bg-green-400 rounded-full opacity-40 animate-float-2 svelte-18txp9r"></div> <div class="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-20 animate-float-3 svelte-18txp9r"></div> <div class="absolute inset-0 svelte-18txp9r"><div class="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-scan-horizontal svelte-18txp9r"></div> <div class="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent animate-scan-vertical svelte-18txp9r"></div></div></div> `);
   DashboardCanvas($$payload);
-  $$payload.out.push(`<!----></div> <div class="status-bar bg-gray-900/80 border-t border-gray-700/50 px-4 py-2 text-xs text-gray-300 backdrop-blur-sm svelte-bi9bz2"><div class="flex items-center justify-between svelte-bi9bz2"><div class="flex items-center gap-4 svelte-bi9bz2"><span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Widgets:</span> <span class="font-mono svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.widgets?.length || 0)}</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Layout:</span> <span class="font-orbitron svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.name || "Default")}</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-purple-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Grid:</span> <span class="font-mono svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.gridSize || 20)}px</span></span></div> <div class="flex items-center gap-4 svelte-bi9bz2"><span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-yellow-400 rounded-full svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Theme:</span> <span class="capitalize font-orbitron svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span> <span class="flex items-center gap-1 svelte-bi9bz2"><div class="w-1 h-1 bg-red-400 rounded-full animate-pulse svelte-bi9bz2"></div> <span class="font-orbitron svelte-bi9bz2">Alerts:</span> <span class="font-mono svelte-bi9bz2">${escape_html(store_get($$store_subs ??= {}, "$alertHistory", alertHistory)?.length || 0)}</span></span></div></div></div> `);
+  $$payload.out.push(`<!----></div> <div class="status-bar bg-gray-900/80 border-t border-gray-700/50 px-4 py-2 text-xs text-gray-300 backdrop-blur-sm svelte-18txp9r"><div class="flex items-center justify-between svelte-18txp9r"><div class="flex items-center gap-4 svelte-18txp9r"><span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Widgets:</span> <span class="font-mono svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.widgets?.length || 0)}</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Layout:</span> <span class="font-orbitron svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.name || "Default")}</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-purple-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Grid:</span> <span class="font-mono svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.gridSize || 20)}px</span></span></div> <div class="flex items-center gap-4 svelte-18txp9r"><span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-yellow-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Theme:</span> <span class="capitalize font-orbitron svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-red-400 rounded-full animate-pulse svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Alerts:</span> <span class="font-mono svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$alertHistory", alertHistory)?.length || 0)}</span></span></div></div></div> `);
   if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).aiLayout.isOpen) {
     $$payload.out.push("<!--[-->");
     AILayoutModal($$payload);

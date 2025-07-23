@@ -17,6 +17,7 @@
   "devDependencies": {
     "@eslint/js": "^9.31.0",
     "@playwright/test": "^1.40.0",
+    "@skeletonlabs/tw-plugin": "^0.4.0",
     "@sveltejs/adapter-auto": "^3.3.1",
     "@sveltejs/kit": "^2.25.1",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
@@ -47,7 +48,6 @@
     "@floating-ui/dom": "^1.7.2",
     "@neodrag/svelte": "^2.3.3",
     "@skeletonlabs/skeleton": "^3.1.7",
-    "@skeletonlabs/tw-plugin": "^0.4.0",
     "clsx": "^2.1.0",
     "genkit": "^1.15.2",
     "layerchart": "1.0.11",

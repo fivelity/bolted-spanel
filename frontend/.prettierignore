@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.svelte-kit/
+build/
+dist/
+
+# Generated files
+.vite/
+vite.config.js.timestamp-*
+
+# Package manager
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+
+# TypeScript
+*.tsbuildinfo 

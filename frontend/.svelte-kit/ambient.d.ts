@@ -42,13 +42,7 @@ declare module '$env/static/private' {
 	export const CURSOR_TRACE_ID: string;
 	export const DISABLE_AUTO_UPDATE: string;
 	export const DriverData: string;
-	export const EFC_11660_1262719628: string;
 	export const EFC_11660_1592913036: string;
-	export const EFC_11660_2283032206: string;
-	export const EFC_11660_2775293581: string;
-	export const EFC_11660_3789132940: string;
-	export const FPS_BROWSER_APP_PROFILE_STRING: string;
-	export const FPS_BROWSER_USER_PROFILE_STRING: string;
 	export const GEMINI_API_KEY: string;
 	export const GIT_ASKPASS: string;
 	export const GOPATH: string;
@@ -182,13 +176,7 @@ declare module '$env/dynamic/private' {
 		CURSOR_TRACE_ID: string;
 		DISABLE_AUTO_UPDATE: string;
 		DriverData: string;
-		EFC_11660_1262719628: string;
 		EFC_11660_1592913036: string;
-		EFC_11660_2283032206: string;
-		EFC_11660_2775293581: string;
-		EFC_11660_3789132940: string;
-		FPS_BROWSER_APP_PROFILE_STRING: string;
-		FPS_BROWSER_USER_PROFILE_STRING: string;
 		GEMINI_API_KEY: string;
 		GIT_ASKPASS: string;
 		GOPATH: string;
