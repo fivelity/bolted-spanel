@@ -6,10 +6,9 @@
 -->
 
 <script lang="ts">
-  import { CosmicFrame } from '$lib/components/cosmic';
   import { tweened } from 'svelte/motion';
   import { cubicOut } from 'svelte/easing';
-  import type { SensorData } from '$lib/types/sensor';
+  import { CosmicFrame } from '$lib/components/cosmic';
   
   interface SensorConfig {
     min: number;

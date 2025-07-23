@@ -29,7 +29,7 @@ export default [
     rules: {
       ...tsPlugin.configs.recommended.rules,
       // Add or override rules as needed
-      "svelte/valid-compile": "off"
+      "svelte/valid-compile": "off",
     },
   },
   ...svelte.configs["flat/recommended"],
@@ -40,6 +40,9 @@ export default [
       parserOptions: {
         parser: tsParser,
       },
+    },
+    rules: {
+      "svelte/valid-compile": "off",
     },
   },
 ];

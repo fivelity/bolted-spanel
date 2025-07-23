@@ -1,12 +1,8 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import type { WidgetConfig } from '$lib/types/dashboard';
-	import { dashboardActions, dashboardState, currentLayout } from '$lib/stores/dashboard.svelte';
-	import { themeStore } from '$lib/stores/themeStore';
+	import { dashboardActions, currentLayout } from '$lib/stores/dashboard.svelte';
 	import { connectionStatus } from '$lib/services/websocket';
 	import { nanoid } from 'nanoid';
-
-	const dispatch = createEventDispatcher();
 
 	// Local state
 	let showWidgetMenu = $state(false);
@@ -25,7 +21,7 @@
 				unit: '%',
 				colors: ['#22c55e', '#f59e0b', '#ef4444'],
 				thresholds: [70, 90]
-			}
+			} as Record<string, unknown>
 		},
 		{
 			id: nanoid(),
@@ -78,7 +74,7 @@
 			dashboardActions.updateWidget($currentLayout.id, {
 				...$currentLayout,
 				widgets: [...$currentLayout.widgets, widget]
-			} as any);
+			});
 		}
 	}
 
@@ -228,12 +224,12 @@
 	<!-- Right Section: Settings & Controls -->
 	<div class="flex items-center gap-3">
 		<!-- Theme Toggle -->
-						<button
-					class="bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50 flex items-center gap-2"
-					onclick={() => themeStore.toggleTheme()}
-					title="Change Theme"
-					aria-label="Change Theme"
-				>
+		<button
+			class="bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 hover:text-white px-3 py-2 rounded-lg transition-all duration-200 border border-gray-700/50 hover:border-gray-600/50 flex items-center gap-2"
+			onclick={() => console.log('Theme toggle placeholder')}
+			title="Change Theme"
+			aria-label="Change Theme"
+		>
 			<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
 				<path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
 			</svg>

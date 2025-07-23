@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { currentLayout, dashboardState } from '$lib/stores/dashboard.svelte';
-	import { sensorStore } from '$lib/stores/sensorStore';
 	import { CosmicPanel } from '$lib/components/cosmic';
 	import CosmicSensorGauge from './widgets/CosmicSensorGauge.svelte';
 	import DraggableWidget from './DraggableWidget.svelte';
 	import GridOverlay from './GridOverlay.svelte';
-	import SelectionBox from './SelectionBox.svelte';
 	import WidgetBuilder from './WidgetBuilder.svelte';
 
 	let canvasElement: HTMLDivElement;
@@ -56,7 +54,7 @@
 
 		<!-- Sensor Gauges Grid -->
 		<div class="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-			{#each demoSensors as sensor, index}
+			{#each demoSensors as sensor}
 				<div class="flex justify-center">
 					<CosmicSensorGauge
 						value={sensor.value}

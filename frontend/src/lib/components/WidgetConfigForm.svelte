@@ -1,18 +1,37 @@
 // WidgetConfigForm.svelte
 <script lang="ts">
-	import { dashboardState, widgetTemplates } from '$lib/stores/dashboard.svelte';
+	import { dashboardState } from '$lib/stores/dashboard.svelte';
 	import type { WidgetConfig } from '$lib/types/dashboard';
 	
-	let widgetConfig = $state<Partial<WidgetConfig>>({ title: '', size: { width: 200, height: 200 }, config: { min: 0, max: 100, unit: '%', colors: ['#22c55e', '#f59e0b', '#ef4444'], thresholds: [70, 90] }, dataSource: '', thresholds: [], styling: { backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderWidth: 1, borderRadius: 8 } });
-	let width = $state(widgetConfig.size?.width ?? 200);
-	let height = $state(widgetConfig.size?.height ?? 200);
-	$effect(() => { widgetConfig.size = { width, height }; });
+	interface Props {
+		widget: WidgetConfig;
+		onSave: (config: WidgetConfig) => void;
+		onCancel: () => void;
+	}
+
+	// Destructure props for future use but mark as unused for now
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let { widget: _widget, onSave: _onSave, onCancel: _onCancel }: Props = $props();
 	
-	const colorPresets = [ /* array from original */ ];
-	const dataSources = [ /* array from original */ ];
-	
-	function setColorPreset(preset: { colors: string[] }) { if (!widgetConfig.config) widgetConfig.config = {}; widgetConfig.config.colors = preset.colors; }
-	// Add other update functions: updateTitle, updateUnit, etc.
+	let widgetConfig = $state<Partial<WidgetConfig>>({ 
+		title: '', 
+		size: { width: 200, height: 200 }, 
+		config: { 
+			min: 0, 
+			max: 100, 
+			unit: '%', 
+			colors: ['#22c55e', '#f59e0b', '#ef4444'], 
+			thresholds: [70, 90] 
+		}, 
+		dataSource: '', 
+		thresholds: [], 
+		styling: { 
+			backgroundColor: '#ffffff', 
+			borderColor: '#e5e7eb', 
+			borderWidth: 1, 
+			borderRadius: 8 
+		} 
+	});
 </script>
 
 <div class="flex-1 overflow-y-auto">

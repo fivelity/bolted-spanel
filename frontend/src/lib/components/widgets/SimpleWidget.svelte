@@ -1,165 +1,118 @@
 <script lang="ts">
-	import type { WidgetConfig } from '$lib/types/dashboard';
 	import { sensorStore } from '$lib/stores/sensorStore';
 	import { onMount } from 'svelte';
-
+	
 	interface Props {
-		config: WidgetConfig;
-		value?: number | null;
+		config: {
+			min?: number;
+			max?: number;
+			unit?: string;
+			colors?: string[];
+			thresholds?: number[];
+			[key: string]: unknown;
+		};
+		value: number | null;
 	}
 
 	let { config, value }: Props = $props();
 
-	// Get sensor value reactively (fallback if no value provided)
-	let sensorValue = $derived(() => {
-		if (value !== undefined) return value;
-		
-		// Legacy compatibility: try dataSource first, then sensorPath
-		const dataPath = config.dataSource || (config as any).sensorPath;
-		return dataPath ? sensorStore.getSensorValue(dataPath) : null;
-	});
+	// Widget configuration with defaults
+	const widgetConfig = {
+		min: config.min ?? 0,
+		max: config.max ?? 100,
+		unit: config.unit ?? '%',
+		colors: config.colors ?? ['#22c55e', '#f59e0b', '#ef4444'],
+		thresholds: config.thresholds ?? [70, 90],
+		...config as Record<string, unknown>
+	};
 
-	// Calculate color based on value
-	let valueColor = $derived(() => {
+	// Get sensor value reactively (fallback if no value provided)
+	const sensorValue = () => {
+		return value ?? $sensorStore.data?.cpu?.usage ?? 0;
+	};
+
+	// Color based on current value and thresholds
+	const currentColor = $derived(() => {
 		const val = sensorValue();
-		// Try new config structure first, then legacy
-		const colors = config.config?.colors || (config as any).appearance?.colors || ['#22c55e', '#f59e0b', '#ef4444'];
-		const thresholds = config.thresholds || (config as any).appearance?.thresholds || [70, 90];
+		const colors = widgetConfig.colors;
+		const thresholds = widgetConfig.thresholds;
 
 		if (val === null || val === undefined) return colors[0];
-
-		if (thresholds.length >= 2) {
-			if (val >= thresholds[1]) return colors[2] || '#ef4444';
-			if (val >= thresholds[0]) return colors[1] || '#f59e0b';
+		
+		for (let i = thresholds.length - 1; i >= 0; i--) {
+			if (val >= thresholds[i]) {
+				return colors[i + 1] || colors[colors.length - 1];
+			}
 		}
 		return colors[0] || '#22c55e';
 	});
 
-	// Format value for display
-	let displayValue = $derived(() => {
-		const val = sensorValue();
-		if (val === null || val === undefined) return '—';
-		if (val >= 1000) {
-			return (val / 1000).toFixed(1) + 'K';
-		}
-		return val.toFixed(1);
-	});
-
 	// Animation state
-	let mounted = $state(false);
-	let animatedValue = $state(0);
-
 	onMount(() => {
-		mounted = true;
-		// Animate value on mount
-		const animate = () => {
-			const target = sensorValue();
-			if (target === null || target === undefined) return;
-			const diff = target - animatedValue;
-			if (Math.abs(diff) > 0.1) {
-				animatedValue += diff * 0.1;
-				requestAnimationFrame(animate);
-			} else {
-				animatedValue = target;
-			}
+		// Widget initialization if needed
+	});
+
+	// Dynamic styling
+	const dynamicStyle = $derived(() => {
+		const baseStyle = widgetConfig as Record<string, unknown>;
+		return {
+			backgroundColor: (baseStyle.backgroundColor as string) || '#ffffff',
+			borderColor: (baseStyle.borderColor as string) || '#e5e7eb',
+			borderWidth: (baseStyle.borderWidth as number) || 1,
+			borderRadius: (baseStyle.borderRadius as number) || 8,
+			fontSize: (baseStyle.fontSize as string) || '14px',
+			fontWeight: (baseStyle.fontWeight as string) || 'normal',
 		};
-		animate();
-	});
-
-	// Update animated value when sensor value changes
-	$effect(() => {
-		if (mounted) {
-			const target = sensorValue();
-			if (target === null || target === undefined) return;
-			const animate = () => {
-				const diff = target - animatedValue;
-				if (Math.abs(diff) > 0.1) {
-					animatedValue += diff * 0.15;
-					requestAnimationFrame(animate);
-				} else {
-					animatedValue = target;
-				}
-			};
-			animate();
-		}
-	});
-
-	let formattedAnimatedValue = $derived(() => {
-		if (animatedValue >= 1000) {
-			return (animatedValue / 1000).toFixed(1) + 'K';
-		}
-		return animatedValue.toFixed(1);
-	});
-
-	// Get styling properties with fallbacks
-	let borderRadius = $derived(() => {
-		return (config as any).appearance?.borders?.radius || config.styling?.borderRadius || 8;
-	});
-
-	let fontSize = $derived(() => {
-		return (config as any).appearance?.typography?.fontSize || config.styling?.fontSize || 16;
-	});
-
-	let fontWeight = $derived(() => {
-		return (config as any).appearance?.typography?.fontWeight || config.styling?.fontWeight || 'bold';
 	});
 </script>
 
+<!-- Simple Widget Layout -->
 <div 
 	class="simple-widget relative h-full w-full overflow-hidden group"
-	style="border-radius: {borderRadius}px;"
+	style="border-radius: {dynamicStyle().borderRadius}px;"
 >
 	<!-- Animated background with gradient -->
-	<div class="absolute inset-0 bg-gradient-to-br from-gray-900/60 via-gray-800/40 to-gray-900/60 backdrop-blur-sm"></div>
+	<div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
 	
-	<!-- Dynamic glow effect -->
+	<!-- Pulse effect background -->
 	<div 
 		class="absolute inset-0 opacity-20 transition-opacity duration-1000"
-		style="background: radial-gradient(circle at center, {valueColor} 0%, transparent 70%);"
+		style="background: radial-gradient(circle at center, {currentColor()} 0%, transparent 70%);"
 	></div>
 	
 	<!-- Border glow -->
 	<div 
 		class="absolute inset-0 rounded-lg opacity-60"
-		style="border: 1px solid {valueColor}; box-shadow: 0 0 10px {valueColor}40;"
+		style="border: {dynamicStyle().borderWidth}px solid {currentColor()}; box-shadow: 0 0 10px {currentColor()}40;"
 	></div>
 	
-	<!-- Content -->
+	<!-- Main content -->
 	<div class="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center">
-		<!-- Title -->
-		<div class="text-xs font-medium text-gray-300 mb-1 uppercase tracking-wider font-orbitron">
-			{config.title}
-		</div>
-		
-		<!-- Value -->
+		<!-- Value display -->
 		<div 
 			class="text-2xl font-bold transition-all duration-300 font-orbitron"
-			style="color: {valueColor}; font-size: {fontSize}px; font-weight: {fontWeight};"
+			style="color: {currentColor()}; font-size: {dynamicStyle().fontSize}; font-weight: {dynamicStyle().fontWeight};"
 		>
-			{formattedAnimatedValue}
+			{sensorValue()}
 		</div>
 		
-		<!-- Unit -->
-		{#if config.config?.unit || (config as any).unit}
-			<div class="text-xs text-gray-400 mt-1 font-mono">
-				{config.config?.unit || (config as any).unit}
-			</div>
-		{/if}
-	</div>
-
-	<!-- Scanning line effect -->
-	<div class="absolute inset-0 overflow-hidden rounded-lg">
+		<!-- Unit display -->
+		<div class="text-sm text-gray-400 font-medium uppercase tracking-wider mt-1">
+			{widgetConfig.unit}
+		</div>
+		
+		<!-- Scan line effect -->
 		<div 
 			class="absolute w-full h-px opacity-30 animate-scan"
-			style="background: linear-gradient(90deg, transparent 0%, {valueColor} 50%, transparent 100%);"
+			style="background: linear-gradient(90deg, transparent 0%, {currentColor()} 50%, transparent 100%);"
 		></div>
 	</div>
 
 	<!-- Corner accents -->
-	<div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 rounded-tl-lg opacity-60" style="border-color: {valueColor};"></div>
-	<div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 rounded-tr-lg opacity-60" style="border-color: {valueColor};"></div>
-	<div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 rounded-bl-lg opacity-60" style="border-color: {valueColor};"></div>
-	<div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 rounded-br-lg opacity-60" style="border-color: {valueColor};"></div>
+	<div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 rounded-tl-lg opacity-60" style="border-color: {currentColor()};"></div>
+	<div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 rounded-tr-lg opacity-60" style="border-color: {currentColor()};"></div>
+	<div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 rounded-bl-lg opacity-60" style="border-color: {currentColor()};"></div>
+	<div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 rounded-br-lg opacity-60" style="border-color: {currentColor()};"></div>
 </div>
 
 <style lang="css">

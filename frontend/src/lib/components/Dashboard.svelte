@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { currentLayout, dashboardState } from '$lib/stores/dashboard.svelte';
 	import { sensorStore } from '$lib/stores/sensorStore';
-	import { themeStore, currentTheme } from '$lib/stores/themeStore';
+	import { currentTheme } from '$lib/stores/themeStore';
 	import { alertStore, alertHistory } from '$lib/stores/alertStore';
 	import { injectCosmicTheme } from '$lib/components/cosmic/theme';
 	import { CosmicToolbar } from '$lib/components/cosmic';

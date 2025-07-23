@@ -2,12 +2,15 @@ import type { AlertCondition, Alert } from "$lib/types/sensor";
 import { sensorStore } from "./sensorStore";
 import { writable, get } from "svelte/store";
 import { nanoid } from "nanoid";
-import type { Writable } from 'svelte/store';
+import type { Writable } from "svelte/store";
 
 export type AlertStore = {
   init: () => Promise<void>;
   addCondition: (condition: Omit<AlertCondition, "id" | "triggered">) => void;
-  updateCondition: (conditionId: string, updates: Partial<AlertCondition>) => void;
+  updateCondition: (
+    conditionId: string,
+    updates: Partial<AlertCondition>,
+  ) => void;
   removeCondition: (conditionId: string) => void;
   acknowledgeAlert: (alertId: string) => void;
   clearHistory: () => void;

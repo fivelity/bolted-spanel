@@ -15,7 +15,7 @@
 	let isEditMode = $state(true); // For now, always in edit mode
 
 	// Simplified drag configuration
-	function handleDragStart(data: DragEventData) {
+	function handleDragStart() {
 		if (!isSelected) {
 			dashboardActions.selectWidget(widget.id);
 		}

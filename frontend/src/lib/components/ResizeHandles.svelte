@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte'
 	import type { Size } from '$lib/types/dashboard'
 
 	interface Props {
-		onResize: (size: Size) => void
-		onResizeEnd: () => void
+		visible: boolean;
+		onResize?: (handle: string, deltaX: number, deltaY: number) => void;
 	}
 
 	let { onResize, onResizeEnd }: Props = $props()

@@ -53,6 +53,7 @@
     "layerchart": "1.0.11",
     "layerchart-monorepo": "github:techniq/layerchart#next",
     "nanoid": "^5.0.0",
+    "svelte-ux": "^1.0.6",
     "svelte-ux-monorepo": "github:techniq/svelte-ux#next",
     "tailwind-merge": "^2.2.0",
     "zod": "^4.0.5"

@@ -1,84 +1,69 @@
 <script lang="ts">
-	import type { WidgetConfig } from '$lib/types/dashboard';
 	import { sensorStore } from '$lib/stores/sensorStore';
-	import { onMount } from 'svelte';
-
+	
 	interface Props {
-		config: WidgetConfig;
-		value?: number | null;
+		config: {
+			min?: number;
+			max?: number;
+			unit?: string;
+			colors?: string[];
+			thresholds?: number[];
+			[key: string]: unknown;
+		};
+		value: number | null;
 	}
 
 	let { config, value }: Props = $props();
 
-	// Get sensor value reactively (fallback if no value provided)
-	let sensorValue = $derived(() => {
-		if (value !== undefined) return value;
-		
-		// Legacy compatibility: try dataSource first, then sensorPath
-		const dataPath = config.dataSource || (config as any).sensorPath;
-		return dataPath ? sensorStore.getSensorValue(dataPath) : null;
-	});
+	// Meter configuration with defaults
+	const meterConfig = {
+		min: config.min ?? 0,
+		max: config.max ?? 100,
+		unit: config.unit ?? '%',
+		colors: config.colors ?? ['#22c55e', '#f59e0b', '#ef4444'],
+		thresholds: config.thresholds ?? [70, 90],
+		...config as Record<string, unknown>
+	};
 
-	// Calculate color based on value
-	let meterColor = $derived(() => {
+	// Get sensor value reactively (fallback if no value provided)
+	const sensorValue = () => {
+		return value ?? $sensorStore.data?.cpu?.usage ?? 0;
+	};
+
+	// Color based on current value and thresholds
+	const currentColor = $derived(() => {
 		const val = sensorValue();
-		// Try new config structure first, then legacy
-		const colors = config.config?.colors || (config as any).appearance?.colors || ['#22c55e', '#f59e0b', '#ef4444'];
-		const thresholds = config.thresholds || (config as any).appearance?.thresholds || [70, 90];
+		const colors = meterConfig.colors;
+		const thresholds = meterConfig.thresholds;
 
 		if (val === null || val === undefined) return colors[0];
-
-		if (thresholds.length >= 2) {
-			if (val >= thresholds[1]) return colors[2] || '#ef4444';
-			if (val >= thresholds[0]) return colors[1] || '#f59e0b';
+		
+		for (let i = thresholds.length - 1; i >= 0; i--) {
+			if (val >= thresholds[i]) {
+				return colors[i + 1] || colors[colors.length - 1];
+			}
 		}
-		return colors[0] || '#22c55e';
+		return colors[0];
 	});
 
-	// Animation state
-	let mounted = $state(false);
+	// Animated value for smooth meter transitions
 	let animatedValue = $state(0);
-
-	onMount(() => {
-		mounted = true;
+	
+	// Calculate percentage for progress bar
+	let percentage = $derived(() => {
+		const maxValue = meterConfig.max;
+		return Math.min(100, Math.max(0, (animatedValue / maxValue) * 100));
 	});
 
 	// Update animated value when sensor value changes
 	$effect(() => {
-		if (mounted) {
-			const target = sensorValue();
-			if (target === null || target === undefined) return;
-			
-			const animate = () => {
-				const diff = target - animatedValue;
-				if (Math.abs(diff) > 0.1) {
-					animatedValue += diff * 0.15;
-					requestAnimationFrame(animate);
-				} else {
-					animatedValue = target;
-				}
-			};
-			animate();
-		}
-	});
-
-	// Calculate percentage for progress bar
-	let percentage = $derived(() => {
-		const maxValue = config.config?.max || 100;
-		return Math.min(100, Math.max(0, (animatedValue / maxValue) * 100));
-	});
-
-	// Format value for display
-	let formattedValue = $derived(() => {
-		const val = sensorValue();
-		if (val === null || val === undefined) return '—';
-		return val.toFixed(1);
+		const targetValue = sensorValue();
+		animatedValue = targetValue;
 	});
 
 	// Styling properties
 	let borderRadius = 8;
-	let titleColor = '#ffffff';
-	let unit = config.config?.unit || (config as any).unit || '%';
+	let unit = meterConfig.unit;
 </script>
 
 <div 
@@ -98,9 +83,9 @@
 			<div class="flex items-baseline gap-1">
 				<span 
 					class="text-lg font-bold font-mono"
-					style="color: {meterColor()};"
+					style="color: {currentColor()};"
 				>
-					{formattedValue()}
+					{sensorValue().toFixed(1)}
 				</span>
 				<span class="text-xs text-gray-400">
 					{unit}
@@ -117,8 +102,8 @@
 					class="h-full transition-all duration-300 rounded-full"
 					style="
 						width: {percentage()}%;
-						background: linear-gradient(90deg, {meterColor()}, {meterColor()}dd);
-						box-shadow: 0 0 8px {meterColor()}40;
+						background: linear-gradient(90deg, {currentColor()}, {currentColor()}dd);
+						box-shadow: 0 0 8px {currentColor()}40;
 					"
 				></div>
 			</div>
@@ -129,7 +114,7 @@
 				style="
 					background: linear-gradient(90deg, 
 						transparent 0%, 
-						{meterColor()}40 {percentage()}%, 
+						{currentColor()}40 {percentage()}%, 
 						transparent {percentage() + 5}%
 					);
 				"
@@ -141,7 +126,7 @@
 			<div class="flex items-center gap-2">
 				<div 
 					class="w-2 h-2 rounded-full"
-					style="background-color: {meterColor()}; box-shadow: 0 0 4px {meterColor()};"
+					style="background-color: {currentColor()}; box-shadow: 0 0 4px {currentColor()};"
 				></div>
 				<span class="text-xs font-medium uppercase text-gray-400">
 					{(sensorValue() || 0) >= 80 ? 'HIGH' : (sensorValue() || 0) >= 60 ? 'WARN' : 'NORMAL'}

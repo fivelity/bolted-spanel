@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { WidgetConfig } from '$lib/types/dashboard';
 	import type { HardwareData } from '$lib/types/hardware';
 	
@@ -18,7 +17,7 @@
 		isPreview?: boolean;
 	}
 
-	let { widget: config, data, isPreview = false }: Props = $props();
+	let { widget: config, data }: Props = $props();
 
 	// Extract sensor value from data using the sensor path
 	function getSensorValue(data: HardwareData | null, path: string): number | null {
@@ -26,11 +25,11 @@
 
 		try {
 			const keys = path.split('.');
-			let current: any = data;
+			let current: unknown = data;
 			
 			for (const key of keys) {
 				if (current && typeof current === 'object' && key in current) {
-					current = current[key];
+					current = (current as Record<string, unknown>)[key];
 				} else {
 					return null;
 				}

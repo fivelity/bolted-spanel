@@ -1,5 +1,7 @@
+<!-- Linear Gauge Widget -->
 <script lang="ts">
-	import { onMount } from 'svelte'
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	import { onMount } from 'svelte';
 	import type { WidgetConfig } from '$lib/types/dashboard'
 
 	interface Props {

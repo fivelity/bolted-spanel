@@ -1,11 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
-	import { Svg, Circle, Text } from 'layerchart'
-	import type { WidgetConfig } from '$lib/types/dashboard'
-
+	import { onMount } from 'svelte';
+	
 	interface Props {
-		config: WidgetConfig
-		value: number | null
+		value: number;
+		min?: number;
+		max?: number;
+		size?: number;
+		strokeWidth?: number;
+		color?: string;
+		backgroundColor?: string;
+		showValue?: boolean;
+		unit?: string;
+		label?: string;
 	}
 
 	let { config, value }: Props = $props()
@@ -53,9 +59,7 @@
 	let dashArray = $derived(`${arcLength} ${circumference}`)
 
 	// Animation
-	let mounted = $state(false)
 	onMount(() => {
-		mounted = true
 	})
 </script>
 

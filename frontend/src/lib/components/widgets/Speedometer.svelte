@@ -27,20 +27,24 @@
 		showZones: true
 	}
 
-	// Merge config with defaults
+	// Speedometer configuration with fallbacks
 	let speedometerConfig = $derived({ ...defaults, ...config.config });
 	let displayValue = $derived(value ?? 0);
-	let percentage = $derived(Math.max(0, Math.min(100, ((displayValue - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)) * 100)));
 
-	// Calculate needle angle (180 degrees total, from -90 to +90)
-	let needleAngle = $derived(-90 + (percentage / 100) * 180);
+	// Speedometer state and animation
+	let mounted = $state(false);
+	
+	onMount(() => {
+		mounted = true;
+	});
 
 	// Determine current zone color
-	let currentZoneColor = $derived(() => {
-		if (displayValue >= speedometerConfig.dangerZone) return speedometerConfig.colors.danger
-		if (displayValue >= speedometerConfig.warningZone) return speedometerConfig.colors.warning
-		return speedometerConfig.colors.safe
-	})
+	let zoneColor = $derived(() => {
+		const currentValue = displayValue;
+		if (currentValue >= speedometerConfig.dangerZone) return speedometerConfig.colors.danger;
+		if (currentValue >= speedometerConfig.warningZone) return speedometerConfig.colors.warning;
+		return speedometerConfig.colors.safe;
+	});
 
 	// SVG dimensions
 	let size = $derived(Math.min(config.size.width, config.size.height) - 20);
@@ -48,37 +52,80 @@
 	let radius = $derived(size * 0.35);
 
 	// Zone calculations
-	let warningAngle = $derived(-90 + ((speedometerConfig.warningZone - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)) * 180);
-	let dangerAngle = $derived(-90 + ((speedometerConfig.dangerZone - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)) * 180);
-
 	// Animation
-	let mounted = $state(false)
 	onMount(() => {
 		mounted = true
 	})
 
-	// Helper function to create arc path
-	function createArcPath(startAngle: number, endAngle: number, radius: number, strokeWidth: number) {
-		const startAngleRad = (startAngle * Math.PI) / 180
-		const endAngleRad = (endAngle * Math.PI) / 180
-		
-		const innerRadius = radius - strokeWidth / 2
-		const outerRadius = radius + strokeWidth / 2
-		
-		const x1 = center + innerRadius * Math.cos(startAngleRad)
-		const y1 = center + innerRadius * Math.sin(startAngleRad)
-		const x2 = center + innerRadius * Math.cos(endAngleRad)
-		const y2 = center + innerRadius * Math.sin(endAngleRad)
-		
-		const x3 = center + outerRadius * Math.cos(endAngleRad)
-		const y3 = center + outerRadius * Math.sin(endAngleRad)
-		const x4 = center + outerRadius * Math.cos(startAngleRad)
-		const y4 = center + outerRadius * Math.sin(startAngleRad)
-		
-		const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0
-		
-		return `M ${x1} ${y1} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`
+	// Calculate the position for tick marks and labels
+	function calculateTickPosition(angle: number, radius: number) {
+		const radian = (angle * Math.PI) / 180;
+		return {
+			x: Math.cos(radian) * radius,
+			y: Math.sin(radian) * radius
+		};
 	}
+
+	// Calculate current angle based on value
+	const currentAngle = $derived(() => {
+		const normalizedValue = Math.max(0, Math.min(1, (displayValue - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)));
+		return -90 + normalizedValue * 180;
+	});
+
+	// Generate tick marks
+	const tickMarks = $derived(() => {
+		const marks = [];
+		for (let i = 0; i <= 10; i++) {
+			const angle = -90 + (i / 10) * 180;
+			const value = speedometerConfig.min + (i / 10) * (speedometerConfig.max - speedometerConfig.min);
+			const position = calculateTickPosition(angle, radius - 10);
+			
+			marks.push({
+				angle,
+				value: Math.round(value),
+				x: position.x,
+				y: position.y,
+				isMajor: i % 5 === 0
+			});
+		}
+		return marks;
+	});
+
+	// Generate segments for colored backgrounds
+	const segments = $derived(() => {
+		if (!speedometerConfig.showZones) return [];
+		
+		const segmentData = [];
+		const sortedZones = [speedometerConfig.warningZone, speedometerConfig.dangerZone].sort((a, b) => a - b);
+		
+		// First segment (min to first threshold)
+		segmentData.push({
+			start: -90,
+			end: -90 + ((sortedZones[0] - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)) * 180,
+			color: speedometerConfig.colors.safe
+		});
+		
+		// Middle segments
+		for (let i = 0; i < sortedZones.length - 1; i++) {
+			const startVal = sortedZones[i];
+			const endVal = sortedZones[i + 1];
+			segmentData.push({
+				start: -90 + ((startVal - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)) * 180,
+				end: -90 + ((endVal - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)) * 180,
+				color: speedometerConfig.colors.warning
+			});
+		}
+		
+		// Last segment (last threshold to max)
+		const lastZone = sortedZones[sortedZones.length - 1];
+		segmentData.push({
+			start: -90 + ((lastZone - speedometerConfig.min) / (speedometerConfig.max - speedometerConfig.min)) * 180,
+			end: 90,
+			color: speedometerConfig.colors.danger
+		});
+		
+		return segmentData;
+	});
 </script>
 
 <div class="speedometer flex flex-col items-center justify-center h-full p-4">
@@ -101,39 +148,21 @@
 
 			<!-- Zone arcs -->
 			{#if speedometerConfig.showZones}
-				<!-- Safe zone -->
-				<path
-					d="M {center - radius} {center} A {radius} {radius} 0 0 1 {center + radius * Math.cos((warningAngle * Math.PI) / 180)} {center + radius * Math.sin((warningAngle * Math.PI) / 180)}"
-					fill="none"
-					stroke={speedometerConfig.colors.safe}
-					stroke-width="20"
-					stroke-linecap="round"
-				/>
-
-				<!-- Warning zone -->
-				<path
-					d="M {center + radius * Math.cos((warningAngle * Math.PI) / 180)} {center + radius * Math.sin((warningAngle * Math.PI) / 180)} A {radius} {radius} 0 0 1 {center + radius * Math.cos((dangerAngle * Math.PI) / 180)} {center + radius * Math.sin((dangerAngle * Math.PI) / 180)}"
-					fill="none"
-					stroke={speedometerConfig.colors.warning}
-					stroke-width="20"
-					stroke-linecap="round"
-				/>
-
-				<!-- Danger zone -->
-				<path
-					d="M {center + radius * Math.cos((dangerAngle * Math.PI) / 180)} {center + radius * Math.sin((dangerAngle * Math.PI) / 180)} A {radius} {radius} 0 0 1 {center + radius} {center}"
-					fill="none"
-					stroke={speedometerConfig.colors.danger}
-					stroke-width="20"
-					stroke-linecap="round"
-				/>
+				{#each segments as segment}
+					<path
+						d={`M ${center + segment.start * Math.PI / 180 * radius} ${center + segment.start * Math.PI / 180 * radius} A ${radius} ${radius} 0 0 1 ${center + segment.end * Math.PI / 180 * radius} ${center + segment.end * Math.PI / 180 * radius}`}
+						fill="none"
+						stroke={segment.color}
+						stroke-width="20"
+						stroke-linecap="round"
+					/>
+				{/each}
 			{/if}
 
 			<!-- Tick marks -->
-			{#each Array(11) as _, i}
-				{@const angle = -90 + (i * 18)}
-				{@const angleRad = (angle * Math.PI) / 180}
-				{@const tickLength = i % 5 === 0 ? 15 : 8}
+			{#each tickMarks as mark}
+				{@const angleRad = (mark.angle * Math.PI) / 180}
+				{@const tickLength = mark.isMajor ? 15 : 8}
 				{@const x1 = center + (radius - 30) * Math.cos(angleRad)}
 				{@const y1 = center + (radius - 30) * Math.sin(angleRad)}
 				{@const x2 = center + (radius - 30 + tickLength) * Math.cos(angleRad)}
@@ -145,13 +174,13 @@
 					x2={x2}
 					y2={y2}
 					stroke="currentColor"
-					stroke-width={i % 5 === 0 ? 2 : 1}
+					stroke-width={mark.isMajor ? 2 : 1}
 					class="text-gray-600 dark:text-gray-400"
 				/>
 
 				<!-- Tick labels -->
-				{#if i % 5 === 0}
-					{@const labelValue = speedometerConfig.min + (i / 10) * (speedometerConfig.max - speedometerConfig.min)}
+				{#if mark.isMajor}
+					{@const labelValue = speedometerConfig.min + (mark.value / 10) * (speedometerConfig.max - speedometerConfig.min)}
 					{@const labelX = center + (radius - 45) * Math.cos(angleRad)}
 					{@const labelY = center + (radius - 45) * Math.sin(angleRad)}
 					
@@ -168,13 +197,13 @@
 			{/each}
 
 			<!-- Needle -->
-			<g transform="rotate({mounted ? needleAngle : -90} {center} {center})">
+			<g transform="rotate({mounted ? currentAngle : -90} {center} {center})">
 				<line
 					x1={center}
 					y1={center}
 					x2={center + radius - 40}
 					y2={center}
-					stroke={currentZoneColor()}
+					stroke={zoneColor()}
 					stroke-width="3"
 					stroke-linecap="round"
 					class="transition-all duration-1000 ease-out"
@@ -184,7 +213,7 @@
 					cx={center + radius - 40}
 					cy={center}
 					r="3"
-					fill={currentZoneColor()}
+					fill={zoneColor()}
 				/>
 			</g>
 
@@ -200,7 +229,7 @@
 				cx={center}
 				cy={center}
 				r="4"
-				fill={currentZoneColor()}
+				fill={zoneColor()}
 			/>
 		</svg>
 
