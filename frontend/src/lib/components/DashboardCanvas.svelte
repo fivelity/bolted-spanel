@@ -1,207 +1,136 @@
 <script lang="ts">
-	import { onMount } from 'svelte'
-	import { dashboardState, dashboardActions, currentLayout } from '$lib/stores/dashboard.svelte'
-	import { sensorStore } from '$lib/stores/sensorStore'
-	import DraggableWidget from './DraggableWidget.svelte'
-	import GridOverlay from './GridOverlay.svelte'
-	import SelectionBox from './SelectionBox.svelte'
-	import type { Position, WidgetConfig } from '$lib/types/dashboard'
+	import { onMount } from 'svelte';
+	import { currentLayout, dashboardState } from '$lib/stores/dashboard.svelte';
+	import { sensorStore } from '$lib/stores/sensorStore';
+	import { CosmicPanel } from '$lib/components/cosmic';
+	import CosmicSensorGauge from './widgets/CosmicSensorGauge.svelte';
+	import DraggableWidget from './DraggableWidget.svelte';
+	import GridOverlay from './GridOverlay.svelte';
+	import SelectionBox from './SelectionBox.svelte';
+	import WidgetBuilder from './WidgetBuilder.svelte';
 
-	let canvasElement: HTMLDivElement
-	let isSelecting = $state(false)
-	let selectionStart = $state<Position>({ x: 0, y: 0 })
-	let selectionEnd = $state<Position>({ x: 0, y: 0 })
+	let canvasElement: HTMLDivElement;
 
-	// Handle canvas click for deselection
-	function handleCanvasClick(event: MouseEvent) {
-		if (event.target === canvasElement) {
-			dashboardActions.clearSelection()
-		}
-	}
-
-	// Handle drag over for widget dropping
-	function handleDragOver(event: DragEvent) {
-		event.preventDefault()
-	}
-
-	// Handle drop for new widgets
-	function handleDrop(event: DragEvent) {
-		event.preventDefault()
-		
-		const templateId = event.dataTransfer?.getData('text/template-id')
-		if (!templateId) return
-
-		const rect = canvasElement.getBoundingClientRect()
-		const position: Position = {
-			x: event.clientX - rect.left,
-			y: event.clientY - rect.top
-		}
-
-		// Find template and add widget
-		// This would be implemented with the template system
-		console.log('Drop widget template:', templateId, 'at position:', position)
-	}
-
-	// Handle selection box
-	function handleMouseDown(event: MouseEvent) {
-		if (event.target !== canvasElement) return
-		
-		isSelecting = true
-		const rect = canvasElement.getBoundingClientRect()
-		selectionStart = {
-			x: event.clientX - rect.left,
-			y: event.clientY - rect.top
-		}
-		selectionEnd = { ...selectionStart }
-	}
-
-	function handleMouseMove(event: MouseEvent) {
-		if (!isSelecting) return
-		
-		const rect = canvasElement.getBoundingClientRect()
-		selectionEnd = {
-			x: event.clientX - rect.left,
-			y: event.clientY - rect.top
-		}
-	}
-
-	function handleMouseUp() {
-		if (!isSelecting) return
-		
-		isSelecting = false
-		
-		// Select widgets within selection box
-		if ($currentLayout) {
-			const minX = Math.min(selectionStart.x, selectionEnd.x)
-			const maxX = Math.max(selectionStart.x, selectionEnd.x)
-			const minY = Math.min(selectionStart.y, selectionEnd.y)
-			const maxY = Math.max(selectionStart.y, selectionEnd.y)
-
-			$currentLayout.widgets.forEach((widget: WidgetConfig) => {
-				const widgetRight = widget.position.x + widget.size.width
-				const widgetBottom = widget.position.y + widget.size.height
-
-				if (
-					widget.position.x < maxX &&
-					widgetRight > minX &&
-					widget.position.y < maxY &&
-					widgetBottom > minY
-				) {
-					dashboardActions.selectWidget(widget.id, true)
-				}
-			})
-		}
-	}
-
-	// Widget handlers
-	function handleWidgetSelect(widget: WidgetConfig, multiSelect: boolean) {
-		dashboardActions.selectWidget(widget.id, multiSelect)
-	}
-
-	function handleWidgetDeselect(widget: WidgetConfig) {
-		dashboardActions.deselectWidget(widget.id)
-	}
-
-	function handleWidgetUpdate(widget: WidgetConfig, updates: Partial<WidgetConfig>) {
-		dashboardActions.updateWidget(widget.id, updates)
-	}
-
-	function handleWidgetRemove(widgetId: string) {
-		dashboardActions.removeWidget(widgetId)
-	}
-
-	// Keyboard shortcuts
-	function handleKeyDown(event: KeyboardEvent) {
-		if (event.ctrlKey || event.metaKey) {
-			switch (event.key) {
-				case 'z':
-					event.preventDefault()
-					if (event.shiftKey) {
-						dashboardActions.redo()
-					} else {
-						dashboardActions.undo()
-					}
-					break
-				case 'a':
-					event.preventDefault()
-					if ($currentLayout) {
-						$currentLayout.widgets.forEach((widget: WidgetConfig) => {
-							dashboardActions.selectWidget(widget.id, true)
-						})
-					}
-					break
-				case 'Delete':
-				case 'Backspace':
-					event.preventDefault()
-					$dashboardState.selectedWidgets.forEach((widgetId: string) => {
-						dashboardActions.removeWidget(widgetId)
-					})
-					dashboardActions.clearSelection()
-					break
-			}
-		}
-	}
+	// Demo sensor data
+	const demoSensors = [
+		{ label: "CPU Usage", value: 65, unit: "%", icon: "🔥", critical: 90, warning: 70 },
+		{ label: "GPU Usage", value: 82, unit: "%", icon: "⚡", critical: 95, warning: 80 },
+		{ label: "Memory", value: 74, unit: "%", icon: "💾", critical: 90, warning: 75 },
+		{ label: "CPU Temp", value: 68, unit: "°C", icon: "🌡️", critical: 85, warning: 70 },
+	];
 
 	onMount(() => {
-		document.addEventListener('keydown', handleKeyDown)
-		return () => {
-			document.removeEventListener('keydown', handleKeyDown)
-		}
-	})
+		// Canvas initialization code can go here
+	});
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div
+<div 
 	bind:this={canvasElement}
-	class="dashboard-canvas relative w-full h-full overflow-hidden bg-gray-50 dark:bg-gray-900"
-	style="transform: scale({$dashboardState.zoom}); transform-origin: top left;"
-	onclick={handleCanvasClick}
-	ondragover={handleDragOver}
-	ondrop={handleDrop}
-	onmousedown={handleMouseDown}
-	onmousemove={handleMouseMove}
-	onmouseup={handleMouseUp}
-	onkeydown={handleKeyDown}
-	role="application"
-	tabindex="0"
-	aria-label="Dashboard canvas for placing and arranging widgets"
+	class="relative w-full h-full overflow-hidden"
+	style="background: radial-gradient(ellipse at center, rgba(20, 160, 230, 0.05) 0%, transparent 70%)"
 >
-	<!-- Grid overlay -->
+	<!-- Grid Overlay -->
 	{#if $dashboardState.isGridVisible}
-		<GridOverlay 
-			gridSize={$dashboardState.dragState.gridSize} 
-			zoom={$dashboardState.zoom}
-		/>
+		<GridOverlay gridSize={$dashboardState.dragState.gridSize} zoom={$dashboardState.zoom} />
 	{/if}
 
-	<!-- Widgets -->
+	<!-- Cosmic UI Demo Content -->
+	<div class="absolute inset-0 p-8">
+		<!-- Welcome Panel -->
+		<CosmicPanel 
+			variant="highlighted" 
+			title="SenseCanvas Dashboard" 
+			subtitle="Real-time Hardware Monitoring with Cosmic UI"
+			className="w-full max-w-2xl mx-auto mb-8"
+			showGlow={true}
+		>
+			<div class="text-center space-y-4">
+				<p class="text-gray-300 font-orbitron">
+					Welcome to the enhanced SenseCanvas dashboard featuring the new Cosmic UI design system.
+				</p>
+				<p class="text-sm text-gray-400">
+					Sci-fi inspired components with SVG-first design and real-time hardware monitoring.
+				</p>
+			</div>
+		</CosmicPanel>
+
+		<!-- Sensor Gauges Grid -->
+		<div class="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+			{#each demoSensors as sensor, index}
+				<div class="flex justify-center">
+					<CosmicSensorGauge
+						value={sensor.value}
+						label={sensor.label}
+						config={{
+							min: 0,
+							max: 100,
+							warningThreshold: sensor.warning,
+							criticalThreshold: sensor.critical,
+							unit: sensor.unit,
+							icon: sensor.icon
+						}}
+						size={180}
+						showFrame={true}
+						glowEffect={true}
+					/>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Status Panel -->
+		<CosmicPanel 
+			variant="default" 
+			className="w-full max-w-4xl mx-auto mt-8"
+			title="System Status"
+		>
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+				<div class="space-y-2">
+					<div class="text-2xl font-orbitron text-green-400">ONLINE</div>
+					<div class="text-sm text-gray-400">Connection Status</div>
+				</div>
+				<div class="space-y-2">
+					<div class="text-2xl font-orbitron text-blue-400">{demoSensors.length}</div>
+					<div class="text-sm text-gray-400">Active Sensors</div>
+				</div>
+				<div class="space-y-2">
+					<div class="text-2xl font-orbitron text-purple-400">COSMIC UI</div>
+					<div class="text-sm text-gray-400">Design System</div>
+				</div>
+			</div>
+		</CosmicPanel>
+	</div>
+
+	<!-- Existing widget system -->
 	{#if $currentLayout}
 		{#each $currentLayout.widgets as widget (widget.id)}
-			<DraggableWidget 
-				{widget}
-			/>
+			<DraggableWidget {widget} />
 		{/each}
 	{/if}
 
-	<!-- Selection box -->
-	{#if isSelecting}
-		<SelectionBox 
-			start={selectionStart}
-			end={selectionEnd}
-		/>
-	{/if}
+	<!-- Selection box can be added later if needed -->
 
-	<!-- Drop zones and guides would go here -->
+	<!-- Widget Builder Modal -->
+	{#if $dashboardState.widgetBuilder.isOpen}
+		<WidgetBuilder />
+	{/if}
 </div>
 
 <style>
-	.dashboard-canvas {
-		cursor: crosshair;
-		user-select: none;
+	/* Add subtle animations */
+	.grid > div {
+		animation: fadeInUp 0.6s ease-out forwards;
+		animation-delay: calc(var(--index, 0) * 0.1s);
+		opacity: 0;
 	}
 
-	.dashboard-canvas:focus {
-		outline: none;
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>

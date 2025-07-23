@@ -2,14 +2,17 @@
   CosmicSensorGauge.svelte
   
   Custom sensor gauge extending Cosmic UI aesthetic
-  Integrated with SenseCanvas sensor data
+  Demonstrates:
+  - Cosmic UI Frame integration with sensor data
+  - Custom SVG gauge design with sci-fi styling
+  - Real-time value updates with smooth animations
+  - Gaming-inspired visual effects and glows
 -->
 
 <script lang="ts">
-  import { CosmicFrame } from '$lib/components/cosmic';
+  import CosmicFrame from './CosmicFrame.svelte';
   import { tweened } from 'svelte/motion';
   import { cubicOut } from 'svelte/easing';
-  import type { SensorData } from '$lib/types/sensor';
   
   interface SensorConfig {
     min: number;
@@ -50,7 +53,7 @@
     easing: cubicOut
   });
 
-  // Update animated value when sensor data changes
+  // Update animated value when prop changes
   $effect(() => {
     animatedValue.set(value);
   });
@@ -212,17 +215,12 @@
 
   <!-- Label -->
   <div class="absolute bottom-2 left-0 right-0 text-center">
-    <div class="text-xs font-medium text-white/80 flex items-center justify-center gap-1 font-orbitron">
+    <div class="text-xs font-medium text-white/80 flex items-center justify-center gap-1">
       {#if config.icon}
         <span>{config.icon}</span>
       {/if}
       {label}
     </div>
-  </div>
-  
-  <!-- Status indicator -->
-  <div class="absolute top-2 right-2">
-    <div class="w-2 h-2 rounded-full {value >= config.criticalThreshold ? 'bg-red-400 cosmic-glow' : value >= config.warningThreshold ? 'bg-yellow-400' : 'bg-green-400'}"></div>
   </div>
 </div>
 

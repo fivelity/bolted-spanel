@@ -4,7 +4,8 @@
 	import { sensorStore } from '$lib/stores/sensorStore';
 	import { themeStore, currentTheme } from '$lib/stores/themeStore';
 	import { alertStore, alertHistory } from '$lib/stores/alertStore';
-	import Toolbar from './Toolbar.svelte';
+	import { injectCosmicTheme } from '$lib/components/cosmic/theme';
+	import { CosmicToolbar, CosmicPanel } from '$lib/components/cosmic';
 	import DashboardCanvas from './DashboardCanvas.svelte';
 	import AILayoutModal from './AILayoutModal.svelte';
 
@@ -13,6 +14,9 @@
 			await alertStore.init();
 		})();
 
+		// Initialize Cosmic UI theme
+		injectCosmicTheme();
+		
 		themeStore.init();
 		sensorStore.connect();
 
@@ -23,8 +27,45 @@
 </script>
 
 <div class="dashboard h-screen flex flex-col bg-surface-50-900-token">
-	<!-- Toolbar -->
-	<Toolbar />
+	<!-- Cosmic UI Toolbar -->
+	<CosmicToolbar>
+		{#snippet left()}
+			<div class="flex items-center gap-4">
+				<h1 class="font-orbitron font-bold text-xl text-white">SenseCanvas</h1>
+				<div class="text-xs text-blue-400/80 font-orbitron">Real-time Monitoring</div>
+			</div>
+		{/snippet}
+		
+		{#snippet center()}
+			<div class="flex items-center gap-4">
+				<button 
+					class="cosmic-button px-4 py-2 text-sm font-orbitron text-blue-200 border border-blue-400/30 hover:border-blue-400 transition-colors rounded"
+					on:click={() => $dashboardState.aiLayout.isOpen = true}
+				>
+					+ Add Widget
+				</button>
+				<button 
+					class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-colors rounded"
+					on:click={() => $dashboardState.aiLayout.isOpen = true}
+				>
+					AI Layouts
+				</button>
+			</div>
+		{/snippet}
+		
+		{#snippet right()}
+			<div class="flex items-center gap-4 text-xs text-gray-300">
+				<span class="flex items-center gap-1">
+					<div class="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
+					<span class="font-orbitron">Connected</span>
+				</span>
+				<span class="flex items-center gap-1">
+					<div class="w-1 h-1 bg-blue-400 rounded-full"></div>
+					<span class="font-orbitron">Theme: {$currentTheme}</span>
+				</span>
+			</div>
+		{/snippet}
+	</CosmicToolbar>
 
 	<!-- Main Dashboard Area -->
 	<div class="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
