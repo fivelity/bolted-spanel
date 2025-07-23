@@ -11,6 +11,7 @@
 
 <script lang="ts">
   import CosmicFrame from './CosmicFrame.svelte';
+  import type { Snippet } from 'svelte';
   
   // Props
   let { 
@@ -23,12 +24,12 @@
     ...restProps 
   }: {
     className?: string;
-    left?: any;
-    center?: any;
-    right?: any;
-    children?: any;
+    left?: Snippet;
+    center?: Snippet;
+    right?: Snippet;
+    children?: Snippet;
     showScanLines?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
   } = $props();
 
   // Toolbar frame with sci-fi styling

@@ -2,8 +2,8 @@
 	import { draggable } from '@neodrag/svelte';
 	import type { WidgetConfig } from '$lib/types/dashboard';
 	import { dashboardState, dashboardActions } from '$lib/stores/dashboard.svelte';
-	import { sensorStore } from '$lib/stores/sensorStore';
 	import WidgetRenderer from './WidgetRenderer.svelte';
+	import type { DragEventData } from '@neodrag/svelte';
 
 	interface Props {
 		widget: WidgetConfig;
@@ -15,14 +15,14 @@
 	let isEditMode = $state(true); // For now, always in edit mode
 
 	// Simplified drag configuration
-	function handleDragStart() {
+	function handleDragStart(data: DragEventData) {
 		if (!isSelected) {
 			dashboardActions.selectWidget(widget.id);
 		}
 	}
 
-	function handleDrag(event: CustomEvent) {
-		const { offsetX, offsetY } = event.detail;
+	function handleDrag(data: DragEventData) {
+		const { offsetX, offsetY } = data;
 		dashboardActions.updateWidget(widget.id, {
 			position: { x: offsetX, y: offsetY }
 		});
@@ -47,6 +47,7 @@
 	class="draggable-widget absolute"
 	class:selected={isSelected}
 	class:edit-mode={isEditMode}
+	use:draggable={{ onDragStart: handleDragStart, onDrag: handleDrag }}
 	style="
 		left: {widget.position.x}px;
 		top: {widget.position.y}px;

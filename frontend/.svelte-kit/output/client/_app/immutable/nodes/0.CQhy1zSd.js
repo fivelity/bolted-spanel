@@ -1,1 +1,1356 @@
-import"../chunks/CWj6FrbW.js";import{i as Kt}from"../chunks/cUd3n1kI.js";import{x as ve,y as xe,aw as ye,aJ as Qt,T as be,aK as Re,p as Zt,aL as X,aM as Ae,k as ct,t as it,aN as Oe,m as j,n as te,R as J,P as K,h as Q,o as z,u as at,v as ft,s as I,g as Z,aI as $t,aG as Se,l as _e}from"../chunks/BOYRZm52.js";import{l as Le,p as U,i as ut}from"../chunks/BTbfHnEm.js";import{s as $,c as Et,a as Pe}from"../chunks/DCHGiQBl.js";function tt(t,e,n,o,i){var l;ve&&xe();var s=(l=e.$$slots)==null?void 0:l[n],r=!1;s===!0&&(s=e[n==="default"?"children":n],r=!0),s===void 0?i!==null&&i(t):s(t,r?()=>o:o)}function Ce(t){const e={};t.children&&(e.default=!0);for(const n in t.$$slots)e[n]=!0;return e}function Ee(t,e){var s;var n=(s=t.$$events)==null?void 0:s[e.type],o=ye(n)?n.slice():n==null?[]:[n];for(var i of o)i.call(this,e)}const Te=Qt(void 0),Tt={};function jt(t){return t==="local"?localStorage:sessionStorage}function Nt(t,e,n){const o=JSON,i="local";function s(r,l){jt(i).setItem(r,o.stringify(l))}if(!Tt[t]){const r=Qt(e,c=>{const d=jt(i).getItem(t);d&&c(o.parse(d));{const u=m=>{m.key===t&&c(m.newValue?o.parse(m.newValue):null)};return window.addEventListener("storage",u),()=>window.removeEventListener("storage",u)}}),{subscribe:l,set:a}=r;Tt[t]={set(c){s(t,c),a(c)},update(c){const d=c(be(r));s(t,d),a(d)},subscribe:l}}return Tt[t]}Nt("modeOsPrefers",!1);Nt("modeUserPrefers",void 0);Nt("modeCurrent",!1);const ee="(prefers-reduced-motion: reduce)";function Fe(){return window.matchMedia(ee).matches}Re(Fe(),t=>{{const e=o=>{t(o.matches)},n=window.matchMedia(ee);return n.addEventListener("change",e),()=>{n.removeEventListener("change",e)}}});var De=ct('<header id="shell-header"><!></header>'),Me=ct('<aside id="sidebar-left"><!></aside>'),ke=ct('<header id="page-header"><!></header>'),Ne=ct('<footer id="page-footer"><!></footer>'),Ve=ct('<aside id="sidebar-right"><!></aside>'),Be=ct('<footer id="shell-footer"><!></footer>'),He=ct('<div id="appShell" data-testid="app-shell"><!> <div><!> <div id="page"><!> <main id="page-content"><!></main> <!></div> <!></div> <!></div>');function We(t,e){const n=Ce(e),o=Le(e,["children","$$slots","$$events","$$legacy"]);Zt(e,!1);const i=K(),s=K(),r=K(),l=K(),a=K(),c=K(),d=K(),u=K();let m=U(e,"scrollbarGutter",8,"auto"),f=U(e,"regionPage",8,""),g=U(e,"slotHeader",8,"z-10"),h=U(e,"slotSidebarLeft",8,"w-auto"),w=U(e,"slotSidebarRight",8,"w-auto"),p=U(e,"slotPageHeader",8,""),v=U(e,"slotPageContent",8,""),b=U(e,"slotPageFooter",8,""),O=U(e,"slotFooter",8,"");const R="w-full h-full flex flex-col overflow-hidden",E="flex-none overflow-x-hidden overflow-y-auto",_="flex-none overflow-x-hidden overflow-y-auto";X(()=>Q(o),()=>{J(i,`${R} ${o.class??""}`)}),X(()=>Q(g()),()=>{J(s,`${g()}`)}),X(()=>Q(h()),()=>{J(r,`${E} ${h()}`)}),X(()=>Q(w()),()=>{J(l,`${_} ${w()}`)}),X(()=>Q(p()),()=>{J(a,`${p()}`)}),X(()=>Q(v()),()=>{J(c,`${v()}`)}),X(()=>Q(b()),()=>{J(d,`${b()}`)}),X(()=>Q(O()),()=>{J(u,`${O()}`)}),Ae(),Kt();var k=He(),N=z(k);{var T=y=>{var x=De(),F=z(x);tt(F,e,"header",{},null),I(x),it(()=>$(x,1,`flex-none ${Z(s)??""}`)),j(y,x)};ut(N,y=>{at(()=>n.header)&&y(T)})}var V=ft(N,2);$(V,1,"flex-auto w-full h-full flex overflow-hidden");var B=z(V);{var ot=y=>{var x=Me(),F=z(x);tt(F,e,"sidebarLeft",{},null),I(x),it(()=>$(x,1,Et(Z(r)))),j(y,x)};ut(B,y=>{at(()=>n.sidebarLeft)&&y(ot)})}var A=ft(B,2);let H;var C=z(A);{var L=y=>{var x=ke(),F=z(x);tt(F,e,"pageHeader",{},Pt=>{var Ct=$t("(slot:header)");j(Pt,Ct)}),I(x),it(()=>$(x,1,`flex-none ${Z(a)??""}`)),j(y,x)};ut(C,y=>{at(()=>n.pageHeader)&&y(L)})}var S=ft(C,2),W=z(S);tt(W,e,"default",{},null),I(S);var Lt=ft(S,2);{var me=y=>{var x=Ne(),F=z(x);tt(F,e,"pageFooter",{},Pt=>{var Ct=$t("(slot:footer)");j(Pt,Ct)}),I(x),it(()=>$(x,1,`flex-none ${Z(d)??""}`)),j(y,x)};ut(Lt,y=>{at(()=>n.pageFooter)&&y(me)})}I(A);var ge=ft(A,2);{var he=y=>{var x=Ve(),F=z(x);tt(F,e,"sidebarRight",{},null),I(x),it(()=>$(x,1,Et(Z(l)))),j(y,x)};ut(ge,y=>{at(()=>n.sidebarRight)&&y(he)})}I(V);var pe=ft(V,2);{var we=y=>{var x=Be(),F=z(x);tt(F,e,"footer",{},null),I(x),it(()=>$(x,1,`flex-none ${Z(u)??""}`)),j(y,x)};ut(pe,y=>{at(()=>n.footer)&&y(we)})}I(k),it(y=>{$(k,1,Et(Z(i))),$(A,1,`${f()??""} flex-1 overflow-x-hidden flex flex-col`),H=Pe(A,"",H,y),$(S,1,`flex-auto ${Z(c)??""}`)},[()=>({"scrollbar-gutter":m()})]),Oe("scroll",A,function(y){Ee.call(this,e,y)}),j(t,k),te()}const mt=Math.min,st=Math.max,bt=Math.round,yt=Math.floor,Y=t=>({x:t,y:t}),ze={left:"right",right:"left",bottom:"top",top:"bottom"},Ie={start:"end",end:"start"};function Dt(t,e,n){return st(t,mt(e,n))}function wt(t,e){return typeof t=="function"?t(e):t}function rt(t){return t.split("-")[0]}function vt(t){return t.split("-")[1]}function ne(t){return t==="x"?"y":"x"}function Vt(t){return t==="y"?"height":"width"}const $e=new Set(["top","bottom"]);function et(t){return $e.has(rt(t))?"y":"x"}function Bt(t){return ne(et(t))}function je(t,e,n){n===void 0&&(n=!1);const o=vt(t),i=Bt(t),s=Vt(i);let r=i==="x"?o===(n?"end":"start")?"right":"left":o==="start"?"bottom":"top";return e.reference[s]>e.floating[s]&&(r=Rt(r)),[r,Rt(r)]}function Ye(t){const e=Rt(t);return[Mt(t),e,Mt(e)]}function Mt(t){return t.replace(/start|end/g,e=>Ie[e])}const Yt=["left","right"],qt=["right","left"],qe=["top","bottom"],Ge=["bottom","top"];function Ue(t,e,n){switch(t){case"top":case"bottom":return n?e?qt:Yt:e?Yt:qt;case"left":case"right":return e?qe:Ge;default:return[]}}function Xe(t,e,n,o){const i=vt(t);let s=Ue(rt(t),n==="start",o);return i&&(s=s.map(r=>r+"-"+i),e&&(s=s.concat(s.map(Mt)))),s}function Rt(t){return t.replace(/left|right|bottom|top/g,e=>ze[e])}function Je(t){return{top:0,right:0,bottom:0,left:0,...t}}function oe(t){return typeof t!="number"?Je(t):{top:t,right:t,bottom:t,left:t}}function At(t){const{x:e,y:n,width:o,height:i}=t;return{width:o,height:i,top:n,left:e,right:e+o,bottom:n+i,x:e,y:n}}function Gt(t,e,n){let{reference:o,floating:i}=t;const s=et(e),r=Bt(e),l=Vt(r),a=rt(e),c=s==="y",d=o.x+o.width/2-i.width/2,u=o.y+o.height/2-i.height/2,m=o[l]/2-i[l]/2;let f;switch(a){case"top":f={x:d,y:o.y-i.height};break;case"bottom":f={x:d,y:o.y+o.height};break;case"right":f={x:o.x+o.width,y:u};break;case"left":f={x:o.x-i.width,y:u};break;default:f={x:o.x,y:o.y}}switch(vt(e)){case"start":f[r]-=m*(n&&c?-1:1);break;case"end":f[r]+=m*(n&&c?-1:1);break}return f}const Ke=async(t,e,n)=>{const{placement:o="bottom",strategy:i="absolute",middleware:s=[],platform:r}=n,l=s.filter(Boolean),a=await(r.isRTL==null?void 0:r.isRTL(e));let c=await r.getElementRects({reference:t,floating:e,strategy:i}),{x:d,y:u}=Gt(c,o,a),m=o,f={},g=0;for(let h=0;h<l.length;h++){const{name:w,fn:p}=l[h],{x:v,y:b,data:O,reset:R}=await p({x:d,y:u,initialPlacement:o,placement:m,strategy:i,middlewareData:f,rects:c,platform:r,elements:{reference:t,floating:e}});d=v??d,u=b??u,f={...f,[w]:{...f[w],...O}},R&&g<=50&&(g++,typeof R=="object"&&(R.placement&&(m=R.placement),R.rects&&(c=R.rects===!0?await r.getElementRects({reference:t,floating:e,strategy:i}):R.rects),{x:d,y:u}=Gt(c,m,a)),h=-1)}return{x:d,y:u,placement:m,strategy:i,middlewareData:f}};async function ie(t,e){var n;e===void 0&&(e={});const{x:o,y:i,platform:s,rects:r,elements:l,strategy:a}=t,{boundary:c="clippingAncestors",rootBoundary:d="viewport",elementContext:u="floating",altBoundary:m=!1,padding:f=0}=wt(e,t),g=oe(f),w=l[m?u==="floating"?"reference":"floating":u],p=At(await s.getClippingRect({element:(n=await(s.isElement==null?void 0:s.isElement(w)))==null||n?w:w.contextElement||await(s.getDocumentElement==null?void 0:s.getDocumentElement(l.floating)),boundary:c,rootBoundary:d,strategy:a})),v=u==="floating"?{x:o,y:i,width:r.floating.width,height:r.floating.height}:r.reference,b=await(s.getOffsetParent==null?void 0:s.getOffsetParent(l.floating)),O=await(s.isElement==null?void 0:s.isElement(b))?await(s.getScale==null?void 0:s.getScale(b))||{x:1,y:1}:{x:1,y:1},R=At(s.convertOffsetParentRelativeRectToViewportRelativeRect?await s.convertOffsetParentRelativeRectToViewportRelativeRect({elements:l,rect:v,offsetParent:b,strategy:a}):v);return{top:(p.top-R.top+g.top)/O.y,bottom:(R.bottom-p.bottom+g.bottom)/O.y,left:(p.left-R.left+g.left)/O.x,right:(R.right-p.right+g.right)/O.x}}const Qe=t=>({name:"arrow",options:t,async fn(e){const{x:n,y:o,placement:i,rects:s,platform:r,elements:l,middlewareData:a}=e,{element:c,padding:d=0}=wt(t,e)||{};if(c==null)return{};const u=oe(d),m={x:n,y:o},f=Bt(i),g=Vt(f),h=await r.getDimensions(c),w=f==="y",p=w?"top":"left",v=w?"bottom":"right",b=w?"clientHeight":"clientWidth",O=s.reference[g]+s.reference[f]-m[f]-s.floating[g],R=m[f]-s.reference[f],E=await(r.getOffsetParent==null?void 0:r.getOffsetParent(c));let _=E?E[b]:0;(!_||!await(r.isElement==null?void 0:r.isElement(E)))&&(_=l.floating[b]||s.floating[g]);const k=O/2-R/2,N=_/2-h[g]/2-1,T=mt(u[p],N),V=mt(u[v],N),B=T,ot=_-h[g]-V,A=_/2-h[g]/2+k,H=Dt(B,A,ot),C=!a.arrow&&vt(i)!=null&&A!==H&&s.reference[g]/2-(A<B?T:V)-h[g]/2<0,L=C?A<B?A-B:A-ot:0;return{[f]:m[f]+L,data:{[f]:H,centerOffset:A-H-L,...C&&{alignmentOffset:L}},reset:C}}}),Ze=function(t){return t===void 0&&(t={}),{name:"flip",options:t,async fn(e){var n,o;const{placement:i,middlewareData:s,rects:r,initialPlacement:l,platform:a,elements:c}=e,{mainAxis:d=!0,crossAxis:u=!0,fallbackPlacements:m,fallbackStrategy:f="bestFit",fallbackAxisSideDirection:g="none",flipAlignment:h=!0,...w}=wt(t,e);if((n=s.arrow)!=null&&n.alignmentOffset)return{};const p=rt(i),v=et(l),b=rt(l)===l,O=await(a.isRTL==null?void 0:a.isRTL(c.floating)),R=m||(b||!h?[Rt(l)]:Ye(l)),E=g!=="none";!m&&E&&R.push(...Xe(l,h,g,O));const _=[l,...R],k=await ie(e,w),N=[];let T=((o=s.flip)==null?void 0:o.overflows)||[];if(d&&N.push(k[p]),u){const A=je(i,r,O);N.push(k[A[0]],k[A[1]])}if(T=[...T,{placement:i,overflows:N}],!N.every(A=>A<=0)){var V,B;const A=(((V=s.flip)==null?void 0:V.index)||0)+1,H=_[A];if(H&&(!(u==="alignment"?v!==et(H):!1)||T.every(S=>S.overflows[0]>0&&et(S.placement)===v)))return{data:{index:A,overflows:T},reset:{placement:H}};let C=(B=T.filter(L=>L.overflows[0]<=0).sort((L,S)=>L.overflows[1]-S.overflows[1])[0])==null?void 0:B.placement;if(!C)switch(f){case"bestFit":{var ot;const L=(ot=T.filter(S=>{if(E){const W=et(S.placement);return W===v||W==="y"}return!0}).map(S=>[S.placement,S.overflows.filter(W=>W>0).reduce((W,Lt)=>W+Lt,0)]).sort((S,W)=>S[1]-W[1])[0])==null?void 0:ot[0];L&&(C=L);break}case"initialPlacement":C=l;break}if(i!==C)return{reset:{placement:C}}}return{}}}},tn=new Set(["left","top"]);async function en(t,e){const{placement:n,platform:o,elements:i}=t,s=await(o.isRTL==null?void 0:o.isRTL(i.floating)),r=rt(n),l=vt(n),a=et(n)==="y",c=tn.has(r)?-1:1,d=s&&a?-1:1,u=wt(e,t);let{mainAxis:m,crossAxis:f,alignmentAxis:g}=typeof u=="number"?{mainAxis:u,crossAxis:0,alignmentAxis:null}:{mainAxis:u.mainAxis||0,crossAxis:u.crossAxis||0,alignmentAxis:u.alignmentAxis};return l&&typeof g=="number"&&(f=l==="end"?g*-1:g),a?{x:f*d,y:m*c}:{x:m*c,y:f*d}}const nn=function(t){return t===void 0&&(t=0),{name:"offset",options:t,async fn(e){var n,o;const{x:i,y:s,placement:r,middlewareData:l}=e,a=await en(e,t);return r===((n=l.offset)==null?void 0:n.placement)&&(o=l.arrow)!=null&&o.alignmentOffset?{}:{x:i+a.x,y:s+a.y,data:{...a,placement:r}}}}},on=function(t){return t===void 0&&(t={}),{name:"shift",options:t,async fn(e){const{x:n,y:o,placement:i}=e,{mainAxis:s=!0,crossAxis:r=!1,limiter:l={fn:w=>{let{x:p,y:v}=w;return{x:p,y:v}}},...a}=wt(t,e),c={x:n,y:o},d=await ie(e,a),u=et(rt(i)),m=ne(u);let f=c[m],g=c[u];if(s){const w=m==="y"?"top":"left",p=m==="y"?"bottom":"right",v=f+d[w],b=f-d[p];f=Dt(v,f,b)}if(r){const w=u==="y"?"top":"left",p=u==="y"?"bottom":"right",v=g+d[w],b=g-d[p];g=Dt(v,g,b)}const h=l.fn({...e,[m]:f,[u]:g});return{...h,data:{x:h.x-n,y:h.y-o,enabled:{[m]:s,[u]:r}}}}}};function Ot(){return typeof window<"u"}function ht(t){return se(t)?(t.nodeName||"").toLowerCase():"#document"}function P(t){var e;return(t==null||(e=t.ownerDocument)==null?void 0:e.defaultView)||window}function G(t){var e;return(e=(se(t)?t.ownerDocument:t.document)||window.document)==null?void 0:e.documentElement}function se(t){return Ot()?t instanceof Node||t instanceof P(t).Node:!1}function D(t){return Ot()?t instanceof Element||t instanceof P(t).Element:!1}function q(t){return Ot()?t instanceof HTMLElement||t instanceof P(t).HTMLElement:!1}function Ut(t){return!Ot()||typeof ShadowRoot>"u"?!1:t instanceof ShadowRoot||t instanceof P(t).ShadowRoot}const sn=new Set(["inline","contents"]);function xt(t){const{overflow:e,overflowX:n,overflowY:o,display:i}=M(t);return/auto|scroll|overlay|hidden|clip/.test(e+o+n)&&!sn.has(i)}const rn=new Set(["table","td","th"]);function ln(t){return rn.has(ht(t))}const cn=[":popover-open",":modal"];function St(t){return cn.some(e=>{try{return t.matches(e)}catch{return!1}})}const an=["transform","translate","scale","rotate","perspective"],fn=["transform","translate","scale","rotate","perspective","filter"],un=["paint","layout","strict","content"];function Ht(t){const e=Wt(),n=D(t)?M(t):t;return an.some(o=>n[o]?n[o]!=="none":!1)||(n.containerType?n.containerType!=="normal":!1)||!e&&(n.backdropFilter?n.backdropFilter!=="none":!1)||!e&&(n.filter?n.filter!=="none":!1)||fn.some(o=>(n.willChange||"").includes(o))||un.some(o=>(n.contain||"").includes(o))}function dn(t){let e=nt(t);for(;q(e)&&!gt(e);){if(Ht(e))return e;if(St(e))return null;e=nt(e)}return null}function Wt(){return typeof CSS>"u"||!CSS.supports?!1:CSS.supports("-webkit-backdrop-filter","none")}const mn=new Set(["html","body","#document"]);function gt(t){return mn.has(ht(t))}function M(t){return P(t).getComputedStyle(t)}function _t(t){return D(t)?{scrollLeft:t.scrollLeft,scrollTop:t.scrollTop}:{scrollLeft:t.scrollX,scrollTop:t.scrollY}}function nt(t){if(ht(t)==="html")return t;const e=t.assignedSlot||t.parentNode||Ut(t)&&t.host||G(t);return Ut(e)?e.host:e}function re(t){const e=nt(t);return gt(e)?t.ownerDocument?t.ownerDocument.body:t.body:q(e)&&xt(e)?e:re(e)}function pt(t,e,n){var o;e===void 0&&(e=[]),n===void 0&&(n=!0);const i=re(t),s=i===((o=t.ownerDocument)==null?void 0:o.body),r=P(i);if(s){const l=kt(r);return e.concat(r,r.visualViewport||[],xt(i)?i:[],l&&n?pt(l):[])}return e.concat(i,pt(i,[],n))}function kt(t){return t.parent&&Object.getPrototypeOf(t.parent)?t.frameElement:null}function le(t){const e=M(t);let n=parseFloat(e.width)||0,o=parseFloat(e.height)||0;const i=q(t),s=i?t.offsetWidth:n,r=i?t.offsetHeight:o,l=bt(n)!==s||bt(o)!==r;return l&&(n=s,o=r),{width:n,height:o,$:l}}function zt(t){return D(t)?t:t.contextElement}function dt(t){const e=zt(t);if(!q(e))return Y(1);const n=e.getBoundingClientRect(),{width:o,height:i,$:s}=le(e);let r=(s?bt(n.width):n.width)/o,l=(s?bt(n.height):n.height)/i;return(!r||!Number.isFinite(r))&&(r=1),(!l||!Number.isFinite(l))&&(l=1),{x:r,y:l}}const gn=Y(0);function ce(t){const e=P(t);return!Wt()||!e.visualViewport?gn:{x:e.visualViewport.offsetLeft,y:e.visualViewport.offsetTop}}function hn(t,e,n){return e===void 0&&(e=!1),!n||e&&n!==P(t)?!1:e}function lt(t,e,n,o){e===void 0&&(e=!1),n===void 0&&(n=!1);const i=t.getBoundingClientRect(),s=zt(t);let r=Y(1);e&&(o?D(o)&&(r=dt(o)):r=dt(t));const l=hn(s,n,o)?ce(s):Y(0);let a=(i.left+l.x)/r.x,c=(i.top+l.y)/r.y,d=i.width/r.x,u=i.height/r.y;if(s){const m=P(s),f=o&&D(o)?P(o):o;let g=m,h=kt(g);for(;h&&o&&f!==g;){const w=dt(h),p=h.getBoundingClientRect(),v=M(h),b=p.left+(h.clientLeft+parseFloat(v.paddingLeft))*w.x,O=p.top+(h.clientTop+parseFloat(v.paddingTop))*w.y;a*=w.x,c*=w.y,d*=w.x,u*=w.y,a+=b,c+=O,g=P(h),h=kt(g)}}return At({width:d,height:u,x:a,y:c})}function It(t,e){const n=_t(t).scrollLeft;return e?e.left+n:lt(G(t)).left+n}function ae(t,e,n){n===void 0&&(n=!1);const o=t.getBoundingClientRect(),i=o.left+e.scrollLeft-(n?0:It(t,o)),s=o.top+e.scrollTop;return{x:i,y:s}}function pn(t){let{elements:e,rect:n,offsetParent:o,strategy:i}=t;const s=i==="fixed",r=G(o),l=e?St(e.floating):!1;if(o===r||l&&s)return n;let a={scrollLeft:0,scrollTop:0},c=Y(1);const d=Y(0),u=q(o);if((u||!u&&!s)&&((ht(o)!=="body"||xt(r))&&(a=_t(o)),q(o))){const f=lt(o);c=dt(o),d.x=f.x+o.clientLeft,d.y=f.y+o.clientTop}const m=r&&!u&&!s?ae(r,a,!0):Y(0);return{width:n.width*c.x,height:n.height*c.y,x:n.x*c.x-a.scrollLeft*c.x+d.x+m.x,y:n.y*c.y-a.scrollTop*c.y+d.y+m.y}}function wn(t){return Array.from(t.getClientRects())}function vn(t){const e=G(t),n=_t(t),o=t.ownerDocument.body,i=st(e.scrollWidth,e.clientWidth,o.scrollWidth,o.clientWidth),s=st(e.scrollHeight,e.clientHeight,o.scrollHeight,o.clientHeight);let r=-n.scrollLeft+It(t);const l=-n.scrollTop;return M(o).direction==="rtl"&&(r+=st(e.clientWidth,o.clientWidth)-i),{width:i,height:s,x:r,y:l}}function xn(t,e){const n=P(t),o=G(t),i=n.visualViewport;let s=o.clientWidth,r=o.clientHeight,l=0,a=0;if(i){s=i.width,r=i.height;const c=Wt();(!c||c&&e==="fixed")&&(l=i.offsetLeft,a=i.offsetTop)}return{width:s,height:r,x:l,y:a}}const yn=new Set(["absolute","fixed"]);function bn(t,e){const n=lt(t,!0,e==="fixed"),o=n.top+t.clientTop,i=n.left+t.clientLeft,s=q(t)?dt(t):Y(1),r=t.clientWidth*s.x,l=t.clientHeight*s.y,a=i*s.x,c=o*s.y;return{width:r,height:l,x:a,y:c}}function Xt(t,e,n){let o;if(e==="viewport")o=xn(t,n);else if(e==="document")o=vn(G(t));else if(D(e))o=bn(e,n);else{const i=ce(t);o={x:e.x-i.x,y:e.y-i.y,width:e.width,height:e.height}}return At(o)}function fe(t,e){const n=nt(t);return n===e||!D(n)||gt(n)?!1:M(n).position==="fixed"||fe(n,e)}function Rn(t,e){const n=e.get(t);if(n)return n;let o=pt(t,[],!1).filter(l=>D(l)&&ht(l)!=="body"),i=null;const s=M(t).position==="fixed";let r=s?nt(t):t;for(;D(r)&&!gt(r);){const l=M(r),a=Ht(r);!a&&l.position==="fixed"&&(i=null),(s?!a&&!i:!a&&l.position==="static"&&!!i&&yn.has(i.position)||xt(r)&&!a&&fe(t,r))?o=o.filter(d=>d!==r):i=l,r=nt(r)}return e.set(t,o),o}function An(t){let{element:e,boundary:n,rootBoundary:o,strategy:i}=t;const r=[...n==="clippingAncestors"?St(e)?[]:Rn(e,this._c):[].concat(n),o],l=r[0],a=r.reduce((c,d)=>{const u=Xt(e,d,i);return c.top=st(u.top,c.top),c.right=mt(u.right,c.right),c.bottom=mt(u.bottom,c.bottom),c.left=st(u.left,c.left),c},Xt(e,l,i));return{width:a.right-a.left,height:a.bottom-a.top,x:a.left,y:a.top}}function On(t){const{width:e,height:n}=le(t);return{width:e,height:n}}function Sn(t,e,n){const o=q(e),i=G(e),s=n==="fixed",r=lt(t,!0,s,e);let l={scrollLeft:0,scrollTop:0};const a=Y(0);function c(){a.x=It(i)}if(o||!o&&!s)if((ht(e)!=="body"||xt(i))&&(l=_t(e)),o){const f=lt(e,!0,s,e);a.x=f.x+e.clientLeft,a.y=f.y+e.clientTop}else i&&c();s&&!o&&i&&c();const d=i&&!o&&!s?ae(i,l):Y(0),u=r.left+l.scrollLeft-a.x-d.x,m=r.top+l.scrollTop-a.y-d.y;return{x:u,y:m,width:r.width,height:r.height}}function Ft(t){return M(t).position==="static"}function Jt(t,e){if(!q(t)||M(t).position==="fixed")return null;if(e)return e(t);let n=t.offsetParent;return G(t)===n&&(n=n.ownerDocument.body),n}function ue(t,e){const n=P(t);if(St(t))return n;if(!q(t)){let i=nt(t);for(;i&&!gt(i);){if(D(i)&&!Ft(i))return i;i=nt(i)}return n}let o=Jt(t,e);for(;o&&ln(o)&&Ft(o);)o=Jt(o,e);return o&&gt(o)&&Ft(o)&&!Ht(o)?n:o||dn(t)||n}const _n=async function(t){const e=this.getOffsetParent||ue,n=this.getDimensions,o=await n(t.floating);return{reference:Sn(t.reference,await e(t.floating),t.strategy),floating:{x:0,y:0,width:o.width,height:o.height}}};function Ln(t){return M(t).direction==="rtl"}const Pn={convertOffsetParentRelativeRectToViewportRelativeRect:pn,getDocumentElement:G,getClippingRect:An,getOffsetParent:ue,getElementRects:_n,getClientRects:wn,getDimensions:On,getScale:dt,isElement:D,isRTL:Ln};function de(t,e){return t.x===e.x&&t.y===e.y&&t.width===e.width&&t.height===e.height}function Cn(t,e){let n=null,o;const i=G(t);function s(){var l;clearTimeout(o),(l=n)==null||l.disconnect(),n=null}function r(l,a){l===void 0&&(l=!1),a===void 0&&(a=1),s();const c=t.getBoundingClientRect(),{left:d,top:u,width:m,height:f}=c;if(l||e(),!m||!f)return;const g=yt(u),h=yt(i.clientWidth-(d+m)),w=yt(i.clientHeight-(u+f)),p=yt(d),b={rootMargin:-g+"px "+-h+"px "+-w+"px "+-p+"px",threshold:st(0,mt(1,a))||1};let O=!0;function R(E){const _=E[0].intersectionRatio;if(_!==a){if(!O)return r();_?r(!1,_):o=setTimeout(()=>{r(!1,1e-7)},1e3)}_===1&&!de(c,t.getBoundingClientRect())&&r(),O=!1}try{n=new IntersectionObserver(R,{...b,root:i.ownerDocument})}catch{n=new IntersectionObserver(R,b)}n.observe(t)}return r(!0),s}function En(t,e,n,o){o===void 0&&(o={});const{ancestorScroll:i=!0,ancestorResize:s=!0,elementResize:r=typeof ResizeObserver=="function",layoutShift:l=typeof IntersectionObserver=="function",animationFrame:a=!1}=o,c=zt(t),d=i||s?[...c?pt(c):[],...pt(e)]:[];d.forEach(p=>{i&&p.addEventListener("scroll",n,{passive:!0}),s&&p.addEventListener("resize",n)});const u=c&&l?Cn(c,n):null;let m=-1,f=null;r&&(f=new ResizeObserver(p=>{let[v]=p;v&&v.target===c&&f&&(f.unobserve(e),cancelAnimationFrame(m),m=requestAnimationFrame(()=>{var b;(b=f)==null||b.observe(e)})),n()}),c&&!a&&f.observe(c),f.observe(e));let g,h=a?lt(t):null;a&&w();function w(){const p=lt(t);h&&!de(h,p)&&n(),h=p,g=requestAnimationFrame(w)}return n(),()=>{var p;d.forEach(v=>{i&&v.removeEventListener("scroll",n),s&&v.removeEventListener("resize",n)}),u==null||u(),(p=f)==null||p.disconnect(),f=null,a&&cancelAnimationFrame(g)}}const Tn=nn,Fn=on,Dn=Ze,Mn=Qe,kn=(t,e,n)=>{const o=new Map,i={platform:Pn,...n},s={...i.platform,_c:o};return Ke(t,e,{...i,platform:s})};function zn(t,e){Zt(e,!1),Te.set({computePosition:kn,autoUpdate:En,offset:Tn,shift:Fn,flip:Dn,arrow:Mn}),Kt(),We(t,{children:(n,o)=>{var i=Se(),s=_e(i);tt(s,e,"default",{},null),j(n,i)},$$slots:{default:!0}}),te()}export{zn as component};
+import "../chunks/CWj6FrbW.js";
+import { i as Kt } from "../chunks/cUd3n1kI.js";
+import {
+  x as ve,
+  y as xe,
+  aw as ye,
+  aJ as Qt,
+  T as be,
+  aK as Re,
+  p as Zt,
+  aL as X,
+  aM as Ae,
+  k as ct,
+  t as it,
+  aN as Oe,
+  m as j,
+  n as te,
+  R as J,
+  P as K,
+  h as Q,
+  o as z,
+  u as at,
+  v as ft,
+  s as I,
+  g as Z,
+  aI as $t,
+  aG as Se,
+  l as _e,
+} from "../chunks/BOYRZm52.js";
+import { l as Le, p as U, i as ut } from "../chunks/BTbfHnEm.js";
+import { s as $, c as Et, a as Pe } from "../chunks/DCHGiQBl.js";
+function tt(t, e, n, o, i) {
+  var l;
+  ve && xe();
+  var s = (l = e.$$slots) == null ? void 0 : l[n],
+    r = !1;
+  (s === !0 && ((s = e[n === "default" ? "children" : n]), (r = !0)),
+    s === void 0 ? i !== null && i(t) : s(t, r ? () => o : o));
+}
+function Ce(t) {
+  const e = {};
+  t.children && (e.default = !0);
+  for (const n in t.$$slots) e[n] = !0;
+  return e;
+}
+function Ee(t, e) {
+  var s;
+  var n = (s = t.$$events) == null ? void 0 : s[e.type],
+    o = ye(n) ? n.slice() : n == null ? [] : [n];
+  for (var i of o) i.call(this, e);
+}
+const Te = Qt(void 0),
+  Tt = {};
+function jt(t) {
+  return t === "local" ? localStorage : sessionStorage;
+}
+function Nt(t, e, n) {
+  const o = JSON,
+    i = "local";
+  function s(r, l) {
+    jt(i).setItem(r, o.stringify(l));
+  }
+  if (!Tt[t]) {
+    const r = Qt(e, (c) => {
+        const d = jt(i).getItem(t);
+        d && c(o.parse(d));
+        {
+          const u = (m) => {
+            m.key === t && c(m.newValue ? o.parse(m.newValue) : null);
+          };
+          return (
+            window.addEventListener("storage", u),
+            () => window.removeEventListener("storage", u)
+          );
+        }
+      }),
+      { subscribe: l, set: a } = r;
+    Tt[t] = {
+      set(c) {
+        (s(t, c), a(c));
+      },
+      update(c) {
+        const d = c(be(r));
+        (s(t, d), a(d));
+      },
+      subscribe: l,
+    };
+  }
+  return Tt[t];
+}
+Nt("modeOsPrefers", !1);
+Nt("modeUserPrefers", void 0);
+Nt("modeCurrent", !1);
+const ee = "(prefers-reduced-motion: reduce)";
+function Fe() {
+  return window.matchMedia(ee).matches;
+}
+Re(Fe(), (t) => {
+  {
+    const e = (o) => {
+        t(o.matches);
+      },
+      n = window.matchMedia(ee);
+    return (
+      n.addEventListener("change", e),
+      () => {
+        n.removeEventListener("change", e);
+      }
+    );
+  }
+});
+var De = ct('<header id="shell-header"><!></header>'),
+  Me = ct('<aside id="sidebar-left"><!></aside>'),
+  ke = ct('<header id="page-header"><!></header>'),
+  Ne = ct('<footer id="page-footer"><!></footer>'),
+  Ve = ct('<aside id="sidebar-right"><!></aside>'),
+  Be = ct('<footer id="shell-footer"><!></footer>'),
+  He = ct(
+    '<div id="appShell" data-testid="app-shell"><!> <div><!> <div id="page"><!> <main id="page-content"><!></main> <!></div> <!></div> <!></div>',
+  );
+function We(t, e) {
+  const n = Ce(e),
+    o = Le(e, ["children", "$$slots", "$$events", "$$legacy"]);
+  Zt(e, !1);
+  const i = K(),
+    s = K(),
+    r = K(),
+    l = K(),
+    a = K(),
+    c = K(),
+    d = K(),
+    u = K();
+  let m = U(e, "scrollbarGutter", 8, "auto"),
+    f = U(e, "regionPage", 8, ""),
+    g = U(e, "slotHeader", 8, "z-10"),
+    h = U(e, "slotSidebarLeft", 8, "w-auto"),
+    w = U(e, "slotSidebarRight", 8, "w-auto"),
+    p = U(e, "slotPageHeader", 8, ""),
+    v = U(e, "slotPageContent", 8, ""),
+    b = U(e, "slotPageFooter", 8, ""),
+    O = U(e, "slotFooter", 8, "");
+  const R = "w-full h-full flex flex-col overflow-hidden",
+    E = "flex-none overflow-x-hidden overflow-y-auto",
+    _ = "flex-none overflow-x-hidden overflow-y-auto";
+  (X(
+    () => Q(o),
+    () => {
+      J(i, `${R} ${o.class ?? ""}`);
+    },
+  ),
+    X(
+      () => Q(g()),
+      () => {
+        J(s, `${g()}`);
+      },
+    ),
+    X(
+      () => Q(h()),
+      () => {
+        J(r, `${E} ${h()}`);
+      },
+    ),
+    X(
+      () => Q(w()),
+      () => {
+        J(l, `${_} ${w()}`);
+      },
+    ),
+    X(
+      () => Q(p()),
+      () => {
+        J(a, `${p()}`);
+      },
+    ),
+    X(
+      () => Q(v()),
+      () => {
+        J(c, `${v()}`);
+      },
+    ),
+    X(
+      () => Q(b()),
+      () => {
+        J(d, `${b()}`);
+      },
+    ),
+    X(
+      () => Q(O()),
+      () => {
+        J(u, `${O()}`);
+      },
+    ),
+    Ae(),
+    Kt());
+  var k = He(),
+    N = z(k);
+  {
+    var T = (y) => {
+      var x = De(),
+        F = z(x);
+      (tt(F, e, "header", {}, null),
+        I(x),
+        it(() => $(x, 1, `flex-none ${Z(s) ?? ""}`)),
+        j(y, x));
+    };
+    ut(N, (y) => {
+      at(() => n.header) && y(T);
+    });
+  }
+  var V = ft(N, 2);
+  $(V, 1, "flex-auto w-full h-full flex overflow-hidden");
+  var B = z(V);
+  {
+    var ot = (y) => {
+      var x = Me(),
+        F = z(x);
+      (tt(F, e, "sidebarLeft", {}, null),
+        I(x),
+        it(() => $(x, 1, Et(Z(r)))),
+        j(y, x));
+    };
+    ut(B, (y) => {
+      at(() => n.sidebarLeft) && y(ot);
+    });
+  }
+  var A = ft(B, 2);
+  let H;
+  var C = z(A);
+  {
+    var L = (y) => {
+      var x = ke(),
+        F = z(x);
+      (tt(F, e, "pageHeader", {}, (Pt) => {
+        var Ct = $t("(slot:header)");
+        j(Pt, Ct);
+      }),
+        I(x),
+        it(() => $(x, 1, `flex-none ${Z(a) ?? ""}`)),
+        j(y, x));
+    };
+    ut(C, (y) => {
+      at(() => n.pageHeader) && y(L);
+    });
+  }
+  var S = ft(C, 2),
+    W = z(S);
+  (tt(W, e, "default", {}, null), I(S));
+  var Lt = ft(S, 2);
+  {
+    var me = (y) => {
+      var x = Ne(),
+        F = z(x);
+      (tt(F, e, "pageFooter", {}, (Pt) => {
+        var Ct = $t("(slot:footer)");
+        j(Pt, Ct);
+      }),
+        I(x),
+        it(() => $(x, 1, `flex-none ${Z(d) ?? ""}`)),
+        j(y, x));
+    };
+    ut(Lt, (y) => {
+      at(() => n.pageFooter) && y(me);
+    });
+  }
+  I(A);
+  var ge = ft(A, 2);
+  {
+    var he = (y) => {
+      var x = Ve(),
+        F = z(x);
+      (tt(F, e, "sidebarRight", {}, null),
+        I(x),
+        it(() => $(x, 1, Et(Z(l)))),
+        j(y, x));
+    };
+    ut(ge, (y) => {
+      at(() => n.sidebarRight) && y(he);
+    });
+  }
+  I(V);
+  var pe = ft(V, 2);
+  {
+    var we = (y) => {
+      var x = Be(),
+        F = z(x);
+      (tt(F, e, "footer", {}, null),
+        I(x),
+        it(() => $(x, 1, `flex-none ${Z(u) ?? ""}`)),
+        j(y, x));
+    };
+    ut(pe, (y) => {
+      at(() => n.footer) && y(we);
+    });
+  }
+  (I(k),
+    it(
+      (y) => {
+        ($(k, 1, Et(Z(i))),
+          $(A, 1, `${f() ?? ""} flex-1 overflow-x-hidden flex flex-col`),
+          (H = Pe(A, "", H, y)),
+          $(S, 1, `flex-auto ${Z(c) ?? ""}`));
+      },
+      [() => ({ "scrollbar-gutter": m() })],
+    ),
+    Oe("scroll", A, function (y) {
+      Ee.call(this, e, y);
+    }),
+    j(t, k),
+    te());
+}
+const mt = Math.min,
+  st = Math.max,
+  bt = Math.round,
+  yt = Math.floor,
+  Y = (t) => ({ x: t, y: t }),
+  ze = { left: "right", right: "left", bottom: "top", top: "bottom" },
+  Ie = { start: "end", end: "start" };
+function Dt(t, e, n) {
+  return st(t, mt(e, n));
+}
+function wt(t, e) {
+  return typeof t == "function" ? t(e) : t;
+}
+function rt(t) {
+  return t.split("-")[0];
+}
+function vt(t) {
+  return t.split("-")[1];
+}
+function ne(t) {
+  return t === "x" ? "y" : "x";
+}
+function Vt(t) {
+  return t === "y" ? "height" : "width";
+}
+const $e = new Set(["top", "bottom"]);
+function et(t) {
+  return $e.has(rt(t)) ? "y" : "x";
+}
+function Bt(t) {
+  return ne(et(t));
+}
+function je(t, e, n) {
+  n === void 0 && (n = !1);
+  const o = vt(t),
+    i = Bt(t),
+    s = Vt(i);
+  let r =
+    i === "x"
+      ? o === (n ? "end" : "start")
+        ? "right"
+        : "left"
+      : o === "start"
+        ? "bottom"
+        : "top";
+  return (e.reference[s] > e.floating[s] && (r = Rt(r)), [r, Rt(r)]);
+}
+function Ye(t) {
+  const e = Rt(t);
+  return [Mt(t), e, Mt(e)];
+}
+function Mt(t) {
+  return t.replace(/start|end/g, (e) => Ie[e]);
+}
+const Yt = ["left", "right"],
+  qt = ["right", "left"],
+  qe = ["top", "bottom"],
+  Ge = ["bottom", "top"];
+function Ue(t, e, n) {
+  switch (t) {
+    case "top":
+    case "bottom":
+      return n ? (e ? qt : Yt) : e ? Yt : qt;
+    case "left":
+    case "right":
+      return e ? qe : Ge;
+    default:
+      return [];
+  }
+}
+function Xe(t, e, n, o) {
+  const i = vt(t);
+  let s = Ue(rt(t), n === "start", o);
+  return (
+    i && ((s = s.map((r) => r + "-" + i)), e && (s = s.concat(s.map(Mt)))),
+    s
+  );
+}
+function Rt(t) {
+  return t.replace(/left|right|bottom|top/g, (e) => ze[e]);
+}
+function Je(t) {
+  return { top: 0, right: 0, bottom: 0, left: 0, ...t };
+}
+function oe(t) {
+  return typeof t != "number"
+    ? Je(t)
+    : { top: t, right: t, bottom: t, left: t };
+}
+function At(t) {
+  const { x: e, y: n, width: o, height: i } = t;
+  return {
+    width: o,
+    height: i,
+    top: n,
+    left: e,
+    right: e + o,
+    bottom: n + i,
+    x: e,
+    y: n,
+  };
+}
+function Gt(t, e, n) {
+  let { reference: o, floating: i } = t;
+  const s = et(e),
+    r = Bt(e),
+    l = Vt(r),
+    a = rt(e),
+    c = s === "y",
+    d = o.x + o.width / 2 - i.width / 2,
+    u = o.y + o.height / 2 - i.height / 2,
+    m = o[l] / 2 - i[l] / 2;
+  let f;
+  switch (a) {
+    case "top":
+      f = { x: d, y: o.y - i.height };
+      break;
+    case "bottom":
+      f = { x: d, y: o.y + o.height };
+      break;
+    case "right":
+      f = { x: o.x + o.width, y: u };
+      break;
+    case "left":
+      f = { x: o.x - i.width, y: u };
+      break;
+    default:
+      f = { x: o.x, y: o.y };
+  }
+  switch (vt(e)) {
+    case "start":
+      f[r] -= m * (n && c ? -1 : 1);
+      break;
+    case "end":
+      f[r] += m * (n && c ? -1 : 1);
+      break;
+  }
+  return f;
+}
+const Ke = async (t, e, n) => {
+  const {
+      placement: o = "bottom",
+      strategy: i = "absolute",
+      middleware: s = [],
+      platform: r,
+    } = n,
+    l = s.filter(Boolean),
+    a = await (r.isRTL == null ? void 0 : r.isRTL(e));
+  let c = await r.getElementRects({ reference: t, floating: e, strategy: i }),
+    { x: d, y: u } = Gt(c, o, a),
+    m = o,
+    f = {},
+    g = 0;
+  for (let h = 0; h < l.length; h++) {
+    const { name: w, fn: p } = l[h],
+      {
+        x: v,
+        y: b,
+        data: O,
+        reset: R,
+      } = await p({
+        x: d,
+        y: u,
+        initialPlacement: o,
+        placement: m,
+        strategy: i,
+        middlewareData: f,
+        rects: c,
+        platform: r,
+        elements: { reference: t, floating: e },
+      });
+    ((d = v ?? d),
+      (u = b ?? u),
+      (f = { ...f, [w]: { ...f[w], ...O } }),
+      R &&
+        g <= 50 &&
+        (g++,
+        typeof R == "object" &&
+          (R.placement && (m = R.placement),
+          R.rects &&
+            (c =
+              R.rects === !0
+                ? await r.getElementRects({
+                    reference: t,
+                    floating: e,
+                    strategy: i,
+                  })
+                : R.rects),
+          ({ x: d, y: u } = Gt(c, m, a))),
+        (h = -1)));
+  }
+  return { x: d, y: u, placement: m, strategy: i, middlewareData: f };
+};
+async function ie(t, e) {
+  var n;
+  e === void 0 && (e = {});
+  const { x: o, y: i, platform: s, rects: r, elements: l, strategy: a } = t,
+    {
+      boundary: c = "clippingAncestors",
+      rootBoundary: d = "viewport",
+      elementContext: u = "floating",
+      altBoundary: m = !1,
+      padding: f = 0,
+    } = wt(e, t),
+    g = oe(f),
+    w = l[m ? (u === "floating" ? "reference" : "floating") : u],
+    p = At(
+      await s.getClippingRect({
+        element:
+          (n = await (s.isElement == null ? void 0 : s.isElement(w))) == null ||
+          n
+            ? w
+            : w.contextElement ||
+              (await (s.getDocumentElement == null
+                ? void 0
+                : s.getDocumentElement(l.floating))),
+        boundary: c,
+        rootBoundary: d,
+        strategy: a,
+      }),
+    ),
+    v =
+      u === "floating"
+        ? { x: o, y: i, width: r.floating.width, height: r.floating.height }
+        : r.reference,
+    b = await (s.getOffsetParent == null
+      ? void 0
+      : s.getOffsetParent(l.floating)),
+    O = (await (s.isElement == null ? void 0 : s.isElement(b)))
+      ? (await (s.getScale == null ? void 0 : s.getScale(b))) || { x: 1, y: 1 }
+      : { x: 1, y: 1 },
+    R = At(
+      s.convertOffsetParentRelativeRectToViewportRelativeRect
+        ? await s.convertOffsetParentRelativeRectToViewportRelativeRect({
+            elements: l,
+            rect: v,
+            offsetParent: b,
+            strategy: a,
+          })
+        : v,
+    );
+  return {
+    top: (p.top - R.top + g.top) / O.y,
+    bottom: (R.bottom - p.bottom + g.bottom) / O.y,
+    left: (p.left - R.left + g.left) / O.x,
+    right: (R.right - p.right + g.right) / O.x,
+  };
+}
+const Qe = (t) => ({
+    name: "arrow",
+    options: t,
+    async fn(e) {
+      const {
+          x: n,
+          y: o,
+          placement: i,
+          rects: s,
+          platform: r,
+          elements: l,
+          middlewareData: a,
+        } = e,
+        { element: c, padding: d = 0 } = wt(t, e) || {};
+      if (c == null) return {};
+      const u = oe(d),
+        m = { x: n, y: o },
+        f = Bt(i),
+        g = Vt(f),
+        h = await r.getDimensions(c),
+        w = f === "y",
+        p = w ? "top" : "left",
+        v = w ? "bottom" : "right",
+        b = w ? "clientHeight" : "clientWidth",
+        O = s.reference[g] + s.reference[f] - m[f] - s.floating[g],
+        R = m[f] - s.reference[f],
+        E = await (r.getOffsetParent == null ? void 0 : r.getOffsetParent(c));
+      let _ = E ? E[b] : 0;
+      (!_ || !(await (r.isElement == null ? void 0 : r.isElement(E)))) &&
+        (_ = l.floating[b] || s.floating[g]);
+      const k = O / 2 - R / 2,
+        N = _ / 2 - h[g] / 2 - 1,
+        T = mt(u[p], N),
+        V = mt(u[v], N),
+        B = T,
+        ot = _ - h[g] - V,
+        A = _ / 2 - h[g] / 2 + k,
+        H = Dt(B, A, ot),
+        C =
+          !a.arrow &&
+          vt(i) != null &&
+          A !== H &&
+          s.reference[g] / 2 - (A < B ? T : V) - h[g] / 2 < 0,
+        L = C ? (A < B ? A - B : A - ot) : 0;
+      return {
+        [f]: m[f] + L,
+        data: {
+          [f]: H,
+          centerOffset: A - H - L,
+          ...(C && { alignmentOffset: L }),
+        },
+        reset: C,
+      };
+    },
+  }),
+  Ze = function (t) {
+    return (
+      t === void 0 && (t = {}),
+      {
+        name: "flip",
+        options: t,
+        async fn(e) {
+          var n, o;
+          const {
+              placement: i,
+              middlewareData: s,
+              rects: r,
+              initialPlacement: l,
+              platform: a,
+              elements: c,
+            } = e,
+            {
+              mainAxis: d = !0,
+              crossAxis: u = !0,
+              fallbackPlacements: m,
+              fallbackStrategy: f = "bestFit",
+              fallbackAxisSideDirection: g = "none",
+              flipAlignment: h = !0,
+              ...w
+            } = wt(t, e);
+          if ((n = s.arrow) != null && n.alignmentOffset) return {};
+          const p = rt(i),
+            v = et(l),
+            b = rt(l) === l,
+            O = await (a.isRTL == null ? void 0 : a.isRTL(c.floating)),
+            R = m || (b || !h ? [Rt(l)] : Ye(l)),
+            E = g !== "none";
+          !m && E && R.push(...Xe(l, h, g, O));
+          const _ = [l, ...R],
+            k = await ie(e, w),
+            N = [];
+          let T = ((o = s.flip) == null ? void 0 : o.overflows) || [];
+          if ((d && N.push(k[p]), u)) {
+            const A = je(i, r, O);
+            N.push(k[A[0]], k[A[1]]);
+          }
+          if (
+            ((T = [...T, { placement: i, overflows: N }]),
+            !N.every((A) => A <= 0))
+          ) {
+            var V, B;
+            const A = (((V = s.flip) == null ? void 0 : V.index) || 0) + 1,
+              H = _[A];
+            if (
+              H &&
+              (!(u === "alignment" ? v !== et(H) : !1) ||
+                T.every((S) => S.overflows[0] > 0 && et(S.placement) === v))
+            )
+              return {
+                data: { index: A, overflows: T },
+                reset: { placement: H },
+              };
+            let C =
+              (B = T.filter((L) => L.overflows[0] <= 0).sort(
+                (L, S) => L.overflows[1] - S.overflows[1],
+              )[0]) == null
+                ? void 0
+                : B.placement;
+            if (!C)
+              switch (f) {
+                case "bestFit": {
+                  var ot;
+                  const L =
+                    (ot = T.filter((S) => {
+                      if (E) {
+                        const W = et(S.placement);
+                        return W === v || W === "y";
+                      }
+                      return !0;
+                    })
+                      .map((S) => [
+                        S.placement,
+                        S.overflows
+                          .filter((W) => W > 0)
+                          .reduce((W, Lt) => W + Lt, 0),
+                      ])
+                      .sort((S, W) => S[1] - W[1])[0]) == null
+                      ? void 0
+                      : ot[0];
+                  L && (C = L);
+                  break;
+                }
+                case "initialPlacement":
+                  C = l;
+                  break;
+              }
+            if (i !== C) return { reset: { placement: C } };
+          }
+          return {};
+        },
+      }
+    );
+  },
+  tn = new Set(["left", "top"]);
+async function en(t, e) {
+  const { placement: n, platform: o, elements: i } = t,
+    s = await (o.isRTL == null ? void 0 : o.isRTL(i.floating)),
+    r = rt(n),
+    l = vt(n),
+    a = et(n) === "y",
+    c = tn.has(r) ? -1 : 1,
+    d = s && a ? -1 : 1,
+    u = wt(e, t);
+  let {
+    mainAxis: m,
+    crossAxis: f,
+    alignmentAxis: g,
+  } = typeof u == "number"
+    ? { mainAxis: u, crossAxis: 0, alignmentAxis: null }
+    : {
+        mainAxis: u.mainAxis || 0,
+        crossAxis: u.crossAxis || 0,
+        alignmentAxis: u.alignmentAxis,
+      };
+  return (
+    l && typeof g == "number" && (f = l === "end" ? g * -1 : g),
+    a ? { x: f * d, y: m * c } : { x: m * c, y: f * d }
+  );
+}
+const nn = function (t) {
+    return (
+      t === void 0 && (t = 0),
+      {
+        name: "offset",
+        options: t,
+        async fn(e) {
+          var n, o;
+          const { x: i, y: s, placement: r, middlewareData: l } = e,
+            a = await en(e, t);
+          return r === ((n = l.offset) == null ? void 0 : n.placement) &&
+            (o = l.arrow) != null &&
+            o.alignmentOffset
+            ? {}
+            : { x: i + a.x, y: s + a.y, data: { ...a, placement: r } };
+        },
+      }
+    );
+  },
+  on = function (t) {
+    return (
+      t === void 0 && (t = {}),
+      {
+        name: "shift",
+        options: t,
+        async fn(e) {
+          const { x: n, y: o, placement: i } = e,
+            {
+              mainAxis: s = !0,
+              crossAxis: r = !1,
+              limiter: l = {
+                fn: (w) => {
+                  let { x: p, y: v } = w;
+                  return { x: p, y: v };
+                },
+              },
+              ...a
+            } = wt(t, e),
+            c = { x: n, y: o },
+            d = await ie(e, a),
+            u = et(rt(i)),
+            m = ne(u);
+          let f = c[m],
+            g = c[u];
+          if (s) {
+            const w = m === "y" ? "top" : "left",
+              p = m === "y" ? "bottom" : "right",
+              v = f + d[w],
+              b = f - d[p];
+            f = Dt(v, f, b);
+          }
+          if (r) {
+            const w = u === "y" ? "top" : "left",
+              p = u === "y" ? "bottom" : "right",
+              v = g + d[w],
+              b = g - d[p];
+            g = Dt(v, g, b);
+          }
+          const h = l.fn({ ...e, [m]: f, [u]: g });
+          return {
+            ...h,
+            data: { x: h.x - n, y: h.y - o, enabled: { [m]: s, [u]: r } },
+          };
+        },
+      }
+    );
+  };
+function Ot() {
+  return typeof window < "u";
+}
+function ht(t) {
+  return se(t) ? (t.nodeName || "").toLowerCase() : "#document";
+}
+function P(t) {
+  var e;
+  return (
+    (t == null || (e = t.ownerDocument) == null ? void 0 : e.defaultView) ||
+    window
+  );
+}
+function G(t) {
+  var e;
+  return (e = (se(t) ? t.ownerDocument : t.document) || window.document) == null
+    ? void 0
+    : e.documentElement;
+}
+function se(t) {
+  return Ot() ? t instanceof Node || t instanceof P(t).Node : !1;
+}
+function D(t) {
+  return Ot() ? t instanceof Element || t instanceof P(t).Element : !1;
+}
+function q(t) {
+  return Ot() ? t instanceof HTMLElement || t instanceof P(t).HTMLElement : !1;
+}
+function Ut(t) {
+  return !Ot() || typeof ShadowRoot > "u"
+    ? !1
+    : t instanceof ShadowRoot || t instanceof P(t).ShadowRoot;
+}
+const sn = new Set(["inline", "contents"]);
+function xt(t) {
+  const { overflow: e, overflowX: n, overflowY: o, display: i } = M(t);
+  return /auto|scroll|overlay|hidden|clip/.test(e + o + n) && !sn.has(i);
+}
+const rn = new Set(["table", "td", "th"]);
+function ln(t) {
+  return rn.has(ht(t));
+}
+const cn = [":popover-open", ":modal"];
+function St(t) {
+  return cn.some((e) => {
+    try {
+      return t.matches(e);
+    } catch {
+      return !1;
+    }
+  });
+}
+const an = ["transform", "translate", "scale", "rotate", "perspective"],
+  fn = ["transform", "translate", "scale", "rotate", "perspective", "filter"],
+  un = ["paint", "layout", "strict", "content"];
+function Ht(t) {
+  const e = Wt(),
+    n = D(t) ? M(t) : t;
+  return (
+    an.some((o) => (n[o] ? n[o] !== "none" : !1)) ||
+    (n.containerType ? n.containerType !== "normal" : !1) ||
+    (!e && (n.backdropFilter ? n.backdropFilter !== "none" : !1)) ||
+    (!e && (n.filter ? n.filter !== "none" : !1)) ||
+    fn.some((o) => (n.willChange || "").includes(o)) ||
+    un.some((o) => (n.contain || "").includes(o))
+  );
+}
+function dn(t) {
+  let e = nt(t);
+  for (; q(e) && !gt(e); ) {
+    if (Ht(e)) return e;
+    if (St(e)) return null;
+    e = nt(e);
+  }
+  return null;
+}
+function Wt() {
+  return typeof CSS > "u" || !CSS.supports
+    ? !1
+    : CSS.supports("-webkit-backdrop-filter", "none");
+}
+const mn = new Set(["html", "body", "#document"]);
+function gt(t) {
+  return mn.has(ht(t));
+}
+function M(t) {
+  return P(t).getComputedStyle(t);
+}
+function _t(t) {
+  return D(t)
+    ? { scrollLeft: t.scrollLeft, scrollTop: t.scrollTop }
+    : { scrollLeft: t.scrollX, scrollTop: t.scrollY };
+}
+function nt(t) {
+  if (ht(t) === "html") return t;
+  const e = t.assignedSlot || t.parentNode || (Ut(t) && t.host) || G(t);
+  return Ut(e) ? e.host : e;
+}
+function re(t) {
+  const e = nt(t);
+  return gt(e)
+    ? t.ownerDocument
+      ? t.ownerDocument.body
+      : t.body
+    : q(e) && xt(e)
+      ? e
+      : re(e);
+}
+function pt(t, e, n) {
+  var o;
+  (e === void 0 && (e = []), n === void 0 && (n = !0));
+  const i = re(t),
+    s = i === ((o = t.ownerDocument) == null ? void 0 : o.body),
+    r = P(i);
+  if (s) {
+    const l = kt(r);
+    return e.concat(
+      r,
+      r.visualViewport || [],
+      xt(i) ? i : [],
+      l && n ? pt(l) : [],
+    );
+  }
+  return e.concat(i, pt(i, [], n));
+}
+function kt(t) {
+  return t.parent && Object.getPrototypeOf(t.parent) ? t.frameElement : null;
+}
+function le(t) {
+  const e = M(t);
+  let n = parseFloat(e.width) || 0,
+    o = parseFloat(e.height) || 0;
+  const i = q(t),
+    s = i ? t.offsetWidth : n,
+    r = i ? t.offsetHeight : o,
+    l = bt(n) !== s || bt(o) !== r;
+  return (l && ((n = s), (o = r)), { width: n, height: o, $: l });
+}
+function zt(t) {
+  return D(t) ? t : t.contextElement;
+}
+function dt(t) {
+  const e = zt(t);
+  if (!q(e)) return Y(1);
+  const n = e.getBoundingClientRect(),
+    { width: o, height: i, $: s } = le(e);
+  let r = (s ? bt(n.width) : n.width) / o,
+    l = (s ? bt(n.height) : n.height) / i;
+  return (
+    (!r || !Number.isFinite(r)) && (r = 1),
+    (!l || !Number.isFinite(l)) && (l = 1),
+    { x: r, y: l }
+  );
+}
+const gn = Y(0);
+function ce(t) {
+  const e = P(t);
+  return !Wt() || !e.visualViewport
+    ? gn
+    : { x: e.visualViewport.offsetLeft, y: e.visualViewport.offsetTop };
+}
+function hn(t, e, n) {
+  return (e === void 0 && (e = !1), !n || (e && n !== P(t)) ? !1 : e);
+}
+function lt(t, e, n, o) {
+  (e === void 0 && (e = !1), n === void 0 && (n = !1));
+  const i = t.getBoundingClientRect(),
+    s = zt(t);
+  let r = Y(1);
+  e && (o ? D(o) && (r = dt(o)) : (r = dt(t)));
+  const l = hn(s, n, o) ? ce(s) : Y(0);
+  let a = (i.left + l.x) / r.x,
+    c = (i.top + l.y) / r.y,
+    d = i.width / r.x,
+    u = i.height / r.y;
+  if (s) {
+    const m = P(s),
+      f = o && D(o) ? P(o) : o;
+    let g = m,
+      h = kt(g);
+    for (; h && o && f !== g; ) {
+      const w = dt(h),
+        p = h.getBoundingClientRect(),
+        v = M(h),
+        b = p.left + (h.clientLeft + parseFloat(v.paddingLeft)) * w.x,
+        O = p.top + (h.clientTop + parseFloat(v.paddingTop)) * w.y;
+      ((a *= w.x),
+        (c *= w.y),
+        (d *= w.x),
+        (u *= w.y),
+        (a += b),
+        (c += O),
+        (g = P(h)),
+        (h = kt(g)));
+    }
+  }
+  return At({ width: d, height: u, x: a, y: c });
+}
+function It(t, e) {
+  const n = _t(t).scrollLeft;
+  return e ? e.left + n : lt(G(t)).left + n;
+}
+function ae(t, e, n) {
+  n === void 0 && (n = !1);
+  const o = t.getBoundingClientRect(),
+    i = o.left + e.scrollLeft - (n ? 0 : It(t, o)),
+    s = o.top + e.scrollTop;
+  return { x: i, y: s };
+}
+function pn(t) {
+  let { elements: e, rect: n, offsetParent: o, strategy: i } = t;
+  const s = i === "fixed",
+    r = G(o),
+    l = e ? St(e.floating) : !1;
+  if (o === r || (l && s)) return n;
+  let a = { scrollLeft: 0, scrollTop: 0 },
+    c = Y(1);
+  const d = Y(0),
+    u = q(o);
+  if ((u || (!u && !s)) && ((ht(o) !== "body" || xt(r)) && (a = _t(o)), q(o))) {
+    const f = lt(o);
+    ((c = dt(o)), (d.x = f.x + o.clientLeft), (d.y = f.y + o.clientTop));
+  }
+  const m = r && !u && !s ? ae(r, a, !0) : Y(0);
+  return {
+    width: n.width * c.x,
+    height: n.height * c.y,
+    x: n.x * c.x - a.scrollLeft * c.x + d.x + m.x,
+    y: n.y * c.y - a.scrollTop * c.y + d.y + m.y,
+  };
+}
+function wn(t) {
+  return Array.from(t.getClientRects());
+}
+function vn(t) {
+  const e = G(t),
+    n = _t(t),
+    o = t.ownerDocument.body,
+    i = st(e.scrollWidth, e.clientWidth, o.scrollWidth, o.clientWidth),
+    s = st(e.scrollHeight, e.clientHeight, o.scrollHeight, o.clientHeight);
+  let r = -n.scrollLeft + It(t);
+  const l = -n.scrollTop;
+  return (
+    M(o).direction === "rtl" && (r += st(e.clientWidth, o.clientWidth) - i),
+    { width: i, height: s, x: r, y: l }
+  );
+}
+function xn(t, e) {
+  const n = P(t),
+    o = G(t),
+    i = n.visualViewport;
+  let s = o.clientWidth,
+    r = o.clientHeight,
+    l = 0,
+    a = 0;
+  if (i) {
+    ((s = i.width), (r = i.height));
+    const c = Wt();
+    (!c || (c && e === "fixed")) && ((l = i.offsetLeft), (a = i.offsetTop));
+  }
+  return { width: s, height: r, x: l, y: a };
+}
+const yn = new Set(["absolute", "fixed"]);
+function bn(t, e) {
+  const n = lt(t, !0, e === "fixed"),
+    o = n.top + t.clientTop,
+    i = n.left + t.clientLeft,
+    s = q(t) ? dt(t) : Y(1),
+    r = t.clientWidth * s.x,
+    l = t.clientHeight * s.y,
+    a = i * s.x,
+    c = o * s.y;
+  return { width: r, height: l, x: a, y: c };
+}
+function Xt(t, e, n) {
+  let o;
+  if (e === "viewport") o = xn(t, n);
+  else if (e === "document") o = vn(G(t));
+  else if (D(e)) o = bn(e, n);
+  else {
+    const i = ce(t);
+    o = { x: e.x - i.x, y: e.y - i.y, width: e.width, height: e.height };
+  }
+  return At(o);
+}
+function fe(t, e) {
+  const n = nt(t);
+  return n === e || !D(n) || gt(n) ? !1 : M(n).position === "fixed" || fe(n, e);
+}
+function Rn(t, e) {
+  const n = e.get(t);
+  if (n) return n;
+  let o = pt(t, [], !1).filter((l) => D(l) && ht(l) !== "body"),
+    i = null;
+  const s = M(t).position === "fixed";
+  let r = s ? nt(t) : t;
+  for (; D(r) && !gt(r); ) {
+    const l = M(r),
+      a = Ht(r);
+    (!a && l.position === "fixed" && (i = null),
+      (
+        s
+          ? !a && !i
+          : (!a && l.position === "static" && !!i && yn.has(i.position)) ||
+            (xt(r) && !a && fe(t, r))
+      )
+        ? (o = o.filter((d) => d !== r))
+        : (i = l),
+      (r = nt(r)));
+  }
+  return (e.set(t, o), o);
+}
+function An(t) {
+  let { element: e, boundary: n, rootBoundary: o, strategy: i } = t;
+  const r = [
+      ...(n === "clippingAncestors"
+        ? St(e)
+          ? []
+          : Rn(e, this._c)
+        : [].concat(n)),
+      o,
+    ],
+    l = r[0],
+    a = r.reduce(
+      (c, d) => {
+        const u = Xt(e, d, i);
+        return (
+          (c.top = st(u.top, c.top)),
+          (c.right = mt(u.right, c.right)),
+          (c.bottom = mt(u.bottom, c.bottom)),
+          (c.left = st(u.left, c.left)),
+          c
+        );
+      },
+      Xt(e, l, i),
+    );
+  return {
+    width: a.right - a.left,
+    height: a.bottom - a.top,
+    x: a.left,
+    y: a.top,
+  };
+}
+function On(t) {
+  const { width: e, height: n } = le(t);
+  return { width: e, height: n };
+}
+function Sn(t, e, n) {
+  const o = q(e),
+    i = G(e),
+    s = n === "fixed",
+    r = lt(t, !0, s, e);
+  let l = { scrollLeft: 0, scrollTop: 0 };
+  const a = Y(0);
+  function c() {
+    a.x = It(i);
+  }
+  if (o || (!o && !s))
+    if (((ht(e) !== "body" || xt(i)) && (l = _t(e)), o)) {
+      const f = lt(e, !0, s, e);
+      ((a.x = f.x + e.clientLeft), (a.y = f.y + e.clientTop));
+    } else i && c();
+  s && !o && i && c();
+  const d = i && !o && !s ? ae(i, l) : Y(0),
+    u = r.left + l.scrollLeft - a.x - d.x,
+    m = r.top + l.scrollTop - a.y - d.y;
+  return { x: u, y: m, width: r.width, height: r.height };
+}
+function Ft(t) {
+  return M(t).position === "static";
+}
+function Jt(t, e) {
+  if (!q(t) || M(t).position === "fixed") return null;
+  if (e) return e(t);
+  let n = t.offsetParent;
+  return (G(t) === n && (n = n.ownerDocument.body), n);
+}
+function ue(t, e) {
+  const n = P(t);
+  if (St(t)) return n;
+  if (!q(t)) {
+    let i = nt(t);
+    for (; i && !gt(i); ) {
+      if (D(i) && !Ft(i)) return i;
+      i = nt(i);
+    }
+    return n;
+  }
+  let o = Jt(t, e);
+  for (; o && ln(o) && Ft(o); ) o = Jt(o, e);
+  return o && gt(o) && Ft(o) && !Ht(o) ? n : o || dn(t) || n;
+}
+const _n = async function (t) {
+  const e = this.getOffsetParent || ue,
+    n = this.getDimensions,
+    o = await n(t.floating);
+  return {
+    reference: Sn(t.reference, await e(t.floating), t.strategy),
+    floating: { x: 0, y: 0, width: o.width, height: o.height },
+  };
+};
+function Ln(t) {
+  return M(t).direction === "rtl";
+}
+const Pn = {
+  convertOffsetParentRelativeRectToViewportRelativeRect: pn,
+  getDocumentElement: G,
+  getClippingRect: An,
+  getOffsetParent: ue,
+  getElementRects: _n,
+  getClientRects: wn,
+  getDimensions: On,
+  getScale: dt,
+  isElement: D,
+  isRTL: Ln,
+};
+function de(t, e) {
+  return (
+    t.x === e.x && t.y === e.y && t.width === e.width && t.height === e.height
+  );
+}
+function Cn(t, e) {
+  let n = null,
+    o;
+  const i = G(t);
+  function s() {
+    var l;
+    (clearTimeout(o), (l = n) == null || l.disconnect(), (n = null));
+  }
+  function r(l, a) {
+    (l === void 0 && (l = !1), a === void 0 && (a = 1), s());
+    const c = t.getBoundingClientRect(),
+      { left: d, top: u, width: m, height: f } = c;
+    if ((l || e(), !m || !f)) return;
+    const g = yt(u),
+      h = yt(i.clientWidth - (d + m)),
+      w = yt(i.clientHeight - (u + f)),
+      p = yt(d),
+      b = {
+        rootMargin: -g + "px " + -h + "px " + -w + "px " + -p + "px",
+        threshold: st(0, mt(1, a)) || 1,
+      };
+    let O = !0;
+    function R(E) {
+      const _ = E[0].intersectionRatio;
+      if (_ !== a) {
+        if (!O) return r();
+        _
+          ? r(!1, _)
+          : (o = setTimeout(() => {
+              r(!1, 1e-7);
+            }, 1e3));
+      }
+      (_ === 1 && !de(c, t.getBoundingClientRect()) && r(), (O = !1));
+    }
+    try {
+      n = new IntersectionObserver(R, { ...b, root: i.ownerDocument });
+    } catch {
+      n = new IntersectionObserver(R, b);
+    }
+    n.observe(t);
+  }
+  return (r(!0), s);
+}
+function En(t, e, n, o) {
+  o === void 0 && (o = {});
+  const {
+      ancestorScroll: i = !0,
+      ancestorResize: s = !0,
+      elementResize: r = typeof ResizeObserver == "function",
+      layoutShift: l = typeof IntersectionObserver == "function",
+      animationFrame: a = !1,
+    } = o,
+    c = zt(t),
+    d = i || s ? [...(c ? pt(c) : []), ...pt(e)] : [];
+  d.forEach((p) => {
+    (i && p.addEventListener("scroll", n, { passive: !0 }),
+      s && p.addEventListener("resize", n));
+  });
+  const u = c && l ? Cn(c, n) : null;
+  let m = -1,
+    f = null;
+  r &&
+    ((f = new ResizeObserver((p) => {
+      let [v] = p;
+      (v &&
+        v.target === c &&
+        f &&
+        (f.unobserve(e),
+        cancelAnimationFrame(m),
+        (m = requestAnimationFrame(() => {
+          var b;
+          (b = f) == null || b.observe(e);
+        }))),
+        n());
+    })),
+    c && !a && f.observe(c),
+    f.observe(e));
+  let g,
+    h = a ? lt(t) : null;
+  a && w();
+  function w() {
+    const p = lt(t);
+    (h && !de(h, p) && n(), (h = p), (g = requestAnimationFrame(w)));
+  }
+  return (
+    n(),
+    () => {
+      var p;
+      (d.forEach((v) => {
+        (i && v.removeEventListener("scroll", n),
+          s && v.removeEventListener("resize", n));
+      }),
+        u == null || u(),
+        (p = f) == null || p.disconnect(),
+        (f = null),
+        a && cancelAnimationFrame(g));
+    }
+  );
+}
+const Tn = nn,
+  Fn = on,
+  Dn = Ze,
+  Mn = Qe,
+  kn = (t, e, n) => {
+    const o = new Map(),
+      i = { platform: Pn, ...n },
+      s = { ...i.platform, _c: o };
+    return Ke(t, e, { ...i, platform: s });
+  };
+function zn(t, e) {
+  (Zt(e, !1),
+    Te.set({
+      computePosition: kn,
+      autoUpdate: En,
+      offset: Tn,
+      shift: Fn,
+      flip: Dn,
+      arrow: Mn,
+    }),
+    Kt(),
+    We(t, {
+      children: (n, o) => {
+        var i = Se(),
+          s = _e(i);
+        (tt(s, e, "default", {}, null), j(n, i));
+      },
+      $$slots: { default: !0 },
+    }),
+    te());
+}
+export { zn as component };

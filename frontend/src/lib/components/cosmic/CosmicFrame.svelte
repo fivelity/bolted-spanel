@@ -24,17 +24,7 @@
   }
 
   // Props
-  let { 
-    paths = [] as PathData[],
-    className = "",
-    style = "",
-    ...restProps 
-  }: {
-    paths?: PathData[];
-    className?: string;
-    style?: string;
-    [key: string]: any;
-  } = $props();
+  let { paths = [] as PathData[], className = "", style = "", ...restProps } = $props<{ paths?: PathData[], className?: string, style?: string, [key: string]: unknown }>()
 
   let svgElement: SVGSVGElement;
 
@@ -44,7 +34,7 @@
   }
 
   // Process percentage-based coordinates for responsive frames
-  function processPath(pathString: string, width: number, height: number): string {
+  function processPath(pathString: string, width: number): string {
     return pathString
       .replace(/100%-(\d+)/g, (match, offset) => {
         return `${width - parseFloat(offset)}`;
@@ -88,12 +78,11 @@
 
   // Process paths reactively
   const processedPaths = $derived(
-    paths.map(pathData => ({
+    paths.map((pathData: PathData) => ({
       ...pathData,
       processedPath: processPath(
         pathToString(pathData.path), 
-        frameWidth, 
-        frameHeight
+        frameWidth
       )
     }))
   );

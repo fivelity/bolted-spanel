@@ -1,6 +1,4 @@
 {
-	"/": [],
-	"/api/ai-layout": [
-		"src/routes/api/ai-layout/+server.ts"
-	]
+  "/": [],
+  "/api/ai-layout": ["src/routes/api/ai-layout/+server.ts"]
 }

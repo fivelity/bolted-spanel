@@ -11,7 +11,7 @@
 
 <script lang="ts">
   import CosmicFrame from './CosmicFrame.svelte';
-  import { defaultFramePaths } from './theme';
+  import type { Snippet } from 'svelte';
   
   type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'ghost';
   type ButtonSize = 'sm' | 'md' | 'lg';
@@ -31,8 +31,8 @@
     disabled?: boolean;
     onclick?: () => void;
     className?: string;
-    children: any;
-    [key: string]: any;
+    children: Snippet;
+    [key: string]: unknown;
   } = $props();
 
   // Button state

@@ -11,8 +11,6 @@
 -->
 
 <script lang="ts">
-  // Note: This is an example - actual imports would be from SvelteKit project
-  // import { Chart, Arc, Circle, Text } from 'layerchart';
   // import { tweened } from 'svelte/motion';
   // import { cubicOut } from 'svelte/easing';
   
@@ -119,22 +117,6 @@
       case 'dark': return '#1a1a1a40';
       default: return '#f8f9fa40';
     }
-  });
-  
-  // Arc configuration
-  let arcConfig = $derived(() => {
-    const startAngle = -225; // Start from bottom-left
-    const endAngle = 45;     // End at bottom-right
-    const totalAngle = endAngle - startAngle;
-    const valueAngle = startAngle + (totalAngle * normalizedValue());
-    
-    return {
-      startAngle,
-      endAngle: valueAngle,
-      innerRadius: size * 0.25,
-      outerRadius: size * 0.35,
-      padAngle: 0.02
-    };
   });
   
   // Generate tick marks

@@ -1,5 +1,5 @@
 # FastAPI and web server dependencies
-fastapi>=0.115.2
+fastapi[all]
 uvicorn[standard]>=0.24.0
 websockets>=12.0
 python-multipart>=0.0.18
@@ -22,3 +22,5 @@ HardwareMonitor==1.0.0
 # Additional dependencies for hardware monitoring
 wmi>=1.5.1; sys_platform == "win32"
 pywin32>=306; sys_platform == "win32"
+fastapi[all]
+@genkit/core@latest

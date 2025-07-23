@@ -5,7 +5,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
       id: "gaming-dashboard",
       name: "Gaming Performance",
       description: "Optimized layout for gaming performance monitoring",
-      reasoning: "Prioritizes CPU, GPU, and memory usage with large gauges for quick visibility during gaming sessions.",
+      reasoning:
+        "Prioritizes CPU, GPU, and memory usage with large gauges for quick visibility during gaming sessions.",
       confidence: 0.92,
       widgets: [
         {
@@ -18,8 +19,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
             dataSource: "cpu.usage",
             unit: "%",
             colors: ["#22c55e", "#f59e0b", "#ef4444"],
-            thresholds: [70, 90]
-          }
+            thresholds: [70, 90],
+          },
         },
         {
           id: "gpu-gauge",
@@ -31,8 +32,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
             dataSource: "gpu.usage",
             unit: "%",
             colors: ["#3b82f6", "#8b5cf6", "#ef4444"],
-            thresholds: [75, 90]
-          }
+            thresholds: [75, 90],
+          },
         },
         {
           id: "memory-bar",
@@ -44,16 +45,17 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
             dataSource: "memory.usage",
             unit: "%",
             colors: ["#06b6d4", "#f59e0b", "#ef4444"],
-            thresholds: [80, 95]
-          }
-        }
-      ]
+            thresholds: [80, 95],
+          },
+        },
+      ],
     },
     {
       id: "minimal-overview",
       name: "Minimal Overview",
       description: "Clean, minimal layout focusing on key metrics",
-      reasoning: "Simple text-based widgets for users who prefer clean, distraction-free monitoring.",
+      reasoning:
+        "Simple text-based widgets for users who prefer clean, distraction-free monitoring.",
       confidence: 0.85,
       widgets: [
         {
@@ -64,8 +66,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
           size: { width: 150, height: 100 },
           config: {
             dataSource: "cpu.usage",
-            unit: "%"
-          }
+            unit: "%",
+          },
         },
         {
           id: "gpu-simple",
@@ -75,8 +77,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
           size: { width: 150, height: 100 },
           config: {
             dataSource: "gpu.usage",
-            unit: "%"
-          }
+            unit: "%",
+          },
         },
         {
           id: "memory-simple",
@@ -86,16 +88,18 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
           size: { width: 150, height: 100 },
           config: {
             dataSource: "memory.usage",
-            unit: "%"
-          }
-        }
-      ]
+            unit: "%",
+          },
+        },
+      ],
     },
     {
       id: "detailed-monitoring",
       name: "Detailed Monitoring",
-      description: "Comprehensive layout with detailed metrics and temperatures",
-      reasoning: "Includes temperature monitoring and detailed system information for power users and system administrators.",
+      description:
+        "Comprehensive layout with detailed metrics and temperatures",
+      reasoning:
+        "Includes temperature monitoring and detailed system information for power users and system administrators.",
       confidence: 0.88,
       widgets: [
         {
@@ -106,8 +110,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
           size: { width: 180, height: 180 },
           config: {
             dataSource: "cpu.usage",
-            unit: "%"
-          }
+            unit: "%",
+          },
         },
         {
           id: "cpu-temp",
@@ -117,8 +121,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
           size: { width: 140, height: 80 },
           config: {
             dataSource: "cpu.temperature",
-            unit: "°C"
-          }
+            unit: "°C",
+          },
         },
         {
           id: "gpu-detailed",
@@ -128,8 +132,8 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
           size: { width: 180, height: 180 },
           config: {
             dataSource: "gpu.usage",
-            unit: "%"
-          }
+            unit: "%",
+          },
         },
         {
           id: "gpu-temp",
@@ -139,18 +143,18 @@ async function generateLayoutSuggestions(description, availableWidgets = []) {
           size: { width: 140, height: 80 },
           config: {
             dataSource: "gpu.temperature",
-            unit: "°C"
-          }
-        }
-      ]
-    }
+            unit: "°C",
+          },
+        },
+      ],
+    },
   ];
   await new Promise((resolve) => setTimeout(resolve, 1e3));
   if (availableWidgets.length > 0) {
-    return mockSuggestions.filter(
-      (suggestion) => suggestion.widgets.every(
-        (widget) => availableWidgets.includes(widget.type)
-      )
+    return mockSuggestions.filter((suggestion) =>
+      suggestion.widgets.every((widget) =>
+        availableWidgets.includes(widget.type),
+      ),
     );
   }
   return mockSuggestions;
@@ -160,13 +164,17 @@ const POST = async ({ request }) => {
     const body = await request.json();
     const description = body.description || "Default dashboard layout";
     const availableWidgets = body.availableWidgets || [];
-    const suggestions = await generateLayoutSuggestions(description, availableWidgets);
+    const suggestions = await generateLayoutSuggestions(
+      description,
+      availableWidgets,
+    );
     return json(suggestions);
   } catch (error) {
     console.error("AI layout generation failed:", error);
-    return json({ error: "Failed to generate layout suggestions" }, { status: 500 });
+    return json(
+      { error: "Failed to generate layout suggestions" },
+      { status: 500 },
+    );
   }
 };
-export {
-  POST
-};
+export { POST };

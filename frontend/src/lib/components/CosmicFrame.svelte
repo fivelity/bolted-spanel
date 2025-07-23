@@ -31,7 +31,7 @@
   }: {
     paths?: PathData[];
     className?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   } = $props();
 
   let svgElement: SVGSVGElement;
@@ -42,7 +42,7 @@
   }
 
   // Process percentage-based coordinates for responsive frames
-  function processPath(pathString: string, width: number, height: number): string {
+  function processPath(pathString: string, width: number): string {
     return pathString
       .replace(/(\d+)%/g, (match, percent) => {
         const num = parseFloat(percent);
@@ -88,8 +88,7 @@
       ...pathData,
       processedPath: processPath(
         pathToString(pathData.path), 
-        frameWidth, 
-        frameHeight
+        frameWidth
       )
     }))
   );

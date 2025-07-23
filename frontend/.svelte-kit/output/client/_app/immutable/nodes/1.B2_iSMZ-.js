@@ -1,1 +1,43 @@
-import"../chunks/CWj6FrbW.js";import{i as h}from"../chunks/cUd3n1kI.js";import{p as g,k as l,l as v,t as d,m as _,n as x,o as a,s as o,v as k}from"../chunks/BOYRZm52.js";import{s as p}from"../chunks/-sVewgbm.js";import{s as $,p as m}from"../chunks/CmyKn7di.js";const b={get error(){return m.error},get status(){return m.status}};$.updated.check;const i=b;var E=l("<h1> </h1> <p> </p>",1);function A(n,c){g(c,!1),h();var r=E(),t=v(r),f=a(t,!0);o(t);var s=k(t,2),u=a(s,!0);o(s),d(()=>{var e;p(f,i.status),p(u,(e=i.error)==null?void 0:e.message)}),_(n,r),x()}export{A as component};
+import "../chunks/CWj6FrbW.js";
+import { i as h } from "../chunks/cUd3n1kI.js";
+import {
+  p as g,
+  k as l,
+  l as v,
+  t as d,
+  m as _,
+  n as x,
+  o as a,
+  s as o,
+  v as k,
+} from "../chunks/BOYRZm52.js";
+import { s as p } from "../chunks/-sVewgbm.js";
+import { s as $, p as m } from "../chunks/CmyKn7di.js";
+const b = {
+  get error() {
+    return m.error;
+  },
+  get status() {
+    return m.status;
+  },
+};
+$.updated.check;
+const i = b;
+var E = l("<h1> </h1> <p> </p>", 1);
+function A(n, c) {
+  (g(c, !1), h());
+  var r = E(),
+    t = v(r),
+    f = a(t, !0);
+  o(t);
+  var s = k(t, 2),
+    u = a(s, !0);
+  (o(s),
+    d(() => {
+      var e;
+      (p(f, i.status), p(u, (e = i.error) == null ? void 0 : e.message));
+    }),
+    _(n, r),
+    x());
+}
+export { A as component };

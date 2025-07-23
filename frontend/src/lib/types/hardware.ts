@@ -14,32 +14,32 @@ export interface StorageDevice {
 
 export interface HardwareData {
   timestamp?: number;
-  cpu: { 
-    usage: number; 
-    temperature: number; 
-    frequency: number; 
+  cpu: {
+    usage: number;
+    temperature: number;
+    frequency: number;
     voltage: number;
     cores?: CoreData[];
   };
-  gpu: { 
-    usage: number; 
-    temperature: number; 
-    memory: number; 
-    fanSpeed: number; 
+  gpu: {
+    usage: number;
+    temperature: number;
+    memory: number;
+    fanSpeed: number;
     voltage: number;
     powerUsage?: number;
   };
-  memory: { 
-    usage: number; 
-    available: number; 
+  memory: {
+    usage: number;
+    available: number;
     total: number;
     cached?: number;
     swapUsage?: number;
   };
-  storage: { 
-    usage: number; 
-    temperature: number; 
-    readSpeed: number; 
+  storage: {
+    usage: number;
+    temperature: number;
+    readSpeed: number;
     writeSpeed: number;
     devices?: StorageDevice[];
   };
@@ -62,4 +62,4 @@ export interface HardwareData {
 
 export interface SystemInfo {
   // Add properties as needed
-} 
+}

@@ -5,7 +5,7 @@
 	import { themeStore, currentTheme } from '$lib/stores/themeStore';
 	import { alertStore, alertHistory } from '$lib/stores/alertStore';
 	import { injectCosmicTheme } from '$lib/components/cosmic/theme';
-	import { CosmicToolbar, CosmicPanel } from '$lib/components/cosmic';
+	import { CosmicToolbar } from '$lib/components/cosmic';
 	import DashboardCanvas from './DashboardCanvas.svelte';
 	import AILayoutModal from './AILayoutModal.svelte';
 
@@ -17,7 +17,6 @@
 		// Initialize Cosmic UI theme
 		injectCosmicTheme();
 		
-		themeStore.init();
 		sensorStore.connect();
 
 		return () => {

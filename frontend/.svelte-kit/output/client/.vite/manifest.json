@@ -30,9 +30,7 @@
       "_BTbfHnEm.js",
       "_DCHGiQBl.js"
     ],
-    "css": [
-      "_app/immutable/assets/0.B-VBxI-0.css"
-    ]
+    "css": ["_app/immutable/assets/0.B-VBxI-0.css"]
   },
   ".svelte-kit/generated/client-optimized/nodes/1.js": {
     "file": "_app/immutable/nodes/1.B2_iSMZ-.js",
@@ -63,16 +61,12 @@
       "_DCHGiQBl.js",
       "_DcYYMAFE.js"
     ],
-    "css": [
-      "_app/immutable/assets/2.cn711u7W.css"
-    ]
+    "css": ["_app/immutable/assets/2.cn711u7W.css"]
   },
   "_-sVewgbm.js": {
     "file": "_app/immutable/chunks/-sVewgbm.js",
     "name": "index-client",
-    "imports": [
-      "_BOYRZm52.js"
-    ]
+    "imports": ["_BOYRZm52.js"]
   },
   "_BOYRZm52.js": {
     "file": "_app/immutable/chunks/BOYRZm52.js",
@@ -81,9 +75,7 @@
   "_BTbfHnEm.js": {
     "file": "_app/immutable/chunks/BTbfHnEm.js",
     "name": "props",
-    "imports": [
-      "_BOYRZm52.js"
-    ]
+    "imports": ["_BOYRZm52.js"]
   },
   "_CWj6FrbW.js": {
     "file": "_app/immutable/chunks/CWj6FrbW.js",
@@ -92,39 +84,28 @@
   "_CmyKn7di.js": {
     "file": "_app/immutable/chunks/CmyKn7di.js",
     "name": "entry",
-    "imports": [
-      "_-sVewgbm.js",
-      "_BOYRZm52.js"
-    ]
+    "imports": ["_-sVewgbm.js", "_BOYRZm52.js"]
   },
   "_DCHGiQBl.js": {
     "file": "_app/immutable/chunks/DCHGiQBl.js",
     "name": "style",
-    "imports": [
-      "_BOYRZm52.js"
-    ]
+    "imports": ["_BOYRZm52.js"]
   },
   "_DcYYMAFE.js": {
     "file": "_app/immutable/chunks/DcYYMAFE.js",
     "name": "this",
-    "imports": [
-      "_BOYRZm52.js"
-    ]
+    "imports": ["_BOYRZm52.js"]
   },
   "_cUd3n1kI.js": {
     "file": "_app/immutable/chunks/cUd3n1kI.js",
     "name": "legacy",
-    "imports": [
-      "_BOYRZm52.js"
-    ]
+    "imports": ["_BOYRZm52.js"]
   },
   "node_modules/.pnpm/@sveltejs+kit@2.25.1_@svelt_aa0fc36eb2bb80c35f051e1e63c656fd/node_modules/@sveltejs/kit/src/runtime/client/entry.js": {
     "file": "_app/immutable/entry/start.BjEt3yVq.js",
     "name": "entry/start",
     "src": "node_modules/.pnpm/@sveltejs+kit@2.25.1_@svelt_aa0fc36eb2bb80c35f051e1e63c656fd/node_modules/@sveltejs/kit/src/runtime/client/entry.js",
     "isEntry": true,
-    "imports": [
-      "_CmyKn7di.js"
-    ]
+    "imports": ["_CmyKn7di.js"]
   }
 }

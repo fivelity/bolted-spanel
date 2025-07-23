@@ -12,6 +12,7 @@
 <script lang="ts">
   import CosmicFrame from './CosmicFrame.svelte';
   import { defaultFramePaths } from './theme';
+  import type { Snippet } from 'svelte';
   
   type PanelVariant = 'default' | 'highlighted' | 'minimal';
 
@@ -36,10 +37,10 @@
     contentClass?: string;
     showGlow?: boolean;
     scrollable?: boolean;
-    children: any;
-    header?: any;
-    footer?: any;
-    [key: string]: any;
+    children: Snippet;
+    header?: Snippet;
+    footer?: Snippet;
+    [key: string]: unknown;
   } = $props();
 
   // Variant-based frame paths

@@ -1,8 +1,12 @@
-import { Q as noop, _ as subscribe_to_store, $ as safe_not_equal } from "./index.js";
+import {
+  Q as noop,
+  _ as subscribe_to_store,
+  $ as safe_not_equal,
+} from "./index.js";
 const subscriber_queue = [];
 function readable(value, start) {
   return {
-    subscribe: writable(value, start).subscribe
+    subscribe: writable(value, start).subscribe,
   };
 }
 function writable(value, start = noop) {
@@ -27,10 +31,12 @@ function writable(value, start = noop) {
     }
   }
   function update(fn) {
-    set(fn(
-      /** @type {T} */
-      value
-    ));
+    set(
+      fn(
+        /** @type {T} */
+        value,
+      ),
+    );
   }
   function subscribe(run, invalidate = noop) {
     const subscriber = [run, invalidate];
@@ -40,7 +46,7 @@ function writable(value, start = noop) {
     }
     run(
       /** @type {T} */
-      value
+      value,
     );
     return () => {
       subscribers.delete(subscriber);
@@ -54,11 +60,7 @@ function writable(value, start = noop) {
 }
 function get(store) {
   let value;
-  subscribe_to_store(store, (_) => value = _)();
+  subscribe_to_store(store, (_) => (value = _))();
   return value;
 }
-export {
-  get as g,
-  readable as r,
-  writable as w
-};
+export { get as g, readable as r, writable as w };
