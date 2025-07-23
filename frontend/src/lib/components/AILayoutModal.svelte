@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dashboardState, dashboardActions } from '$lib/stores/dashboard';
+  import { dashboardState, dashboardActions } from '$lib/stores/dashboard.svelte';
   import { onMount } from 'svelte';
   import type { LayoutSuggestion } from '$lib/types/ai';
 
@@ -45,19 +45,20 @@
   {:else}
     <div class="suggestions-grid">
       {#each suggestions as suggestion}
-        <div 
-          class="suggestion-card" 
-          class:selected={selectedSuggestion?.id === suggestion.id}
-          on:click={() => selectedSuggestion = suggestion}
-        >
+        			<button
+				class="suggestion-card"
+				class:selected={selectedSuggestion?.id === suggestion.id}
+				onclick={() => selectedSuggestion = suggestion}
+				aria-label="Select {suggestion.name} layout suggestion"
+			>
           <h3>{suggestion.name}</h3>
           <p>{suggestion.description}</p>
           <div class="preview">
             <!-- Mini preview of layout -->
           </div>
-        </div>
-      {/each}
+        			</button>
+		{/each}
     </div>
-    <button on:click={applySuggestion} disabled={!selectedSuggestion}>Apply Selected</button>
+    <button onclick={applySuggestion} disabled={!selectedSuggestion}>Apply Selected</button>
   {/if}
 </div>

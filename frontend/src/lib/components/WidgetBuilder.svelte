@@ -1,461 +1,476 @@
 <script lang="ts">
-	import { dashboardState, dashboardActions, widgetTemplates } from '$lib/stores/dashboard'
-	import { createEventDispatcher } from 'svelte'
-	import { nanoid } from 'nanoid'
-	import type { WidgetConfig, WidgetType, WidgetTemplate } from '$lib/types/dashboard'
+	import { createEventDispatcher } from 'svelte';
+	import { dashboardState, dashboardActions, widgetTemplates } from '$lib/stores/dashboard.svelte';
 	import WidgetRenderer from './WidgetRenderer.svelte'
-	import { generateMockHardwareData } from '$lib/services/mock-data'
+	import { MockDataService } from '$lib/services/mock-data'
+	import type { WidgetConfig, WidgetTemplate } from '$lib/types/dashboard';
 
-	const dispatch = createEventDispatcher()
+	const dispatch = createEventDispatcher();
+	const mockDataService = MockDataService.getInstance();
 
-	let activeTab = $state('templates')
-	let selectedTemplate: WidgetTemplate | null = $state(null)
-	let widgetConfig: Partial<WidgetConfig> = $state({})
-	let previewData = $state(generateMockHardwareData())
-
-	// Reactive preview widget
-	let previewWidget = $derived(selectedTemplate ? {
-		id: 'preview',
-		type: selectedTemplate.type,
-		title: widgetConfig.title || selectedTemplate.name,
-		position: { x: 0, y: 0 },
-		size: widgetConfig.size || selectedTemplate.config.size || { width: 200, height: 200 },
-		config: { ...selectedTemplate.config.config, ...widgetConfig.config },
-		dataSource: widgetConfig.dataSource || selectedTemplate.config.dataSource,
-		thresholds: widgetConfig.thresholds || selectedTemplate.config.thresholds,
-		styling: widgetConfig.styling || selectedTemplate.config.styling
-	} as WidgetConfig : null);
-
-	// Widget type categories
-	const widgetCategories = {
-		system: 'System Monitoring',
-		performance: 'Performance',
-		custom: 'Custom',
-		community: 'Community'
-	}
-
-	function selectTemplate(template: WidgetTemplate) {
-		selectedTemplate = template
-		widgetConfig = {
-			title: template.name,
-			size: template.config.size || { width: 200, height: 200 },
-			config: { ...template.config.config },
-			dataSource: template.config.dataSource,
-			thresholds: template.config.thresholds,
-			styling: template.config.styling
+	// Widget configuration state with proper initialization
+	let widgetConfig: Partial<WidgetConfig> = {
+		title: '',
+		size: { width: 200, height: 200 },
+		config: {
+			min: 0,
+			max: 100,
+			unit: '%',
+			colors: ['#22c55e', '#f59e0b', '#ef4444'],
+			thresholds: [70, 90]
+		},
+		dataSource: '',
+		thresholds: [],
+		styling: {
+			backgroundColor: '#ffffff',
+			borderColor: '#e5e7eb',
+			borderWidth: 1,
+			borderRadius: 8
 		}
-		activeTab = 'general'
-	}
+	};
 
-	function updateConfig(key: string, value: any) {
-		widgetConfig = {
-			...widgetConfig,
-			[key]: value
-		}
-	}
-
-	function updateNestedConfig(path: string, value: any) {
-		const keys = path.split('.')
-		const newConfig = { ...widgetConfig }
+	// Create preview widget config
+	let previewWidget = $derived(() => {
+		const selectedTemplateId = $dashboardState.widgetBuilder.selectedWidget;
+		if (!selectedTemplateId) return null;
 		
-		let current = newConfig as any
-		for (let i = 0; i < keys.length - 1; i++) {
-			const key = keys[i]
-			if (!current[key]) current[key] = {}
-			current = current[key]
-		}
+		const selectedTemplate = widgetTemplates.find(t => t.id === selectedTemplateId);
+		if (!selectedTemplate) return null;
 		
-		current[keys[keys.length - 1]] = value
-		widgetConfig = newConfig
-	}
-
-	function addWidget() {
-		if (!selectedTemplate || !$dashboardState.currentLayout) return
-
-		const newWidget: WidgetConfig = {
-			id: nanoid(),
+		return {
+			id: 'preview',
 			type: selectedTemplate.type,
 			title: widgetConfig.title || selectedTemplate.name,
-			position: { x: 100, y: 100 },
-			size: widgetConfig.size || selectedTemplate.config.size || { width: 200, height: 200 },
-			config: { ...selectedTemplate.config.config, ...widgetConfig.config },
-			dataSource: widgetConfig.dataSource || selectedTemplate.config.dataSource,
-			thresholds: widgetConfig.thresholds || selectedTemplate.config.thresholds,
-			styling: widgetConfig.styling || selectedTemplate.config.styling
-		}
+			position: { x: 0, y: 0 },
+			size: widgetConfig.size || selectedTemplate.config?.size || { width: 200, height: 200 },
+			config: { ...selectedTemplate.config?.config, ...(widgetConfig.config || {}) },
+			dataSource: widgetConfig.dataSource || selectedTemplate.config?.dataSource || '',
+			thresholds: widgetConfig.thresholds || selectedTemplate.config?.thresholds || [],
+			styling: { ...selectedTemplate.config?.styling, ...(widgetConfig.styling || {}) }
+		} as WidgetConfig;
+	});
 
-		dashboardActions.updateWidget($dashboardState.currentLayout.id, newWidget)
-		dashboardActions.closeWidgetBuilder()
-		dispatch('widgetAdded', newWidget)
-	}
+	// Mock data for preview
+	let mockData = $derived(() => mockDataService.getCurrentData());
 
-	function closeBuilder() {
-		dashboardActions.closeWidgetBuilder()
-		selectedTemplate = null
-		widgetConfig = {}
-	}
-
-	// Data source options
-	const dataSourceOptions = [
-		{ value: 'cpu.usage', label: 'CPU Usage (%)' },
-		{ value: 'cpu.temperature', label: 'CPU Temperature (°C)' },
-		{ value: 'cpu.frequency', label: 'CPU Frequency (GHz)' },
-		{ value: 'gpu.usage', label: 'GPU Usage (%)' },
-		{ value: 'gpu.temperature', label: 'GPU Temperature (°C)' },
-		{ value: 'gpu.memory_usage', label: 'GPU Memory Usage (%)' },
-		{ value: 'memory.usage', label: 'Memory Usage (%)' },
-		{ value: 'memory.available', label: 'Available Memory (MB)' },
-		{ value: 'network.bytes_sent', label: 'Network Bytes Sent' },
-		{ value: 'network.bytes_recv', label: 'Network Bytes Received' }
-	]
+	// Widget categories for organization
+	const widgetCategories = {
+		'system': ['circular-gauge-cpu', 'gauge-gpu', 'meter-memory', 'simple-temp'],
+		'performance': ['speedometer-perf', 'kpi-card-overview']
+	};
 
 	// Color presets
 	const colorPresets = [
-		{ name: 'Green-Yellow-Red', colors: ['#10b981', '#f59e0b', '#ef4444'] },
-		{ name: 'Blue-Purple-Pink', colors: ['#3b82f6', '#8b5cf6', '#ec4899'] },
-		{ name: 'Cyan-Blue-Indigo', colors: ['#06b6d4', '#3b82f6', '#6366f1'] },
-		{ name: 'Emerald-Teal-Cyan', colors: ['#10b981', '#14b8a6', '#06b6d4'] }
-	]
+		{ name: 'Default', colors: ['#22c55e', '#f59e0b', '#ef4444'] },
+		{ name: 'Blue', colors: ['#3b82f6', '#8b5cf6', '#ef4444'] },
+		{ name: 'Purple', colors: ['#8b5cf6', '#ec4899', '#ef4444'] },
+		{ name: 'Cyan', colors: ['#06b6d4', '#3b82f6', '#ef4444'] },
+		{ name: 'Orange', colors: ['#f97316', '#eab308', '#ef4444'] }
+	];
+
+	function selectTemplate(template: WidgetTemplate) {
+		// Update the dashboard state to track selected widget template
+		dashboardState.update(state => ({
+			...state,
+			widgetBuilder: {
+				...state.widgetBuilder,
+				selectedWidget: template.id
+			}
+		}));
+		
+		// Initialize config with template defaults
+		widgetConfig = {
+			title: template.name,
+			size: template.config?.size || { width: 200, height: 200 },
+			config: { 
+				min: 0,
+				max: 100,
+				unit: '%',
+				colors: ['#22c55e', '#f59e0b', '#ef4444'],
+				thresholds: [70, 90],
+				...template.config?.config 
+			},
+			dataSource: template.config?.dataSource || '',
+			thresholds: template.config?.thresholds || [],
+			styling: { 
+				backgroundColor: '#ffffff',
+				borderColor: '#e5e7eb',
+				borderWidth: 1,
+				borderRadius: 8,
+				...template.config?.styling 
+			}
+		};
+	}
+
+	function createWidget() {
+		const preview = previewWidget();
+		if (!preview) return;
+		
+		// Use addWidget instead of createWidget and handle the template conversion
+		const selectedTemplateId = $dashboardState.widgetBuilder.selectedWidget;
+		const template = widgetTemplates.find(t => t.id === selectedTemplateId);
+		if (template) {
+			dashboardActions.addWidget(template, preview.position);
+		}
+		closeBuilder();
+	}
+
+	function closeBuilder() {
+		dashboardActions.closeWidgetBuilder();
+	}
+
+	function setColorPreset(preset: { colors: string[] }) {
+		if (!widgetConfig.config) {
+			widgetConfig.config = {};
+		}
+		widgetConfig.config = {
+			...widgetConfig.config,
+			colors: preset.colors
+		};
+	}
+
+	function updateTitle(event: Event) {
+		const target = event.target as HTMLInputElement;
+		widgetConfig.title = target.value;
+	}
+
+	function updateUnit(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!widgetConfig.config) widgetConfig.config = {};
+		widgetConfig.config.unit = target.value;
+	}
+
+	function updateBackgroundColor(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!widgetConfig.styling) widgetConfig.styling = {};
+		widgetConfig.styling.backgroundColor = target.value;
+	}
+
+	function updateBorderColor(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!widgetConfig.styling) widgetConfig.styling = {};
+		widgetConfig.styling.borderColor = target.value;
+	}
+
+	function updateBorderWidth(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!widgetConfig.styling) widgetConfig.styling = {};
+		widgetConfig.styling.borderWidth = parseInt(target.value) || 0;
+	}
+
+	function updateBorderRadius(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if (!widgetConfig.styling) widgetConfig.styling = {};
+		widgetConfig.styling.borderRadius = parseInt(target.value) || 0;
+	}
 </script>
 
+<!-- Widget Builder Modal -->
 {#if $dashboardState.widgetBuilder.isOpen}
-	<div class="widget-builder-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-		<div class="widget-builder bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-6xl h-full max-h-[90vh] flex flex-col">
+	<div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+		<div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-6xl h-full max-h-[90vh] flex overflow-hidden">
+			
 			<!-- Header -->
-			<div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-				<h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-					Widget Builder
-				</h2>
-				<button
-					onclick={closeBuilder}
-					class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-				>
-					<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-						<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-					</svg>
-				</button>
+			<div class="flex-none">
+				<div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+					<h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+						Widget Builder
+					</h2>
+					<button
+						onclick={closeBuilder}
+						class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+						aria-label="Close widget builder"
+					>
+						<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+							<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+						</svg>
+					</button>
+				</div>
 			</div>
 
 			<div class="flex flex-1 overflow-hidden">
-				<!-- Sidebar -->
-				<div class="w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-					<!-- Tab navigation -->
-					<div class="flex border-b border-gray-200 dark:border-gray-700">
-						<button
-							class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-							class:bg-blue-50={activeTab === 'templates'}
-							class:text-blue-600={activeTab === 'templates'}
-							class:dark:bg-blue-900={activeTab === 'templates'}
-							class:dark:text-blue-400={activeTab === 'templates'}
-							onclick={() => activeTab = 'templates'}
-						>
-							Templates
-						</button>
-						<button
-							class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-							class:bg-blue-50={activeTab === 'general'}
-							class:text-blue-600={activeTab === 'general'}
-							class:dark:bg-blue-900={activeTab === 'general'}
-							class:dark:text-blue-400={activeTab === 'general'}
-							class:opacity-50={!selectedTemplate}
-							disabled={!selectedTemplate}
-							onclick={() => activeTab = 'general'}
-						>
-							General
-						</button>
-						<button
-							class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-							class:bg-blue-50={activeTab === 'styling'}
-							class:text-blue-600={activeTab === 'styling'}
-							class:dark:bg-blue-900={activeTab === 'styling'}
-							class:dark:text-blue-400={activeTab === 'styling'}
-							class:opacity-50={!selectedTemplate}
-							disabled={!selectedTemplate}
-							onclick={() => activeTab = 'styling'}
-						>
-							Styling
-						</button>
-					</div>
-
-					<!-- Tab content -->
-					<div class="flex-1 overflow-y-auto p-4">
-						{#if activeTab === 'templates'}
-							<!-- Template selection -->
-							{#each Object.entries(widgetCategories) as [category, categoryName]}
-								{@const categoryTemplates = $widgetTemplates.filter(t => t.category === category)}
-								{#if categoryTemplates.length > 0}
-									<div class="mb-6">
-										<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-											{categoryName}
-										</h3>
-										<div class="grid grid-cols-1 gap-2">
-											{#each categoryTemplates as template}
-												<button
-													class="template-card p-3 border rounded-lg text-left transition-all hover:shadow-md"
-													class:border-blue-500={selectedTemplate?.id === template.id}
-													class:bg-blue-50={selectedTemplate?.id === template.id}
-													class:dark:bg-blue-900={selectedTemplate?.id === template.id}
-													onclick={() => selectTemplate(template)}
-												>
-													<div class="font-medium text-sm text-gray-900 dark:text-white mb-1">
-														{template.name}
+				
+				<!-- Left Panel: Widget Templates -->
+				<div class="w-80 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+					<div class="p-6">
+						<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+							Choose Widget Type
+						</h3>
+						
+						{#each Object.entries(widgetCategories) as [category, categoryName]}
+							{@const categoryTemplates = widgetTemplates.filter((t: WidgetTemplate) => t.category === category)}
+							{#if categoryTemplates.length > 0}
+								<div class="mb-6">
+									<h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+										{categoryName}
+									</h4>
+									<div class="space-y-2">
+										{#each categoryTemplates as template}
+											<button
+												class="w-full p-4 text-left border rounded-lg transition-all hover:border-blue-500 dark:hover:border-blue-400
+													{$dashboardState.widgetBuilder.selectedWidget === template.id 
+														? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
+														: 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50'}"
+												onclick={() => selectTemplate(template)}
+											>
+												<div class="flex items-center gap-3">
+													<div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold">
+														{template.type.charAt(0).toUpperCase()}
 													</div>
-													<div class="text-xs text-gray-500 dark:text-gray-400">
-														{template.description}
+													<div>
+														<div class="font-medium text-gray-900 dark:text-white">{template.name}</div>
+														<div class="text-sm text-gray-500 dark:text-gray-400">{template.description}</div>
 													</div>
-												</button>
-											{/each}
-										</div>
+												</div>
+											</button>
+										{/each}
 									</div>
-								{/if}
-							{/each}
-
-						{:else if activeTab === 'general' && selectedTemplate}
-							<!-- General configuration -->
-							<div class="space-y-4">
-								<!-- Title -->
-								<div>
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-										Title
-									</label>
-									<input
-										type="text"
-										class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-										bind:value={widgetConfig.title}
-										placeholder={selectedTemplate.name}
-									/>
 								</div>
+							{/if}
+						{/each}
+					</div>
+				</div>
 
-								<!-- Size -->
-								<div class="grid grid-cols-2 gap-3">
-									<div>
-										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-											Width
-										</label>
-										<input
-											type="number"
-											class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-											bind:value={widgetConfig.size.width}
-											min="100"
-											max="800"
-										/>
-									</div>
-									<div>
-										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-											Height
-										</label>
-										<input
-											type="number"
-											class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-											bind:value={widgetConfig.size.height}
-											min="80"
-											max="600"
-										/>
+				<!-- Center Panel: Configuration -->
+				<div class="flex-1 overflow-y-auto">
+					<div class="p-6">
+						{#if $dashboardState.widgetBuilder.selectedWidget}
+							<div class="space-y-6">
+								
+								<!-- General Settings -->
+								<div>
+									<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">General Settings</h3>
+									<div class="grid grid-cols-1 gap-4">
+										<div>
+											<label for="widget-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+												Title
+											</label>
+											<input
+												id="widget-title"
+												type="text"
+												bind:value={widgetConfig.title}
+												placeholder="Widget title"
+												class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+											/>
+										</div>
+										
+										<div class="grid grid-cols-2 gap-4">
+											<div>
+												<label for="widget-width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+													Width
+												</label>
+												<input
+													id="widget-width"
+													type="number"
+													class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+													bind:value={widgetConfig.size.width}
+													onfocus={() => {}}
+													min="100"
+													step="10"
+												/>
+											</div>
+											<div>
+												<label for="widget-height" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+													Height
+												</label>
+												<input
+													id="widget-height"
+													type="number"
+													class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+													bind:value={widgetConfig.size.height}
+													onfocus={() => {}}
+													min="80"
+													step="10"
+												/>
+											</div>
+										</div>
 									</div>
 								</div>
 
 								<!-- Data Source -->
 								<div>
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+									<label for="data-source" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Data Source
 									</label>
 									<select
-										class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+										id="data-source"
 										bind:value={widgetConfig.dataSource}
+										class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 									>
-										<option value="">Select data source...</option>
-										{#each dataSourceOptions as option}
-											<option value={option.value}>{option.label}</option>
+										<option value="">Select data source</option>
+										{#each dataSources as source}
+											<option value={source.value}>{source.label}</option>
 										{/each}
 									</select>
 								</div>
 
-								<!-- Widget-specific configuration -->
-								{#if selectedTemplate.type === 'circular-gauge' || selectedTemplate.type === 'linear-gauge' || selectedTemplate.type === 'speedometer'}
-									<div class="grid grid-cols-2 gap-3">
+								<!-- Thresholds -->
+								<div>
+									<h4 class="text-md font-medium text-gray-900 dark:text-white mb-3">Thresholds</h4>
+									<div class="grid grid-cols-2 gap-4">
 										<div>
-											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											<label for="min-value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 												Min Value
 											</label>
 											<input
+												id="min-value"
 												type="number"
+												placeholder="0"
 												class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-												value={widgetConfig.config?.min || 0}
-												onchange={(e) => updateNestedConfig('config.min', parseFloat((e.target as HTMLInputElement)?.value ?? '0'))}
 											/>
 										</div>
 										<div>
-											<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											<label for="max-value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 												Max Value
 											</label>
 											<input
+												id="max-value"
 												type="number"
+												placeholder="100"
 												class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-												value={widgetConfig.config?.max || 100}
-												onchange={(e) => updateNestedConfig('config.max', parseFloat((e.target as HTMLInputElement)?.value ?? '100'))}
+											/>
+										</div>
+									</div>
+									<div>
+										<label for="unit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											Unit
+										</label>
+										<input
+											id="unit"
+											type="text"
+											bind:value={widgetConfig.config.unit}
+											placeholder="%, °C, MB/s, etc."
+											class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+										/>
+									</div>
+								</div>
+
+								<!-- Styling -->
+								<div>
+									<h4 class="text-md font-medium text-gray-900 dark:text-white mb-3">Styling</h4>
+									
+									<!-- Color Presets -->
+									<div>
+										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											Color Preset
+										</label>
+										<div class="grid grid-cols-1 gap-2">
+											{#each colorPresets as preset}
+												<button
+													class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+													onclick={() => setColorPreset(preset)}
+												>
+													<div class="flex gap-1">
+														{#each preset.colors as color}
+															<div class="w-4 h-4 rounded-full" style="background-color: {color}"></div>
+														{/each}
+													</div>
+													<span class="text-gray-900 dark:text-white">{preset.name}</span>
+												</button>
+											{/each}
+										</div>
+									</div>
+
+									<!-- Custom Colors -->
+									<div>
+										<label for="bg-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											Background Color
+										</label>
+										<input
+											id="bg-color"
+											type="color"
+											bind:value={widgetConfig.styling.backgroundColor}
+											class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"
+										/>
+									</div>
+
+									<div class="grid grid-cols-2 gap-4">
+										<div>
+											<label for="border-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+												Border Color
+											</label>
+											<input
+												id="border-color"
+												type="color"
+												bind:value={widgetConfig.styling.borderColor}
+												class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"
+											/>
+										</div>
+										<div>
+											<label for="border-width" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+												Border Width
+											</label>
+											<input
+												id="border-width"
+												type="number"
+												bind:value={widgetConfig.styling.borderWidth}
+												min="0"
+												max="10"
+												class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 											/>
 										</div>
 									</div>
 
 									<div>
-										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-											Unit
+										<label for="border-radius" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+											Border Radius
 										</label>
 										<input
-											type="text"
-											class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-											value={widgetConfig.config?.unit || '%'}
-											onchange={(e) => updateNestedConfig('config.unit', (e.target as HTMLInputElement)?.value)}
-											placeholder="%"
-										/>
-									</div>
-								{/if}
-							</div>
-
-						{:else if activeTab === 'styling' && selectedTemplate}
-							<!-- Styling configuration -->
-							<div class="space-y-4">
-								<!-- Color presets -->
-								<div>
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-										Color Preset
-									</label>
-									<div class="grid grid-cols-1 gap-2">
-										{#each colorPresets as preset}
-											<button
-												class="flex items-center gap-3 p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-												onclick={() => updateNestedConfig('config.colors', preset.colors)}
-											>
-												<div class="flex gap-1">
-													{#each preset.colors as color}
-														<div class="w-4 h-4 rounded-full" style="background-color: {color}"></div>
-													{/each}
-												</div>
-												<span class="text-sm text-gray-700 dark:text-gray-300">{preset.name}</span>
-											</button>
-										{/each}
-									</div>
-								</div>
-
-								<!-- Background color -->
-								<div>
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-										Background Color
-									</label>
-									<input
-										type="color"
-										class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"
-										value={widgetConfig.styling?.backgroundColor || '#ffffff'}
-										onchange={(e) => updateNestedConfig('styling.backgroundColor', (e.target as HTMLInputElement)?.value)}
-									/>
-								</div>
-
-								<!-- Border -->
-								<div class="grid grid-cols-2 gap-3">
-									<div>
-										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-											Border Color
-										</label>
-										<input
-											type="color"
-											class="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"
-											value={widgetConfig.styling?.borderColor || '#e5e7eb'}
-											onchange={(e) => updateNestedConfig('styling.borderColor', (e.target as HTMLInputElement)?.value)}
-										/>
-									</div>
-									<div>
-										<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-											Border Width
-										</label>
-										<input
+											id="border-radius"
 											type="number"
-											class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-											value={widgetConfig.styling?.borderWidth || 1}
-											onchange={(e) => updateNestedConfig('styling.borderWidth', parseInt((e.target as HTMLInputElement)?.value ?? '1'))}
+											bind:value={widgetConfig.styling.borderRadius}
 											min="0"
-											max="10"
+											max="50"
+											class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 										/>
 									</div>
-								</div>
-
-								<!-- Border radius -->
-								<div>
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-										Border Radius
-									</label>
-									<input
-										type="range"
-										class="w-full"
-										value={widgetConfig.styling?.borderRadius || 8}
-										onchange={(e) => updateNestedConfig('styling.borderRadius', parseInt((e.target as HTMLInputElement)?.value ?? '8'))}
-										min="0"
-										max="20"
-									/>
-									<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-										{widgetConfig.styling?.borderRadius || 8}px
-									</div>
-								</div>
-							</div>
-						{/if}
-					</div>
-
-					<!-- Actions -->
-					{#if selectedTemplate}
-						<div class="p-4 border-t border-gray-200 dark:border-gray-700">
-							<button
-								onclick={addWidget}
-								class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-							>
-								Add Widget
-							</button>
-						</div>
-					{/if}
-				</div>
-
-				<!-- Preview -->
-				<div class="flex-1 p-6 bg-gray-50 dark:bg-gray-900">
-					<div class="h-full flex flex-col">
-						<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
-							Preview
-						</h3>
-						
-						{#if previewWidget}
-							<div class="flex-1 flex items-center justify-center">
-								<div 
-									class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4"
-									style="width: {previewWidget.size.width}px; height: {previewWidget.size.height}px;"
-								>
-									<WidgetRenderer 
-										config={previewWidget}
-										data={previewData}
-									/>
 								</div>
 							</div>
 						{:else}
-							<div class="flex-1 flex items-center justify-center text-gray-500 dark:text-gray-400">
-								<div class="text-center">
-									<div class="text-4xl mb-4">🎨</div>
-									<div>Select a template to see preview</div>
-								</div>
+							<div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+								<p class="text-lg">Select a widget template to begin configuration</p>
 							</div>
 						{/if}
 					</div>
 				</div>
+
+				<!-- Right Panel: Preview -->
+				<div class="w-80 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
+					<div class="p-6">
+						<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Preview</h3>
+						
+						{#if previewWidget}
+							<div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/30">
+															<WidgetRenderer
+								widget={previewWidget()}
+								data={mockData()}
+								isPreview={true}
+							/>
+							</div>
+							
+							<div class="mt-6 flex gap-3">
+								<button
+									class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+									onclick={createWidget}
+								>
+									Add Widget
+								</button>
+								<button
+									class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+									onclick={closeBuilder}
+								>
+									Cancel
+								</button>
+							</div>
+						{:else}
+							<div class="flex items-center justify-center h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+								<p class="text-gray-500 dark:text-gray-400">No preview available</p>
+							</div>
+						{/if}
+					</div>
+				</div>
+
 			</div>
 		</div>
 	</div>
 {/if}
-
-<style>
-	.widget-builder-overlay {
-		backdrop-filter: blur(4px);
-	}
-
-	.template-card {
-		transition: all 0.2s ease;
-	}
-
-	.template-card:hover {
-		transform: translateY(-1px);
-	}
-</style>

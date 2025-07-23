@@ -1,14 +1,17 @@
 import { json } from '@sveltejs/kit';
-import type { RequestHandler } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
 import { generateLayoutSuggestions } from '$lib/utils/aiLayoutSuggestions';
-import type { AILayoutRequest } from '$lib/types/ai';
 
 export const POST: RequestHandler = async ({ request }) => {
-  try {
-    const body: AILayoutRequest = await request.json();
-    const suggestions = await generateLayoutSuggestions(body);
-    return json(suggestions);
-  } catch (error) {
-    return json({ error: 'Failed to generate layout suggestions' }, { status: 500 });
-  }
+	try {
+		const body = await request.json();
+		const description = body.description || 'Default dashboard layout';
+		const availableWidgets = body.availableWidgets || [];
+		
+		const suggestions = await generateLayoutSuggestions(description, availableWidgets);
+		return json(suggestions);
+	} catch (error) {
+		console.error('AI layout generation failed:', error);
+		return json({ error: 'Failed to generate layout suggestions' }, { status: 500 });
+	}
 }; 

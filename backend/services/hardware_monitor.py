@@ -23,8 +23,8 @@ except ImportError:
 	CPUINFO_AVAILABLE = False
 	logging.warning("py-cpuinfo not available - detailed CPU info disabled")
 
-import clr
-clr.AddReference('LibreHardwareMonitorLib.dll')
+from HardwareMonitor import clr
+clr.AddReference('LibreHardwareMonitorLib')
 from LibreHardwareMonitor import Hardware
 
 from models.hardware import (

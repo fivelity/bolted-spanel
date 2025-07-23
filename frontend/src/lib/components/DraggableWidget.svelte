@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { draggable } from '@neodrag/svelte';
-	import type { WidgetConfig } from '$lib/types/widget';
-	import { layoutStore, selectedWidgets, isEditMode, currentLayout } from '$lib/stores/layoutStore';
-	import GaugeWidget from './widgets/GaugeWidget.svelte';
-	import SimpleWidget from './widgets/SimpleWidget.svelte';
-	import MeterWidget from './widgets/MeterWidget.svelte';
+	import type { WidgetConfig } from '$lib/types/dashboard';
+	import { dashboardState, dashboardActions } from '$lib/stores/dashboard.svelte';
+	import { sensorStore } from '$lib/stores/sensorStore';
+	import WidgetRenderer from './WidgetRenderer.svelte';
 
 	interface Props {
 		widget: WidgetConfig;
@@ -12,31 +11,29 @@
 
 	let { widget }: Props = $props();
 
-	let isSelected = $derived(() => $selectedWidgets.includes(widget.id));
+	let isSelected = $derived($dashboardState.selectedWidgets.includes(widget.id));
+	let isEditMode = $state(true); // For now, always in edit mode
 
-	// Drag configuration
-	const dragOptions = {
-		disabled: !isEditMode,
-		bounds: 'parent',
-		grid: [20, 20], // Use fixed grid size for now
-		onDragStart: () => {
-			if (!isSelected) {
-				layoutStore.selectWidget(widget.id);
-			}
-		},
-		onDrag: ({ offsetX, offsetY }: { offsetX: number; offsetY: number }) => {
-			layoutStore.updateWidget(widget.id, {
-				position: { x: offsetX, y: offsetY }
-			});
+	// Simplified drag configuration
+	function handleDragStart() {
+		if (!isSelected) {
+			dashboardActions.selectWidget(widget.id);
 		}
-	};
+	}
+
+	function handleDrag(event: CustomEvent) {
+		const { offsetX, offsetY } = event.detail;
+		dashboardActions.updateWidget(widget.id, {
+			position: { x: offsetX, y: offsetY }
+		});
+	}
 
 	function handleClick(event: MouseEvent) {
 		if (!isEditMode) return;
 		
 		event.stopPropagation();
 		const multiSelect = event.ctrlKey || event.metaKey;
-		layoutStore.selectWidget(widget.id, multiSelect);
+		dashboardActions.selectWidget(widget.id, multiSelect);
 	}
 
 	function handleDoubleClick() {
@@ -49,38 +46,27 @@
 <div
 	class="draggable-widget absolute"
 	class:selected={isSelected}
-	class:edit-mode={$isEditMode}
+	class:edit-mode={isEditMode}
 	style="
 		left: {widget.position.x}px;
 		top: {widget.position.y}px;
-		width: {widget.size.w}px;
-		height: {widget.size.h}px;
+		width: {widget.size.width}px;
+		height: {widget.size.height}px;
 		z-index: {isSelected ? 10 : 1};
 	"
-	use:draggable={dragOptions}
 	onclick={handleClick}
 	ondblclick={handleDoubleClick}
-	on:keydown={(e) => { if (e.key === 'Enter' || e.key === 'Space') handleClick(e as unknown as MouseEvent); }}
+	onkeydown={(e) => { if (e.key === 'Enter' || e.key === 'Space') handleClick(e as unknown as MouseEvent); }}
 	role="button"
 	tabindex="0"
 >
 	<!-- Widget Content -->
 	<div class="widget-content h-full w-full">
-		{#if widget.type === 'gauge'}
-			<GaugeWidget config={widget} />
-		{:else if widget.type === 'simple'}
-			<SimpleWidget config={widget} />
-		{:else if widget.type === 'meter'}
-			<MeterWidget config={widget} />
-		{:else}
-			<div class="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded">
-				<span class="text-gray-500">Unknown widget type: {widget.type}</span>
-			</div>
-		{/if}
+		<WidgetRenderer widget={widget} data={null} />
 	</div>
 
 	<!-- Selection Indicator -->
-	{#if isSelected && $isEditMode}
+	{#if isSelected && isEditMode}
 		<div class="selection-outline absolute inset-0 pointer-events-none">
 			<div class="selection-border"></div>
 			
@@ -95,7 +81,7 @@
 	{/if}
 
 	<!-- Widget Actions (Edit Mode) -->
-	{#if isSelected && $isEditMode}
+	{#if isSelected && isEditMode}
 		<div class="widget-actions absolute -top-8 left-0 flex gap-1 bg-surface-100-800-token rounded px-2 py-1 text-xs">
 			<button
 				class="p-1 hover:bg-surface-200-700-token rounded"
@@ -106,7 +92,7 @@
 			</button>
 			<button
 				class="p-1 hover:bg-surface-200-700-token rounded text-error-500"
-				onclick={(e) => { e.stopPropagation(); layoutStore.removeWidget(widget.id); }}
+				onclick={(e) => { e.stopPropagation(); dashboardActions.removeWidget(widget.id); }}
 				title="Delete widget"
 			>
 				🗑️

@@ -1,44 +1,48 @@
 <script lang="ts">
-	import type { WidgetConfig } from '$lib/types/widget';
+	import type { WidgetConfig } from '$lib/types/dashboard';
 	import { sensorStore } from '$lib/stores/sensorStore';
 	import { onMount } from 'svelte';
 
 	interface Props {
 		config: WidgetConfig;
+		value?: number | null;
 	}
 
-	let { config }: Props = $props();
+	let { config, value }: Props = $props();
 
-	// Get sensor value reactively
+	// Get sensor value reactively (fallback if no value provided)
 	let sensorValue = $derived(() => {
-		return sensorStore.getSensorValue(config.sensorPath);
+		if (value !== undefined) return value;
+		
+		// Legacy compatibility: try dataSource first, then sensorPath
+		const dataPath = config.dataSource || (config as any).sensorPath;
+		return dataPath ? sensorStore.getSensorValue(dataPath) : null;
 	});
 
 	// Calculate color based on value
 	let valueColor = $derived(() => {
-		const value = sensorValue();
-		const colors = config.appearance.colors;
-		
-		// Temperature-based coloring for temperature sensors
-		if (config.sensorPath.includes('temperature')) {
-			if (value >= 80) return colors[2] || '#ff4444'; // Hot
-			if (value >= 60) return colors[1] || '#ffaa00'; // Warm
-			return colors[0] || '#00ff88'; // Cool
+		const val = sensorValue();
+		// Try new config structure first, then legacy
+		const colors = config.config?.colors || (config as any).appearance?.colors || ['#22c55e', '#f59e0b', '#ef4444'];
+		const thresholds = config.thresholds || (config as any).appearance?.thresholds || [70, 90];
+
+		if (val === null || val === undefined) return colors[0];
+
+		if (thresholds.length >= 2) {
+			if (val >= thresholds[1]) return colors[2] || '#ef4444';
+			if (val >= thresholds[0]) return colors[1] || '#f59e0b';
 		}
-		
-		// Usage-based coloring for other sensors
-		if (value >= 80) return colors[2] || '#ff4444';
-		if (value >= 60) return colors[1] || '#ffaa00';
-		return colors[0] || '#00ff88';
+		return colors[0] || '#22c55e';
 	});
 
 	// Format value for display
 	let displayValue = $derived(() => {
-		const value = sensorValue();
-		if (value >= 1000) {
-			return (value / 1000).toFixed(1) + 'K';
+		const val = sensorValue();
+		if (val === null || val === undefined) return '—';
+		if (val >= 1000) {
+			return (val / 1000).toFixed(1) + 'K';
 		}
-		return value.toFixed(1);
+		return val.toFixed(1);
 	});
 
 	// Animation state
@@ -50,6 +54,7 @@
 		// Animate value on mount
 		const animate = () => {
 			const target = sensorValue();
+			if (target === null || target === undefined) return;
 			const diff = target - animatedValue;
 			if (Math.abs(diff) > 0.1) {
 				animatedValue += diff * 0.1;
@@ -65,6 +70,7 @@
 	$effect(() => {
 		if (mounted) {
 			const target = sensorValue();
+			if (target === null || target === undefined) return;
 			const animate = () => {
 				const diff = target - animatedValue;
 				if (Math.abs(diff) > 0.1) {
@@ -84,151 +90,76 @@
 		}
 		return animatedValue.toFixed(1);
 	});
+
+	// Get styling properties with fallbacks
+	let borderRadius = $derived(() => {
+		return (config as any).appearance?.borders?.radius || config.styling?.borderRadius || 8;
+	});
+
+	let fontSize = $derived(() => {
+		return (config as any).appearance?.typography?.fontSize || config.styling?.fontSize || 16;
+	});
+
+	let fontWeight = $derived(() => {
+		return (config as any).appearance?.typography?.fontWeight || config.styling?.fontWeight || 'bold';
+	});
 </script>
 
 <div 
 	class="simple-widget relative h-full w-full overflow-hidden group"
-	style="border-radius: {config.appearance.borders.radius}px;"
+	style="border-radius: {borderRadius}px;"
 >
 	<!-- Animated background with gradient -->
 	<div class="absolute inset-0 bg-gradient-to-br from-gray-900/60 via-gray-800/40 to-gray-900/60 backdrop-blur-sm"></div>
 	
 	<!-- Dynamic glow effect -->
 	<div 
-		class="absolute inset-0 rounded-lg opacity-20 blur-xl transition-all duration-1000 group-hover:opacity-30"
-		style="background: radial-gradient(circle at center, {valueColor()}, transparent 70%);"
+		class="absolute inset-0 opacity-20 transition-opacity duration-1000"
+		style="background: radial-gradient(circle at center, {valueColor} 0%, transparent 70%);"
 	></div>
+	
+	<!-- Border glow -->
+	<div 
+		class="absolute inset-0 rounded-lg opacity-60"
+		style="border: 1px solid {valueColor}; box-shadow: 0 0 10px {valueColor}40;"
+	></div>
+	
+	<!-- Content -->
+	<div class="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center">
+		<!-- Title -->
+		<div class="text-xs font-medium text-gray-300 mb-1 uppercase tracking-wider font-orbitron">
+			{config.title}
+		</div>
+		
+		<!-- Value -->
+		<div 
+			class="text-2xl font-bold transition-all duration-300 font-orbitron"
+			style="color: {valueColor}; font-size: {fontSize}px; font-weight: {fontWeight};"
+		>
+			{formattedAnimatedValue}
+		</div>
+		
+		<!-- Unit -->
+		{#if config.config?.unit || (config as any).unit}
+			<div class="text-xs text-gray-400 mt-1 font-mono">
+				{config.config?.unit || (config as any).unit}
+			</div>
+		{/if}
+	</div>
 
-	<!-- Scan line effect -->
+	<!-- Scanning line effect -->
 	<div class="absolute inset-0 overflow-hidden rounded-lg">
 		<div 
-			class="absolute w-full h-0.5 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-scan"
-			style="background: linear-gradient(90deg, transparent, {valueColor()}, transparent);"
+			class="absolute w-full h-px opacity-30 animate-scan"
+			style="background: linear-gradient(90deg, transparent 0%, {valueColor} 50%, transparent 100%);"
 		></div>
 	</div>
 
-	<!-- Main content -->
-	<div class="relative z-10 h-full flex flex-col items-center justify-center p-4">
-		<!-- Title with holographic effect -->
-		<h3 
-			class="text-xs font-semibold mb-3 text-center tracking-wider uppercase opacity-90 holographic-text"
-			style="
-				font-size: {Math.max(10, config.appearance.typography.fontSize - 6)}px;
-				color: {config.appearance.typography.color};
-				text-shadow: 0 0 8px {valueColor()}60;
-			"
-		>
-			{config.title}
-		</h3>
-
-		<!-- Value Display with enhanced styling -->
-		<div class="flex-1 flex items-center justify-center">
-			<div class="text-center relative">
-				<!-- Background glow for value -->
-				<div 
-					class="absolute inset-0 blur-lg opacity-50 transition-all duration-300"
-					style="color: {valueColor()};"
-				>
-					<div 
-						class="font-bold"
-						style="
-							font-size: {config.appearance.typography.fontSize * 1.2}px;
-							font-weight: {config.appearance.typography.fontWeight};
-						"
-					>
-						{formattedAnimatedValue()}
-					</div>
-				</div>
-
-				<!-- Main value -->
-				<div 
-					class="relative font-bold transition-all duration-300 digital-display group-hover:scale-105 font-mono numeric-display"
-					style="
-						font-size: {config.appearance.typography.fontSize * 1.2}px;
-						font-weight: {config.appearance.typography.fontWeight};
-						color: {valueColor()};
-						text-shadow: 0 0 12px {valueColor()}, 0 0 24px {valueColor()}40;
-						font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
-					"
-				>
-					{formattedAnimatedValue()}
-				</div>
-
-				<!-- Unit with subtle glow -->
-				<div 
-					class="text-sm opacity-80 mt-1 tracking-widest font-orbitron"
-					style="
-						color: {config.appearance.typography.color};
-						text-shadow: 0 0 6px {valueColor()}30;
-					"
-				>
-					{config.unit || ''}
-				</div>
-			</div>
-		</div>
-
-		<!-- Enhanced status bar with segments -->
-		<div class="w-full mt-3">
-			<div class="flex justify-between text-xs opacity-60 mb-1">
-				<span>0</span>
-				<span>50</span>
-				<span>100</span>
-			</div>
-			<div class="w-full h-2 bg-gray-800/50 rounded-full overflow-hidden backdrop-blur-sm border border-gray-700/50">
-				<!-- Segmented progress bar -->
-				<div class="h-full flex">
-					{#each Array(20) as _, i}
-						{@const segmentValue = (i + 1) * 5}
-						{@const isActive = animatedValue >= segmentValue - 2.5}
-						<div 
-							class="flex-1 transition-all duration-300 mx-px first:ml-0 last:mr-0"
-							style="
-								background-color: {isActive ? valueColor() : 'transparent'};
-								opacity: {isActive ? (segmentValue <= animatedValue ? 1 : 0.5) : 0.1};
-								box-shadow: {isActive ? `0 0 4px ${valueColor()}` : 'none'};
-							"
-						></div>
-					{/each}
-				</div>
-			</div>
-		</div>
-
-		<!-- Status indicator with pulse -->
-		<div class="flex items-center gap-2 mt-2">
-			<div 
-				class="w-2 h-2 rounded-full transition-all duration-300 relative"
-				style="
-					background-color: {valueColor()};
-					box-shadow: 0 0 8px {valueColor()};
-				"
-			>
-				{#if animatedValue > 80}
-					<div 
-						class="absolute inset-0 rounded-full animate-ping"
-						style="background-color: {valueColor()};"
-					></div>
-				{/if}
-			</div>
-			<span 
-				class="text-xs font-medium tracking-wider uppercase"
-				style="
-					color: {config.appearance.typography.color};
-					text-shadow: 0 0 4px {valueColor()}30;
-				"
-			>
-				{animatedValue >= 80 ? 'CRITICAL' : animatedValue >= 60 ? 'WARNING' : 'OPTIMAL'}
-			</span>
-		</div>
-	</div>
-
-	<!-- Corner brackets for sci-fi look -->
-	<div class="absolute top-1 left-1 w-3 h-3 border-l border-t opacity-40 transition-opacity group-hover:opacity-60" style="border-color: {valueColor()};"></div>
-	<div class="absolute top-1 right-1 w-3 h-3 border-r border-t opacity-40 transition-opacity group-hover:opacity-60" style="border-color: {valueColor()};"></div>
-	<div class="absolute bottom-1 left-1 w-3 h-3 border-l border-b opacity-40 transition-opacity group-hover:opacity-60" style="border-color: {valueColor()};"></div>
-	<div class="absolute bottom-1 right-1 w-3 h-3 border-r border-b opacity-40 transition-opacity group-hover:opacity-60" style="border-color: {valueColor()};"></div>
-
-	<!-- Data stream effect -->
-	<div class="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-transparent via-current to-transparent opacity-20 animate-pulse" style="color: {valueColor()};"></div>
+	<!-- Corner accents -->
+	<div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 rounded-tl-lg opacity-60" style="border-color: {valueColor};"></div>
+	<div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 rounded-tr-lg opacity-60" style="border-color: {valueColor};"></div>
+	<div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 rounded-bl-lg opacity-60" style="border-color: {valueColor};"></div>
+	<div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 rounded-br-lg opacity-60" style="border-color: {valueColor};"></div>
 </div>
 
 <style lang="css">
@@ -255,16 +186,7 @@
 			0 0 15px rgba(var(--color-primary-500), 0.2);
 	}
 
-	.digital-display {
-		letter-spacing: 0.1em;
-		font-variant-numeric: tabular-nums;
-	}
 
-	.holographic-text {
-		background: linear-gradient(45deg, currentColor, transparent, currentColor);
-		background-clip: text;
-		-webkit-background-clip: text;
-	}
 
 	@keyframes scan {
 		0% { transform: translateY(-100%); }
@@ -276,8 +198,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.animate-scan,
-		.animate-ping {
+		.animate-scan {
 			animation: none;
 		}
 	}

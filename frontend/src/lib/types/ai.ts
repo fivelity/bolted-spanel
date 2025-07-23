@@ -1,3 +1,5 @@
+import type { WidgetConfig } from './dashboard';
+
 export interface LayoutSuggestion {
 	id: string;
 	name: string;

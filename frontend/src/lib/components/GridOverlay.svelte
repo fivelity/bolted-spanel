@@ -1,12 +1,12 @@
 <script lang="ts">
 	interface Props {
-		gridSize: number
-		zoom: number
+		gridSize: number;
+		zoom: number;
 	}
 
-	let { gridSize, zoom }: Props = $props()
-
-	$: adjustedGridSize = gridSize * zoom
+	let { gridSize, zoom }: Props = $props();
+	
+	let adjustedGridSize = $derived(gridSize * zoom);
 </script>
 
 <div 

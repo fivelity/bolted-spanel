@@ -40,7 +40,7 @@
 		if (displayValue >= speedometerConfig.dangerZone) return speedometerConfig.colors.danger
 		if (displayValue >= speedometerConfig.warningZone) return speedometerConfig.colors.warning
 		return speedometerConfig.colors.safe
-	})()
+	})
 
 	// SVG dimensions
 	let size = $derived(Math.min(config.size.width, config.size.height) - 20);
@@ -174,7 +174,7 @@
 					y1={center}
 					x2={center + radius - 40}
 					y2={center}
-					stroke={currentZoneColor}
+					stroke={currentZoneColor()}
 					stroke-width="3"
 					stroke-linecap="round"
 					class="transition-all duration-1000 ease-out"
@@ -184,7 +184,7 @@
 					cx={center + radius - 40}
 					cy={center}
 					r="3"
-					fill={currentZoneColor}
+					fill={currentZoneColor()}
 				/>
 			</g>
 
@@ -200,7 +200,7 @@
 				cx={center}
 				cy={center}
 				r="4"
-				fill={currentZoneColor}
+				fill={currentZoneColor()}
 			/>
 		</svg>
 

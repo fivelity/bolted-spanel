@@ -26,15 +26,15 @@
 	// Merge config with defaults
 	let gaugeConfig = $derived({ ...defaults, ...config.config })
 	let displayValue = $derived(value ?? 0)
-	let percentage = $derived(Math.max(0, Math.min(100, (($displayValue - $gaugeConfig.min) / ($gaugeConfig.max - $gaugeConfig.min)) * 100)))
+	let percentage = $derived(Math.max(0, Math.min(100, ((displayValue - gaugeConfig.min) / (gaugeConfig.max - gaugeConfig.min)) * 100)))
 
 	// Calculate color based on thresholds
 	let currentColor = $derived(() => {
-		const thresholds = $gaugeConfig.thresholds || []
-		const colors = $gaugeConfig.colors || defaults.colors
+		const thresholds = gaugeConfig.thresholds || []
+		const colors = gaugeConfig.colors || defaults.colors
 		
 		for (let i = 0; i < thresholds.length; i++) {
-			if ($displayValue <= thresholds[i]) {
+			if (displayValue <= thresholds[i]) {
 				return colors[i] || colors[0]
 			}
 		}
@@ -44,13 +44,13 @@
 
 	// SVG dimensions
 	let size = $derived(Math.min(config.size.width, config.size.height) - 20)
-	let center = $derived($size / 2)
-	let radius = $derived(($size - $gaugeConfig.strokeWidth) / 2)
+	let center = $derived(size / 2)
+	let radius = $derived((size - gaugeConfig.strokeWidth) / 2)
 
 	// Arc calculations
-	let circumference = $derived(2 * Math.PI * $radius)
-	let arcLength = $derived(($percentage / 100) * $circumference * 0.75) // 270 degrees
-	let dashArray = $derived(`${$arcLength} ${$circumference}`)
+	let circumference = $derived(2 * Math.PI * radius)
+	let arcLength = $derived((percentage / 100) * circumference * 0.75) // 270 degrees
+	let dashArray = $derived(`${arcLength} ${circumference}`)
 
 	// Animation
 	let mounted = $state(false)
@@ -59,69 +59,57 @@
 	})
 </script>
 
-<div class="circular-gauge flex flex-col items-center justify-center h-full p-4">
-	{#if $gaugeConfig.showTitle}
-		<h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center">
-			{config.title}
-		</h3>
-	{/if}
-
-	<div class="gauge-container relative">
-		<svg width={$size} height={$size} class="transform -rotate-90">
-			<!-- Background circle -->
-			<circle
-				cx={$center}
-				cy={$center}
-				r={$radius}
-				fill="none"
-				stroke="currentColor"
-				stroke-width={$gaugeConfig.strokeWidth}
-				class="text-gray-200 dark:text-gray-700"
-				stroke-linecap="round"
-				stroke-dasharray={`${$circumference * 0.75} ${$circumference}`}
-				stroke-dashoffset={$circumference * 0.125}
-			/>
-			
-			<!-- Progress circle -->
-			<circle
-				cx={$center}
-				cy={$center}
-				r={$radius}
-				fill="none"
-				stroke={$currentColor}
-				stroke-width={$gaugeConfig.strokeWidth}
-				stroke-linecap="round"
-				stroke-dasharray={$dashArray}
-				stroke-dashoffset={$circumference * 0.125}
-				class="transition-all duration-1000 ease-out"
-				style="opacity: {mounted ? 1 : 0}"
-			/>
-		</svg>
-
-		<!-- Center content -->
-		{#if $gaugeConfig.showValue}
-			<div class="absolute inset-0 flex flex-col items-center justify-center">
-				<div class="text-2xl font-bold text-gray-900 dark:text-white">
-					{$displayValue.toFixed(1)}
-				</div>
-				<div class="text-xs text-gray-500 dark:text-gray-400">
-					{$gaugeConfig.unit}
-				</div>
+<div class="gauge-container relative">
+	<svg width={size} height={size} class="transform -rotate-90">
+		<!-- Background circle -->
+		<circle
+			cx={center}
+			cy={center}
+			r={radius}
+			fill="none"
+			stroke="currentColor"
+			stroke-width={gaugeConfig.strokeWidth}
+			class="text-gray-200 dark:text-gray-700"
+		/>
+		
+		<!-- Progress circle -->
+		<circle
+			cx={center}
+			cy={center}
+			r={radius}
+			fill="none"
+			stroke={currentColor()}
+			stroke-width={gaugeConfig.strokeWidth}
+			stroke-linecap="round"
+			stroke-dasharray={dashArray}
+			stroke-dashoffset={circumference * 0.125}
+			class="transition-all duration-1000 ease-out"
+		/>
+	</svg>
+	
+	<!-- Center content -->
+	{#if gaugeConfig.showValue}
+		<div class="absolute inset-0 flex flex-col items-center justify-center">
+			<div class="text-2xl font-bold text-gray-900 dark:text-white">
+				{displayValue.toFixed(1)}
 			</div>
-		{/if}
-	</div>
-
+			<div class="text-xs text-gray-500 dark:text-gray-400">
+				{gaugeConfig.unit}
+			</div>
+		</div>
+	{/if}
+	
 	<!-- Threshold indicators -->
-	{#if $gaugeConfig.thresholds && $gaugeConfig.thresholds.length > 0}
+	{#if gaugeConfig.thresholds && gaugeConfig.thresholds.length > 0}
 		<div class="flex items-center gap-2 mt-2 text-xs">
-			{#each $gaugeConfig.thresholds as threshold, i}
+			{#each gaugeConfig.thresholds as threshold, i}
 				<div class="flex items-center gap-1">
-					<div 
+					<div
 						class="w-2 h-2 rounded-full"
-						style="background-color: {$gaugeConfig.colors[i] || '#gray'}"
+						style="background-color: {gaugeConfig.colors[i] || '#gray'}"
 					></div>
 					<span class="text-gray-600 dark:text-gray-400">
-						{threshold}{$gaugeConfig.unit}
+						{threshold}{gaugeConfig.unit}
 					</span>
 				</div>
 			{/each}
@@ -131,11 +119,7 @@
 
 <style>
 	.gauge-container {
-		position: relative;
-		display: inline-block;
-	}
-
-	.circular-gauge {
-		user-select: none;
+		width: fit-content;
+		height: fit-content;
 	}
 </style>

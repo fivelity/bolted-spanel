@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-	import { dashboardState, dashboardActions, currentLayout } from '$lib/stores/dashboard'
-	import { hardwareData } from '$lib/stores/hardware'
+	import { dashboardState, dashboardActions, currentLayout } from '$lib/stores/dashboard.svelte'
+	import { sensorStore } from '$lib/stores/sensorStore'
 	import DraggableWidget from './DraggableWidget.svelte'
 	import GridOverlay from './GridOverlay.svelte'
 	import SelectionBox from './SelectionBox.svelte'
-	import type { Position } from '$lib/types/dashboard'
+	import type { Position, WidgetConfig } from '$lib/types/dashboard'
 
 	let canvasElement: HTMLDivElement
 	let isSelecting = $state(false)
@@ -77,7 +77,7 @@
 			const minY = Math.min(selectionStart.y, selectionEnd.y)
 			const maxY = Math.max(selectionStart.y, selectionEnd.y)
 
-			$currentLayout.widgets.forEach(widget => {
+			$currentLayout.widgets.forEach((widget: WidgetConfig) => {
 				const widgetRight = widget.position.x + widget.size.width
 				const widgetBottom = widget.position.y + widget.size.height
 
@@ -91,6 +91,23 @@
 				}
 			})
 		}
+	}
+
+	// Widget handlers
+	function handleWidgetSelect(widget: WidgetConfig, multiSelect: boolean) {
+		dashboardActions.selectWidget(widget.id, multiSelect)
+	}
+
+	function handleWidgetDeselect(widget: WidgetConfig) {
+		dashboardActions.deselectWidget(widget.id)
+	}
+
+	function handleWidgetUpdate(widget: WidgetConfig, updates: Partial<WidgetConfig>) {
+		dashboardActions.updateWidget(widget.id, updates)
+	}
+
+	function handleWidgetRemove(widgetId: string) {
+		dashboardActions.removeWidget(widgetId)
 	}
 
 	// Keyboard shortcuts
@@ -108,7 +125,7 @@
 				case 'a':
 					event.preventDefault()
 					if ($currentLayout) {
-						$currentLayout.widgets.forEach(widget => {
+						$currentLayout.widgets.forEach((widget: WidgetConfig) => {
 							dashboardActions.selectWidget(widget.id, true)
 						})
 					}
@@ -116,7 +133,7 @@
 				case 'Delete':
 				case 'Backspace':
 					event.preventDefault()
-					$dashboardState.selectedWidgets.forEach(widgetId => {
+					$dashboardState.selectedWidgets.forEach((widgetId: string) => {
 						dashboardActions.removeWidget(widgetId)
 					})
 					dashboardActions.clearSelection()
@@ -133,6 +150,8 @@
 	})
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
 	bind:this={canvasElement}
 	class="dashboard-canvas relative w-full h-full overflow-hidden bg-gray-50 dark:bg-gray-900"
@@ -145,6 +164,8 @@
 	onmouseup={handleMouseUp}
 	onkeydown={handleKeyDown}
 	role="application"
+	tabindex="0"
+	aria-label="Dashboard canvas for placing and arranging widgets"
 >
 	<!-- Grid overlay -->
 	{#if $dashboardState.isGridVisible}
@@ -158,13 +179,7 @@
 	{#if $currentLayout}
 		{#each $currentLayout.widgets as widget (widget.id)}
 			<DraggableWidget 
-				widget={widget as any} // Temporary type cast, fix types
-				isSelected={$dashboardState.selectedWidgets.includes(widget.id)}
-				hardwareData={$hardwareData}
-				onSelect={(multiSelect) => dashboardActions.selectWidget(widget.id, multiSelect)}
-				onDeselect={() => dashboardActions.deselectWidget(widget.id)}
-				onUpdate={(updates) => dashboardActions.updateWidget(widget.id, updates)}
-				onRemove={() => dashboardActions.removeWidget(widget.id)}
+				{widget}
 			/>
 		{/each}
 	{/if}

@@ -1,5 +1,3 @@
-import type { LayoutSuggestion } from './ai';
-
 export interface Position {
 	x: number
 	y: number
@@ -49,17 +47,15 @@ export interface WidgetStyling {
 }
 
 export type WidgetType = 
-	| 'circular-gauge'
+	| 'gauge' 
+	| 'meter' 
+	| 'simple' 
+	| 'circular-gauge' 
 	| 'linear-gauge' 
-	| 'speedometer'
-	| 'bar-chart'
-	| 'line-chart'
-	| 'area-chart'
+	| 'speedometer' 
 	| 'kpi-card'
-	| 'text-display'
-	| 'system-info'
-	| 'temperature-grid'
-	| 'network-monitor'
+	| 'arc-meter'
+	| 'cosmic-sensor'
 
 export interface DashboardLayout {
 	id: string
@@ -144,7 +140,7 @@ export interface DashboardState {
 	historyIndex: number
 	aiLayout: {
 		isOpen: boolean;
-		suggestions: LayoutSuggestion[];
+		suggestions: any[]; // Remove the direct LayoutSuggestion dependency
 	}
 }
 

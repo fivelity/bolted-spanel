@@ -96,28 +96,28 @@
 		onmousedown={(e) => handleMouseDown('nw', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('nw', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('nw', e as unknown as MouseEvent); }}
 	></div>
 	<div
 		class="resize-handle corner ne-resize absolute -top-1 -right-1 w-3 h-3 bg-blue-500 border border-white rounded-full pointer-events-auto cursor-ne-resize"
 		onmousedown={(e) => handleMouseDown('ne', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('ne', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('ne', e as unknown as MouseEvent); }}
 	></div>
 	<div
 		class="resize-handle corner sw-resize absolute -bottom-1 -left-1 w-3 h-3 bg-blue-500 border border-white rounded-full pointer-events-auto cursor-sw-resize"
 		onmousedown={(e) => handleMouseDown('sw', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('sw', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('sw', e as unknown as MouseEvent); }}
 	></div>
 	<div
 		class="resize-handle corner se-resize absolute -bottom-1 -right-1 w-3 h-3 bg-blue-500 border border-white rounded-full pointer-events-auto cursor-se-resize"
 		onmousedown={(e) => handleMouseDown('se', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('se', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('se', e as unknown as MouseEvent); }}
 	></div>
 
 	<!-- Edge handles -->
@@ -126,28 +126,28 @@
 		onmousedown={(e) => handleMouseDown('n', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('n', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('n', e as unknown as MouseEvent); }}
 	></div>
 	<div
 		class="resize-handle edge s-resize absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-6 h-2 bg-blue-500 border border-white rounded pointer-events-auto cursor-s-resize"
 		onmousedown={(e) => handleMouseDown('s', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('s', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('s', e as unknown as MouseEvent); }}
 	></div>
 	<div
 		class="resize-handle edge w-resize absolute top-1/2 -left-1 transform -translate-y-1/2 w-2 h-6 bg-blue-500 border border-white rounded pointer-events-auto cursor-w-resize"
 		onmousedown={(e) => handleMouseDown('w', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('w', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('w', e as unknown as MouseEvent); }}
 	></div>
 	<div
 		class="resize-handle edge e-resize absolute top-1/2 -right-1 transform -translate-y-1/2 w-2 h-6 bg-blue-500 border border-white rounded pointer-events-auto cursor-e-resize"
 		onmousedown={(e) => handleMouseDown('e', e)}
 		role="button"
 		tabindex="0"
-		on:keydown={(e) => { if (e.key === 'Enter') handleMouseDown('e', e as unknown as MouseEvent); }}
+		onkeydown={(e) => { if (e.key === 'Enter') handleMouseDown('e', e as unknown as MouseEvent); }}
 	></div>
 </div>
 

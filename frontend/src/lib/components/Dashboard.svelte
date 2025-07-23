@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { layoutStore, currentLayout } from '$lib/stores/layoutStore';
+	import { currentLayout, dashboardState } from '$lib/stores/dashboard.svelte';
 	import { sensorStore } from '$lib/stores/sensorStore';
 	import { themeStore, currentTheme } from '$lib/stores/themeStore';
 	import { alertStore, alertHistory } from '$lib/stores/alertStore';
-	import { dashboardState } from '$lib/stores/dashboard';
 	import Toolbar from './Toolbar.svelte';
-	import DashboardGrid from './DashboardGrid.svelte';
+	import DashboardCanvas from './DashboardCanvas.svelte';
 	import AILayoutModal from './AILayoutModal.svelte';
 
 	onMount(() => {
@@ -14,9 +13,7 @@
 			await alertStore.init();
 		})();
 
-		layoutStore.init();
 		themeStore.init();
-
 		sensorStore.connect();
 
 		return () => {
@@ -48,7 +45,7 @@
 			</div>
 		</div>
 		
-		<DashboardGrid />
+		<DashboardCanvas />
 	</div>
 
 	<!-- Status Bar -->

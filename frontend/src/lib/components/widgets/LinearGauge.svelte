@@ -25,13 +25,13 @@
 
 	let gaugeConfig = $derived({ ...defaults, ...config.config });
 	let displayValue = $derived(value ?? 0);
-	let percentage = $derived(Math.max(0, Math.min(100, (($displayValue - $gaugeConfig.min) / ($gaugeConfig.max - $gaugeConfig.min)) * 100)));
+	let percentage = $derived(Math.max(0, Math.min(100, ((displayValue - gaugeConfig.min) / (gaugeConfig.max - gaugeConfig.min)) * 100)));
 	let currentColor = $derived(() => {
-		const thresholds = $gaugeConfig.thresholds || []
-		const colors = $gaugeConfig.colors || defaults.colors
+		const thresholds = gaugeConfig.thresholds || []
+		const colors = gaugeConfig.colors || defaults.colors
 		
 		for (let i = 0; i < thresholds.length; i++) {
-			if ($displayValue <= thresholds[i]) {
+			if (displayValue <= thresholds[i]) {
 				return colors[i] || colors[0]
 			}
 		}

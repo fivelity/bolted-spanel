@@ -1,97 +1,105 @@
-import type { HardwareData } from '../types/hardware'
-import { writable } from 'svelte/store'
+import { writable } from 'svelte/store';
+import type { HardwareData } from '../types/hardware';
+
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+// Connection status store
+export const connectionStatus = writable<ConnectionStatus>('disconnected');
+
+// Hardware data store  
+export const hardwareData = writable<HardwareData | null>(null);
+
+// WebSocket connection
+let ws: WebSocket | null = null;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+const reconnectDelay = 3000;
 
 export class WebSocketService {
-	private ws: WebSocket | null = null
-	private url: string
-	private dataCallbacks: ((data: HardwareData) => void)[] = []
-	private connectionState = writable<'disconnected' | 'connecting' | 'connected'>('disconnected')
-	private reconnectTimer: number | null = null
-	private reconnectAttempts = 0
-	private maxReconnectAttempts = 5
-	private reconnectDelay = 1000
-
-	constructor(url: string) {
-		this.url = url
+	private static instance: WebSocketService;
+	
+	static getInstance(): WebSocketService {
+		if (!WebSocketService.instance) {
+			WebSocketService.instance = new WebSocketService();
+		}
+		return WebSocketService.instance;
 	}
 
-	connect(): void {
-		if (this.ws?.readyState === WebSocket.OPEN) {
-			return
+	connect(url: string = 'ws://localhost:8000/ws'): void {
+		if (ws?.readyState === WebSocket.OPEN) {
+			return; // Already connected
 		}
 
-		this.connectionState.set('connecting')
-		this.ws = new WebSocket(this.url)
+		connectionStatus.set('connecting');
+		
+		try {
+			ws = new WebSocket(url);
+			
+			ws.onopen = () => {
+				console.log('WebSocket connected');
+				connectionStatus.set('connected');
+				reconnectAttempts = 0;
+			};
 
-		this.ws.onopen = () => {
-			this.connectionState.set('connected')
-			this.reconnectAttempts = 0
+			ws.onmessage = (event) => {
+				try {
+					const data = JSON.parse(event.data) as HardwareData;
+					hardwareData.set(data);
+				} catch (error) {
+					console.error('Failed to parse WebSocket message:', error);
+				}
+			};
+
+			ws.onclose = () => {
+				console.log('WebSocket disconnected');
+				connectionStatus.set('disconnected');
+				this.handleReconnect(url);
+			};
+
+			ws.onerror = (error) => {
+				console.error('WebSocket error:', error);
+				connectionStatus.set('error');
+			};
+
+		} catch (error) {
+			console.error('Failed to create WebSocket connection:', error);
+			connectionStatus.set('error');
 		}
+	}
 
-		this.ws.onmessage = (event) => {
-			try {
-				const data: HardwareData = JSON.parse(event.data)
-				this.dataCallbacks.forEach(callback => callback(data))
-			} catch (error) {
-				console.error('Failed to parse WebSocket message:', error)
-			}
-		}
-
-		this.ws.onclose = () => {
-			this.connectionState.set('disconnected')
-			this.scheduleReconnect()
-		}
-
-		this.ws.onerror = (error) => {
-			console.error('WebSocket error:', error)
+	private handleReconnect(url: string): void {
+		if (reconnectAttempts < maxReconnectAttempts) {
+			reconnectAttempts++;
+			console.log(`Attempting to reconnect... (${reconnectAttempts}/${maxReconnectAttempts})`);
+			
+			setTimeout(() => {
+				this.connect(url);
+			}, reconnectDelay);
+		} else {
+			console.error('Max reconnection attempts reached');
+			connectionStatus.set('error');
 		}
 	}
 
 	disconnect(): void {
-		if (this.ws) {
-			this.ws.close()
-			this.ws = null
+		if (ws) {
+			ws.close();
+			ws = null;
 		}
-		
-		if (this.reconnectTimer) {
-			clearTimeout(this.reconnectTimer)
-			this.reconnectTimer = null
-		}
-		
-		this.connectionState.set('disconnected')
+		connectionStatus.set('disconnected');
 	}
 
-	private cleanup(): void {
-		if (this.reconnectTimer) {
-			clearTimeout(this.reconnectTimer)
-			this.reconnectTimer = null
+	send(data: any): void {
+		if (ws?.readyState === WebSocket.OPEN) {
+			ws.send(JSON.stringify(data));
+		} else {
+			console.warn('WebSocket is not connected');
 		}
 	}
+}
 
-	private scheduleReconnect(): void {
-		if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-			console.error('Max reconnection attempts reached')
-			return
-		}
-
-		this.reconnectTimer = window.setTimeout(() => {
-			this.reconnectAttempts++
-			this.connect()
-		}, this.reconnectDelay * Math.pow(2, this.reconnectAttempts))
-	}
-
-	onData(callback: (data: HardwareData) => void): () => void {
-		this.dataCallbacks.push(callback)
-		
-		return () => {
-			const index = this.dataCallbacks.indexOf(callback)
-			if (index > -1) {
-				this.dataCallbacks.splice(index, 1)
-			}
-		}
-	}
-
-	getConnectionState() {
-		return this.connectionState
-	}
+// Auto-connect when in browser
+if (typeof window !== 'undefined') {
+	const wsService = WebSocketService.getInstance();
+	wsService.connect();
 }

@@ -11,7 +11,7 @@
 -->
 
 <script lang="ts">
-  // import CosmicFrame from './CosmicFrame.svelte'; // Ensure this file exists
+  import CosmicFrame from '../CosmicFrame.svelte';
   import { tweened } from 'svelte/motion';
   import { cubicOut } from 'svelte/easing';
   
