@@ -162,7 +162,7 @@ export const widgetTemplates: WidgetTemplate[] = [
     description: "Linear meter for network usage monitoring",
     type: "cosmic-linear",
     preview: "/templates/cosmic-linear.png",
-    category: "network",
+    category: "system",
     config: {
       size: { width: 300, height: 120 },
       config: {
@@ -182,7 +182,7 @@ export const widgetTemplates: WidgetTemplate[] = [
     description: "Multi-metric KPI card showing system overview",
     type: "cosmic-kpi",
     preview: "/templates/cosmic-kpi.png",
-    category: "overview",
+    category: "system",
     config: {
       size: { width: 320, height: 200 },
       config: {
@@ -291,6 +291,8 @@ export const dashboardActions = {
       description: description || "",
       widgets: [],
       gridSize: 20,
+      snapToGrid: true,
+      theme: "dark-gaming",
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -530,7 +532,187 @@ export const dashboardActions = {
     return defaultLayout;
   },
 
-  // ... rest of the code remains the same ...
+  // Widget management
+  addWidget(template: WidgetTemplate, position: Position): void {
+    const newWidget: WidgetConfig = {
+      id: nanoid(),
+      templateId: template.id,
+      type: template.type,
+      title: template.name,
+      position,
+      size: template.config.size || { width: 200, height: 200 },
+      config: template.config.config || {},
+      dataSource: template.config.dataSource,
+      zIndex: 1,
+      isLocked: false,
+    };
+
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      
+      const updatedLayout = {
+        ...state.currentLayout,
+        widgets: [...state.currentLayout.widgets, newWidget],
+        updatedAt: new Date(),
+      };
+      
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map(l => l.id === updatedLayout.id ? updatedLayout : l),
+      };
+    });
+  },
+
+  removeWidget(widgetId: string): void {
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      
+      const updatedLayout = {
+        ...state.currentLayout,
+        widgets: state.currentLayout.widgets.filter(w => w.id !== widgetId),
+        updatedAt: new Date(),
+      };
+      
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map(l => l.id === updatedLayout.id ? updatedLayout : l),
+        selectedWidgets: state.selectedWidgets.filter(id => id !== widgetId),
+      };
+    });
+  },
+
+  updateWidget(widgetId: string, updates: Partial<WidgetConfig>): void {
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      
+      const updatedLayout = {
+        ...state.currentLayout,
+        widgets: state.currentLayout.widgets.map(w => 
+          w.id === widgetId ? { ...w, ...updates } : w
+        ),
+        updatedAt: new Date(),
+      };
+      
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map(l => l.id === updatedLayout.id ? updatedLayout : l),
+      };
+    });
+  },
+
+  selectWidget(widgetId: string, multiSelect: boolean = false): void {
+    dashboardState.update((state) => {
+      const selectedWidgets = multiSelect 
+        ? state.selectedWidgets.includes(widgetId)
+          ? state.selectedWidgets.filter(id => id !== widgetId)
+          : [...state.selectedWidgets, widgetId]
+        : [widgetId];
+      
+      return {
+        ...state,
+        selectedWidgets,
+      };
+    });
+  },
+
+  // Layout management
+  loadLayout(layout: DashboardLayout): void {
+    dashboardState.update((state) => {
+      const updatedLayouts = state.layouts.some(l => l.id === layout.id)
+        ? state.layouts.map(l => l.id === layout.id ? layout : l)
+        : [...state.layouts, layout];
+      
+      currentLayout.set(layout);
+      return {
+        ...state,
+        layouts: updatedLayouts,
+        currentLayout: layout,
+      };
+    });
+  },
+
+  saveLayout(): void {
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      
+      const updatedLayout = {
+        ...state.currentLayout,
+        updatedAt: new Date(),
+      };
+      
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map(l => l.id === updatedLayout.id ? updatedLayout : l),
+      };
+    });
+  },
+
+  // UI state management
+  toggleGrid(): void {
+    dashboardState.update((state) => ({
+      ...state,
+      isGridVisible: !state.isGridVisible,
+    }));
+  },
+
+  // Widget builder
+  openWidgetBuilder(): void {
+    dashboardState.update((state) => ({
+      ...state,
+      widgetBuilder: {
+        ...state.widgetBuilder,
+        isOpen: true,
+        mode: 'create',
+        selectedWidget: null,
+      },
+    }));
+  },
+
+  closeWidgetBuilder(): void {
+    dashboardState.update((state) => ({
+      ...state,
+      widgetBuilder: {
+        ...state.widgetBuilder,
+        isOpen: false,
+        selectedWidget: null,
+      },
+    }));
+  },
+
+  // AI Layout Modal
+  openAILayoutModal(): void {
+    dashboardState.update((state) => ({
+      ...state,
+      aiLayout: {
+        ...state.aiLayout,
+        isOpen: true,
+      },
+    }));
+  },
+
+  closeAILayoutModal(): void {
+    dashboardState.update((state) => ({
+      ...state,
+      aiLayout: {
+        ...state.aiLayout,
+        isOpen: false,
+      },
+    }));
+  },
+
+  applyLayoutSuggestion(suggestion: any): void {
+    // Implementation for applying AI layout suggestions
+    console.log('Applying layout suggestion:', suggestion);
+    // This would typically create a new layout based on the AI suggestion
+  },
 };
 
 // Initialize with default layout
