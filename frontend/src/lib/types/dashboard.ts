@@ -10,8 +10,9 @@ export interface Size {
 
 export interface WidgetConfig {
   id: string;
+  templateId?: string;
   type: WidgetType;
-  title: string;
+  title?: string;
   position: Position;
   size: Size;
   config: Record<string, any>;
@@ -19,6 +20,7 @@ export interface WidgetConfig {
   thresholds?: Threshold[];
   styling?: WidgetStyling;
   zIndex?: number;
+  isLocked?: boolean;
 }
 
 export interface Threshold {
@@ -55,7 +57,10 @@ export type WidgetType =
   | "speedometer"
   | "kpi-card"
   | "arc-meter"
-  | "cosmic-sensor";
+  | "cosmic-sensor"
+  | "cosmic-gauge"
+  | "cosmic-linear"
+  | "cosmic-kpi";
 
 export interface DashboardLayout {
   id: string;

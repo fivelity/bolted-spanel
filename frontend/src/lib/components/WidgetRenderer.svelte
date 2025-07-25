@@ -10,6 +10,8 @@
 	import SimpleWidget from './widgets/SimpleWidget.svelte';
 	import ArcMeter from './widgets/ArcMeter.svelte';
 	import CosmicSensorGauge from './widgets/CosmicSensorGauge.svelte';
+	import CosmicLinearMeter from './widgets/CosmicLinearMeter.svelte';
+	import CosmicKPICard from './widgets/CosmicKPICard.svelte';
 
 	interface Props {
 		widget: WidgetConfig;
@@ -50,47 +52,94 @@
 	{#if config.type === 'circular-gauge'}
 		<CircularGauge 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'linear-gauge'}
 		<LinearGauge 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'gauge'}
 		<CircularGauge 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'meter'}
 		<LinearGauge 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'speedometer'}
 		<Speedometer 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'kpi-card'}
 		<KpiCard 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'simple'}
 		<SimpleWidget 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'arc-meter'}
 		<ArcMeter 
 			{config} 
-			value={sensorValue}
+			value={sensorValue ?? 0}
 		/>
 	{:else if config.type === 'cosmic-sensor'}
 		<CosmicSensorGauge 
-			{config} 
-			value={sensorValue}
+			value={sensorValue || 0}
+			label={config.config?.label || 'Sensor'}
+			config={{
+				min: config.config?.min || 0,
+				max: config.config?.max || 100,
+				warningThreshold: config.config?.warningThreshold || 70,
+				criticalThreshold: config.config?.criticalThreshold || 90,
+				unit: config.config?.unit || '%',
+				icon: config.config?.icon
+			}}
+			size={Math.min(config.size.width, config.size.height)}
+		/>
+	{:else if config.type === 'cosmic-gauge'}
+		<CosmicSensorGauge 
+			value={sensorValue || 0}
+			label={config.config?.label || 'Sensor'}
+			config={{
+				min: config.config?.min || 0,
+				max: config.config?.max || 100,
+				warningThreshold: config.config?.warningThreshold || 70,
+				criticalThreshold: config.config?.criticalThreshold || 90,
+				unit: config.config?.unit || '%',
+				icon: config.config?.icon
+			}}
+			size={Math.min(config.size.width, config.size.height)}
+		/>
+	{:else if config.type === 'cosmic-linear'}
+		<CosmicLinearMeter 
+			value={sensorValue || 0}
+			label={config.config?.label || 'Meter'}
+			config={{
+				min: config.config?.min || 0,
+				max: config.config?.max || 100,
+				warningThreshold: config.config?.warningThreshold || 70,
+				criticalThreshold: config.config?.criticalThreshold || 90,
+				unit: config.config?.unit || '%',
+				icon: config.config?.icon
+			}}
+			width={config.size.width}
+			height={config.size.height}
+		/>
+	{:else if config.type === 'cosmic-kpi'}
+		<CosmicKPICard 
+			config={{
+				title: config.config?.title || 'KPI Card',
+				metrics: config.config?.metrics || []
+			}}
+			width={config.size.width}
+			height={config.size.height}
 		/>
 	{:else}
 		<!-- Fallback for unknown widget types -->
