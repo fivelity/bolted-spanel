@@ -1,16 +1,18 @@
 <!--
   LayerChartGauge.svelte
   
-  LayerChart-based gauge component following the official documentation
+  Proper LayerChart integration with Cosmic UI aesthetic
   Demonstrates:
-  - Proper LayerChart component imports and usage
-  - Theme-aware styling using LayerChart's design system
-  - Real-time value updates with smooth animations
-  - Integration with existing project theme system
+  - LayerChart for actual gauge functionality
+  - Cosmic UI SVG frames for sci-fi aesthetic
+  - SVG base layers for widget backgrounds
+  - Maximum customizability with configurable SVG backgrounds
+  - Svelte 5 runes for reactive state management
 -->
 
 <script lang="ts">
   import { Chart, Arc, Text } from 'layerchart';
+  import { CosmicFrame } from '$lib/components/cosmic';
   
   interface GaugeConfig {
     min: number;
@@ -18,6 +20,20 @@
     warningThreshold: number;
     criticalThreshold: number;
     unit: string;
+  }
+
+  interface SVGBackground {
+    id: string;
+    name: string;
+    paths: Array<{
+      show: boolean;
+      style: {
+        strokeWidth: string;
+        stroke: string;
+        fill: string;
+      };
+      path: string[][];
+    }>;
   }
 
   // Props
@@ -30,13 +46,14 @@
       warningThreshold: 70,
       criticalThreshold: 90,
       unit: "%"
-    },
+    } as GaugeConfig,
     size = 200,
-    theme = "dark",
+    theme = "gaming",
     animated = true,
     showValue = true,
     showLabel = true,
-    glowEffect = true
+    glowEffect = true,
+    svgBackground = null as SVGBackground | null
   }: {
     value?: number;
     label?: string;
@@ -47,16 +64,72 @@
     showValue?: boolean;
     showLabel?: boolean;
     glowEffect?: boolean;
+    svgBackground?: SVGBackground | null;
   } = $props();
 
-  // Animated value for smooth transitions
-  let displayValue = $state(0);
-  
-  // Update animated value when value prop changes
+  // Reactive state
+  let animatedValue = $state(value);
+  let isAnimating = $state(false);
+
+  // Theme-based color system
+  const themeColors = $derived(() => {
+    switch (theme) {
+      case 'gaming':
+        return {
+          primary: '#00ff88',
+          warning: '#ffaa00',
+          critical: '#ff0080',
+          background: 'rgba(0, 20, 40, 0.8)',
+          text: '#00ffff'
+        };
+      case 'rgb':
+        return {
+          primary: `hsl(${240 + (120 * (value / config.max))}, 80%, 60%)`,
+          warning: '#ffaa00',
+          critical: '#ff0080',
+          background: 'rgba(0, 20, 40, 0.8)',
+          text: '#ffffff'
+        };
+      case 'neon':
+        return {
+          primary: '#00ffff',
+          warning: '#ff00ff',
+          critical: '#ff0080',
+          background: 'rgba(0, 40, 80, 0.8)',
+          text: '#00ffff'
+        };
+      case 'cyberpunk':
+        return {
+          primary: '#7c3aed',
+          warning: '#fbbf24',
+          critical: '#ef4444',
+          background: 'rgba(20, 0, 40, 0.8)',
+          text: '#fbbf24'
+        };
+      default:
+        return {
+          primary: '#3b82f6',
+          warning: '#f59e0b',
+          critical: '#ef4444',
+          background: 'rgba(0, 20, 40, 0.8)',
+          text: '#ffffff'
+        };
+    }
+  });
+
+  // Determine current status color
+  const statusColor = $derived(() => {
+    const normalizedValue = (value - config.min) / (config.max - config.min) * 100;
+    if (normalizedValue >= config.criticalThreshold) return themeColors().critical;
+    if (normalizedValue >= config.warningThreshold) return themeColors().warning;
+    return themeColors().primary;
+  });
+
+  // Animate value changes
   $effect(() => {
-    if (animated) {
-      // Simulate smooth animation
-      const startValue = displayValue;
+    if (animated && !isAnimating) {
+      isAnimating = true;
+      const startValue = animatedValue;
       const targetValue = value;
       const duration = 800;
       const startTime = performance.now();
@@ -67,252 +140,241 @@
         
         // Cubic ease-out function
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        displayValue = startValue + (targetValue - startValue) * easeOut;
+        animatedValue = startValue + (targetValue - startValue) * easeOut;
         
         if (progress < 1) {
           requestAnimationFrame(animate);
+        } else {
+          isAnimating = false;
         }
       }
       
       requestAnimationFrame(animate);
-    } else {
-      displayValue = value;
+    } else if (!animated) {
+      animatedValue = value;
     }
   });
-  
-  // Calculate normalized value (0-1)
-  let normalizedValue = $derived(() => {
-    const clamped = Math.max(config.min, Math.min(config.max, displayValue));
-    return (clamped - config.min) / (config.max - config.min);
-  });
-  
-  // Calculate gauge colors based on value and theme
-  let gaugeColors = $derived(() => {
-    const normalized = normalizedValue();
-    const warningNorm = (config.warningThreshold - config.min) / (config.max - config.min);
-    const criticalNorm = (config.criticalThreshold - config.min) / (config.max - config.min);
-    
-    if (normalized >= criticalNorm) {
-      return theme === 'rgb' ? '#ff0066' : '#ff4444';
-    } else if (normalized >= warningNorm) {
-      return theme === 'rgb' ? '#ffaa00' : '#ffa500';
-    } else {
-      switch (theme) {
-        case 'gaming': return '#00ff88';
-        case 'rgb': return '#00ff66';
-        case 'dark': return '#00ffff';
-        default: return '#0066cc';
-      }
+
+  // Gauge calculations
+  const radius = $derived(size * 0.35);
+  const center = $derived(size / 2);
+  const normalizedValue = $derived((animatedValue - config.min) / (config.max - config.min));
+  const arcAngle = $derived(normalizedValue * Math.PI * 1.5); // 270 degrees
+
+  // Default SVG backgrounds for customization
+  const defaultSVGBackgrounds: SVGBackground[] = [
+    {
+      id: 'cosmic-frame',
+      name: 'Cosmic Frame',
+      paths: [
+        {
+          show: true,
+          style: {
+            strokeWidth: "2",
+            stroke: statusColor(),
+            fill: "transparent"
+          },
+          path: [
+            ["M", "20", "20"],
+            ["L", "80%", "20"],
+            ["L", "100%-20", "35"],
+            ["L", "100%-20", "80%"],
+            ["L", "85%", "100%-20"],
+            ["L", "20", "100%-20"],
+            ["L", "20", "20"]
+          ]
+        }
+      ]
+    },
+    {
+      id: 'hex-frame',
+      name: 'Hexagonal Frame',
+      paths: [
+        {
+          show: true,
+          style: {
+            strokeWidth: "2",
+            stroke: statusColor(),
+            fill: "transparent"
+          },
+          path: [
+            ["M", "50%", "10"],
+            ["L", "85%", "25%"],
+            ["L", "85%", "75%"],
+            ["L", "50%", "90%"],
+            ["L", "15%", "75%"],
+            ["L", "15%", "25%"],
+            ["Z"]
+          ]
+        }
+      ]
+    },
+    {
+      id: 'minimal-frame',
+      name: 'Minimal Frame',
+      paths: [
+        {
+          show: true,
+          style: {
+            strokeWidth: "1",
+            stroke: statusColor(),
+            fill: "transparent"
+          },
+          path: [
+            ["M", "10", "10"],
+            ["L", "90%", "10"],
+            ["L", "90%", "90%"],
+            ["L", "10", "90%"],
+            ["Z"]
+          ]
+        }
+      ]
     }
-  });
-  
-  // Background color for the gauge
-  let backgroundColor = $derived(() => {
-    switch (theme) {
-      case 'gaming': return '#001d3d20';
-      case 'rgb': return '#16172240';
-      case 'dark': return '#1a1a1a40';
-      default: return '#f8f9fa40';
-    }
-  });
-  
-  // Chart data for LayerChart
-  let chartData = $derived(() => [
-    { value: normalizedValue(), color: gaugeColors() },
-    { value: 1 - normalizedValue(), color: backgroundColor() }
-  ]);
-  
-  // Arc configuration
-  let arcConfig = $derived(() => ({
-    startAngle: -225 * (Math.PI / 180), // -225 degrees
-    endAngle: 45 * (Math.PI / 180),     // 45 degrees
-    innerRadius: size * 0.3,
-    outerRadius: size * 0.4
-  }));
+  ];
+
+  // Use provided SVG background or default
+  const currentSVGBackground = $derived(svgBackground || defaultSVGBackgrounds[0]);
 </script>
 
 <div 
-  class="relative flex items-center justify-center" 
-  class:glow-effect={glowEffect}
-  style={`width: ${size}px; height: ${size}px;`}
-  data-theme={theme}
+  class="relative gauge-container"
+  style="width: {size}px; height: {size}px;"
 >
-  <!-- LayerChart Chart Container -->
-  <Chart 
-    width={size} 
-    height={size}
-    data={chartData()}
-    class="w-full h-full"
-  >
-    <!-- Background Arc -->
-    <Arc
-      startAngle={arcConfig().startAngle}
-      endAngle={arcConfig().endAngle}
-      innerRadius={arcConfig().innerRadius}
-      outerRadius={arcConfig().outerRadius}
-      fill={backgroundColor()}
-      opacity={0.3}
+  <!-- SVG Background Layer (Cosmic UI approach) -->
+  {#if currentSVGBackground}
+    <CosmicFrame 
+      paths={currentSVGBackground.paths}
+      className="absolute inset-0 z-0"
     />
-    
-    <!-- Value Arc -->
-    <Arc
-      startAngle={arcConfig().startAngle}
-      endAngle={arcConfig().startAngle + (arcConfig().endAngle - arcConfig().startAngle) * normalizedValue()}
-      innerRadius={arcConfig().innerRadius}
-      outerRadius={arcConfig().outerRadius}
-      fill={gaugeColors()}
-      class="value-arc"
-    />
-    
-    <!-- Center Value Display -->
-    {#if showValue}
-      <Text
-        x={size / 2}
-        y={size / 2 - 10}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={gaugeColors()}
-        fontSize={size * 0.15}
-        fontWeight="bold"
-        fontFamily="monospace"
-        class="value-text"
-      >
-        {Math.round(displayValue)}
-      </Text>
+  {/if}
+
+     <!-- LayerChart Gauge (Core functionality) -->
+   <div class="absolute inset-0 z-10 flex items-center justify-center">
+     <Chart>
+      <!-- Background arc -->
+      <Arc
+        startAngle={-Math.PI * 0.75}
+        endAngle={Math.PI * 0.75}
+        innerRadius={radius - 20}
+        outerRadius={radius}
+        fill="rgba(255, 255, 255, 0.1)"
+        stroke="rgba(255, 255, 255, 0.2)"
+        strokeWidth={2}
+      />
       
-      <Text
-        x={size / 2}
-        y={size / 2 + 15}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={theme === 'dark' ? '#999' : '#666'}
-        fontSize={size * 0.08}
-        fontFamily="monospace"
-        class="unit-text"
-      >
-        {config.unit}
-      </Text>
-    {/if}
+      <!-- Progress arc -->
+      <Arc
+        startAngle={-Math.PI * 0.75}
+        endAngle={-Math.PI * 0.75 + arcAngle}
+        innerRadius={radius - 20}
+        outerRadius={radius}
+        fill={statusColor()}
+        class="transition-all duration-300"
+        style={glowEffect ? `filter: drop-shadow(0 0 10px ${statusColor()}40);` : ''}
+      />
+      
+      <!-- Center text -->
+      {#if showValue}
+        <Text
+          x={center}
+          y={center - 10}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          class="text-2xl font-bold font-orbitron"
+          fill={themeColors().text}
+          style={glowEffect ? `text-shadow: 0 0 10px ${themeColors().text}80;` : ''}
+        >
+          {Math.round(animatedValue)}{config.unit}
+        </Text>
+      {/if}
+      
+      <!-- Label text -->
+      {#if showLabel}
+        <Text
+          x={center}
+          y={center + 20}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          class="text-sm font-medium"
+          fill={themeColors().text}
+          opacity={0.8}
+        >
+          {label}
+        </Text>
+      {/if}
+    </Chart>
+  </div>
+
+  <!-- Corner decorations (Cosmic UI aesthetic) -->
+  <div class="absolute inset-0 pointer-events-none">
+    <!-- Top-left corner -->
+    <div 
+      class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2"
+      style="border-color: {statusColor()}; opacity: 0.6;"
+    ></div>
     
-    <!-- Label -->
-    {#if showLabel}
-      <Text
-        x={size / 2}
-        y={size * 0.85}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={theme === 'dark' ? '#ccc' : '#666'}
-        fontSize={size * 0.1}
-        fontWeight="500"
-        class="label-text"
-      >
-        {label}
-      </Text>
-    {/if}
-  </Chart>
-  
-  <!-- Gaming-style corner brackets -->
-  {#if theme === 'gaming' || theme === 'rgb'}
-    <div class="corner-brackets">
-      <div class="bracket top-left"></div>
-      <div class="bracket top-right"></div>
-      <div class="bracket bottom-left"></div>
-      <div class="bracket bottom-right"></div>
-    </div>
-  {/if}
-  
-  <!-- Pulse effect for high values -->
-  {#if normalizedValue() > 0.8 && animated}
-    <div class="pulse-overlay" style={`background: radial-gradient(circle, ${gaugeColors()}20 0%, transparent 70%);`}></div>
-  {/if}
+    <!-- Top-right corner -->
+    <div 
+      class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2"
+      style="border-color: {statusColor()}; opacity: 0.6;"
+    ></div>
+    
+    <!-- Bottom-left corner -->
+    <div 
+      class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2"
+      style="border-color: {statusColor()}; opacity: 0.6;"
+    ></div>
+    
+    <!-- Bottom-right corner -->
+    <div 
+      class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2"
+      style="border-color: {statusColor()}; opacity: 0.6;"
+    ></div>
+  </div>
+
+  <!-- Scanning effect -->
+  <div 
+    class="absolute inset-0 opacity-20 pointer-events-none"
+    style="background: conic-gradient(from 0deg, transparent 0deg, {statusColor()}40 35deg, transparent 70deg); animation: rotate-scan 4s linear infinite;"
+  ></div>
 </div>
 
 <style>
-  .value-arc {
-    transition: all 0.5s ease-in-out;
+  .gauge-container {
+    transition: all 0.3s ease;
   }
-  
-  .value-text {
-    text-shadow: 0 0 10px currentColor;
+
+  .gauge-container:hover {
+    transform: scale(1.02);
   }
-  
-  /* Corner brackets for gaming themes */
-  .corner-brackets {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    pointer-events: none;
+
+  @keyframes rotate-scan {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
-  
-  .bracket {
-    position: absolute;
-    width: 1rem;
-    height: 1rem;
-    border-color: currentColor;
-    opacity: 0.6;
-  }
-  
-  .bracket.top-left {
-    top: 0.5rem;
-    left: 0.5rem;
-    border-top: 2px solid;
-    border-left: 2px solid;
-  }
-  
-  .bracket.top-right {
-    top: 0.5rem;
-    right: 0.5rem;
-    border-top: 2px solid;
-    border-right: 2px solid;
-  }
-  
-  .bracket.bottom-left {
-    bottom: 0.5rem;
-    left: 0.5rem;
-    border-bottom: 2px solid;
-    border-left: 2px solid;
-  }
-  
-  .bracket.bottom-right {
-    bottom: 0.5rem;
-    right: 0.5rem;
-    border-bottom: 2px solid;
-    border-right: 2px solid;
-  }
-  
-  /* Pulse overlay for high values */
-  .pulse-overlay {
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    border-radius: 50%;
-    pointer-events: none;
+
+  /* Pulse animation for high values */
+  .gauge-container:has(.arc[fill*="ff0080"]) {
     animation: pulse-glow 2s ease-in-out infinite;
   }
-  
+
   @keyframes pulse-glow {
-    0%, 100% { opacity: 0.3; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.1); }
-  }
-  
-  /* High contrast mode */
-  @media (prefers-contrast: high) {
-    .value-text {
-      text-shadow: none;
-      font-weight: 900;
+    0%, 100% { 
+      filter: drop-shadow(0 0 10px rgba(255, 0, 128, 0.3));
+    }
+    50% { 
+      filter: drop-shadow(0 0 20px rgba(255, 0, 128, 0.6));
     }
   }
-  
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    .value-arc,
-    .pulse-overlay {
-      animation: none;
-      transition: none;
-    }
+
+  /* Responsive font sizes */
+  @container (max-width: 150px) {
+    .text-2xl { font-size: 1.2rem; }
+    .text-sm { font-size: 0.75rem; }
+  }
+
+  @container (min-width: 250px) {
+    .text-2xl { font-size: 2.2rem; }
+    .text-sm { font-size: 1rem; }
   }
 </style> 
