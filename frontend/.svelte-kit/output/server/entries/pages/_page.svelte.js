@@ -1,6 +1,6 @@
-import { J as noop, M as ensure_array_like, N as spread_attributes, O as attr, E as pop, A as push, P as stringify, K as escape_html, Q as attr_class, R as attr_style, S as store_get, T as unsubscribe_stores, U as bind_props, G as head } from "../../chunks/index.js";
+import { G as noop, K as ensure_array_like, M as spread_attributes, N as attr, E as pop, A as push, O as stringify, J as escape_html, P as attr_class, Q as attr_style, R as store_get, S as unsubscribe_stores, T as bind_props, U as head } from "../../chunks/index.js";
 import "clsx";
-import { w as writable, g as get, d as derived } from "../../chunks/index2.js";
+import { w as writable, d as derived, g as get } from "../../chunks/index2.js";
 import { nanoid } from "nanoid";
 const now = () => Date.now();
 const raf = {
@@ -25,6 +25,857 @@ function loop(callback) {
       raf.tasks.delete(task);
     }
   };
+}
+const initialState = {
+  currentLayout: null,
+  layouts: [],
+  selectedWidgets: [],
+  dragState: {
+    isDragging: false,
+    draggedWidget: null,
+    dragOffset: { x: 0, y: 0 },
+    snapToGrid: true,
+    gridSize: 20
+  },
+  resizeState: { isResizing: false, resizedWidget: null, resizeHandle: null },
+  widgetBuilder: {
+    isOpen: false,
+    mode: "create",
+    selectedWidget: null,
+    previewData: null,
+    activeTab: "general"
+  },
+  isGridVisible: true,
+  zoom: 1,
+  history: [],
+  historyIndex: -1,
+  aiLayout: { isOpen: false, suggestions: [] }
+};
+const dashboardState = writable(initialState);
+const currentLayout = writable(null);
+writable(initialState.dragState);
+writable(initialState.widgetBuilder);
+const widgetTemplates = [
+  {
+    id: "cosmic-gauge-cpu",
+    name: "CPU Gauge",
+    description: "Enhanced circular gauge with segmented arcs for CPU monitoring",
+    type: "cosmic-gauge",
+    preview: "/templates/cosmic-gauge.png",
+    category: "system",
+    config: {
+      size: { width: 200, height: 200 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "%",
+        warningThreshold: 70,
+        criticalThreshold: 90,
+        icon: ""
+      },
+      dataSource: "cpu.usage"
+    }
+  },
+  {
+    id: "cosmic-gauge-gpu",
+    name: "GPU Gauge",
+    description: "Enhanced circular gauge for GPU usage monitoring",
+    type: "cosmic-gauge",
+    preview: "/templates/cosmic-gauge.png",
+    category: "system",
+    config: {
+      size: { width: 200, height: 200 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "%",
+        warningThreshold: 80,
+        criticalThreshold: 95,
+        icon: ""
+      },
+      dataSource: "gpu.usage"
+    }
+  },
+  {
+    id: "cosmic-gauge-memory",
+    name: "Memory Gauge",
+    description: "Enhanced circular gauge for memory usage monitoring",
+    type: "cosmic-gauge",
+    preview: "/templates/cosmic-gauge.png",
+    category: "system",
+    config: {
+      size: { width: 200, height: 200 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "%",
+        warningThreshold: 75,
+        criticalThreshold: 90,
+        icon: ""
+      },
+      dataSource: "memory.usage"
+    }
+  },
+  {
+    id: "cosmic-gauge-temp",
+    name: "Temperature Gauge",
+    description: "Enhanced circular gauge for temperature monitoring",
+    type: "cosmic-gauge",
+    preview: "/templates/cosmic-gauge.png",
+    category: "system",
+    config: {
+      size: { width: 200, height: 200 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "°C",
+        warningThreshold: 70,
+        criticalThreshold: 85,
+        icon: ""
+      },
+      dataSource: "cpu.temperature"
+    }
+  },
+  {
+    id: "cosmic-linear-disk",
+    name: "Disk Usage Meter",
+    description: "Linear meter with segmented bars for disk usage",
+    type: "cosmic-linear",
+    preview: "/templates/cosmic-linear.png",
+    category: "system",
+    config: {
+      size: { width: 300, height: 120 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "%",
+        warningThreshold: 80,
+        criticalThreshold: 95,
+        icon: ""
+      },
+      dataSource: "disk.usage"
+    }
+  },
+  {
+    id: "cosmic-linear-network",
+    name: "Network Meter",
+    description: "Linear meter for network usage monitoring",
+    type: "cosmic-linear",
+    preview: "/templates/cosmic-linear.png",
+    category: "system",
+    config: {
+      size: { width: 300, height: 120 },
+      config: {
+        min: 0,
+        max: 100,
+        unit: "Mbps",
+        warningThreshold: 80,
+        criticalThreshold: 95,
+        icon: ""
+      },
+      dataSource: "network.usage"
+    }
+  },
+  {
+    id: "cosmic-kpi-overview",
+    name: "System Overview KPI",
+    description: "Multi-metric KPI card showing system overview",
+    type: "cosmic-kpi",
+    preview: "/templates/cosmic-kpi.png",
+    category: "system",
+    config: {
+      size: { width: 320, height: 200 },
+      config: {
+        title: "System Overview",
+        metrics: [
+          {
+            label: "CPU",
+            dataSource: "cpu.usage",
+            unit: "%",
+            icon: "",
+            threshold: { warning: 70, critical: 90 }
+          },
+          {
+            label: "Memory",
+            dataSource: "memory.usage",
+            unit: "%",
+            icon: "",
+            threshold: { warning: 75, critical: 90 }
+          },
+          {
+            label: "GPU",
+            dataSource: "gpu.usage",
+            unit: "%",
+            icon: "",
+            threshold: { warning: 80, critical: 95 }
+          },
+          {
+            label: "Temp",
+            dataSource: "cpu.temperature",
+            unit: "°C",
+            icon: "",
+            threshold: { warning: 70, critical: 85 }
+          }
+        ]
+      }
+    }
+  },
+  {
+    id: "cosmic-kpi-performance",
+    name: "Performance KPI",
+    description: "Performance metrics KPI card",
+    type: "cosmic-kpi",
+    preview: "/templates/cosmic-kpi.png",
+    category: "performance",
+    config: {
+      size: { width: 320, height: 200 },
+      config: {
+        title: "Performance Metrics",
+        metrics: [
+          {
+            label: "FPS",
+            dataSource: "performance.fps",
+            unit: "fps",
+            icon: "",
+            threshold: { warning: 30, critical: 15 }
+          },
+          {
+            label: "Frame Time",
+            dataSource: "performance.frametime",
+            unit: "ms",
+            icon: "",
+            threshold: { warning: 33, critical: 66 }
+          },
+          {
+            label: "CPU Load",
+            dataSource: "cpu.load",
+            unit: "%",
+            icon: "",
+            threshold: { warning: 70, critical: 90 }
+          },
+          {
+            label: "GPU Load",
+            dataSource: "gpu.load",
+            unit: "%",
+            icon: "",
+            threshold: { warning: 80, critical: 95 }
+          }
+        ]
+      }
+    }
+  }
+];
+const dashboardActions = {
+  createLayout(name, description) {
+    const newLayout = {
+      id: nanoid(),
+      name,
+      description: description || "",
+      widgets: [],
+      gridSize: 20,
+      snapToGrid: true,
+      theme: "dark-gaming",
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    dashboardState.update((state) => {
+      const updatedLayouts = [...state.layouts, newLayout];
+      const updatedState = { ...state, layouts: updatedLayouts, currentLayout: newLayout };
+      currentLayout.set(newLayout);
+      return updatedState;
+    });
+    return newLayout;
+  },
+  createDefaultLayout() {
+    const defaultLayout = {
+      id: "default-layout",
+      name: "Default Dashboard",
+      description: "Enhanced hardware monitoring dashboard with Cosmic UI",
+      widgets: [
+        // First row - Primary system gauges (20px grid spacing)
+        {
+          id: nanoid(),
+          templateId: "cosmic-gauge-cpu",
+          type: "cosmic-gauge",
+          position: { x: 40, y: 40 },
+          size: { width: 220, height: 220 },
+          config: {
+            label: "CPU Usage",
+            dataSource: "cpu.usage",
+            min: 0,
+            max: 100,
+            unit: "%",
+            warningThreshold: 70,
+            criticalThreshold: 90,
+            icon: "🔥"
+          },
+          zIndex: 1,
+          isLocked: false
+        },
+        {
+          id: nanoid(),
+          templateId: "cosmic-gauge-gpu",
+          type: "cosmic-gauge",
+          position: { x: 280, y: 40 },
+          size: { width: 220, height: 220 },
+          config: {
+            label: "GPU Usage",
+            dataSource: "gpu.usage",
+            min: 0,
+            max: 100,
+            unit: "%",
+            warningThreshold: 80,
+            criticalThreshold: 95,
+            icon: "⚡"
+          },
+          zIndex: 2,
+          isLocked: false
+        },
+        {
+          id: nanoid(),
+          templateId: "cosmic-gauge-memory",
+          type: "cosmic-gauge",
+          position: { x: 520, y: 40 },
+          size: { width: 220, height: 220 },
+          config: {
+            label: "Memory Usage",
+            dataSource: "memory.usage",
+            min: 0,
+            max: 100,
+            unit: "%",
+            warningThreshold: 75,
+            criticalThreshold: 90,
+            icon: "💾"
+          },
+          zIndex: 3,
+          isLocked: false
+        },
+        {
+          id: nanoid(),
+          templateId: "cosmic-gauge-temp",
+          type: "cosmic-gauge",
+          position: { x: 760, y: 40 },
+          size: { width: 220, height: 220 },
+          config: {
+            label: "CPU Temperature",
+            dataSource: "cpu.temperature",
+            min: 0,
+            max: 100,
+            unit: "°C",
+            warningThreshold: 70,
+            criticalThreshold: 85,
+            icon: "🌡️"
+          },
+          zIndex: 4,
+          isLocked: false
+        },
+        // Second row - Linear meters with proper spacing
+        {
+          id: nanoid(),
+          templateId: "cosmic-linear-disk",
+          type: "cosmic-linear",
+          position: { x: 40, y: 300 },
+          size: { width: 320, height: 140 },
+          config: {
+            label: "Disk Usage",
+            dataSource: "disk.usage",
+            min: 0,
+            max: 100,
+            unit: "%",
+            warningThreshold: 80,
+            criticalThreshold: 95,
+            icon: "💽"
+          },
+          zIndex: 5,
+          isLocked: false
+        },
+        {
+          id: nanoid(),
+          templateId: "cosmic-linear-network",
+          type: "cosmic-linear",
+          position: { x: 380, y: 300 },
+          size: { width: 320, height: 140 },
+          config: {
+            label: "Network Usage",
+            dataSource: "network.usage",
+            min: 0,
+            max: 100,
+            unit: "Mbps",
+            warningThreshold: 75,
+            criticalThreshold: 90,
+            icon: "🌐"
+          },
+          zIndex: 6,
+          isLocked: false
+        },
+        {
+          id: nanoid(),
+          templateId: "cosmic-gauge-temp",
+          type: "cosmic-gauge",
+          position: { x: 720, y: 300 },
+          size: { width: 200, height: 200 },
+          config: {
+            label: "GPU Temperature",
+            dataSource: "gpu.temperature",
+            min: 0,
+            max: 100,
+            unit: "°C",
+            warningThreshold: 75,
+            criticalThreshold: 90,
+            icon: "🔥"
+          },
+          zIndex: 7,
+          isLocked: false
+        },
+        // Third row - KPI Cards and additional widgets
+        {
+          id: nanoid(),
+          templateId: "cosmic-kpi-overview",
+          type: "cosmic-kpi",
+          position: { x: 40, y: 480 },
+          size: { width: 340, height: 180 },
+          config: {
+            title: "System Overview",
+            metrics: [
+              {
+                label: "CPU",
+                dataSource: "cpu.usage",
+                unit: "%",
+                icon: "🔥",
+                threshold: { warning: 70, critical: 90 }
+              },
+              {
+                label: "Memory",
+                dataSource: "memory.usage",
+                unit: "%",
+                icon: "💾",
+                threshold: { warning: 75, critical: 90 }
+              },
+              {
+                label: "GPU",
+                dataSource: "gpu.usage",
+                unit: "%",
+                icon: "⚡",
+                threshold: { warning: 80, critical: 95 }
+              },
+              {
+                label: "Temp",
+                dataSource: "cpu.temperature",
+                unit: "°C",
+                icon: "🌡️",
+                threshold: { warning: 70, critical: 85 }
+              }
+            ]
+          },
+          zIndex: 8,
+          isLocked: false
+        },
+        {
+          id: nanoid(),
+          templateId: "cosmic-kpi-performance",
+          type: "cosmic-kpi",
+          position: { x: 400, y: 480 },
+          size: { width: 340, height: 180 },
+          config: {
+            title: "Performance Metrics",
+            metrics: [
+              {
+                label: "FPS",
+                dataSource: "performance.fps",
+                unit: "fps",
+                icon: "🎮",
+                threshold: { warning: 30, critical: 15 }
+              },
+              {
+                label: "Latency",
+                dataSource: "network.latency",
+                unit: "ms",
+                icon: "⚡",
+                threshold: { warning: 100, critical: 200 }
+              },
+              {
+                label: "Power",
+                dataSource: "system.power",
+                unit: "W",
+                icon: "🔋",
+                threshold: { warning: 300, critical: 400 }
+              },
+              {
+                label: "Fan RPM",
+                dataSource: "cooling.fan",
+                unit: "rpm",
+                icon: "🌪️",
+                threshold: { warning: 2e3, critical: 3e3 }
+              }
+            ]
+          },
+          zIndex: 9,
+          isLocked: false
+        },
+        {
+          id: nanoid(),
+          templateId: "cosmic-linear-disk",
+          type: "cosmic-linear",
+          position: { x: 760, y: 480 },
+          size: { width: 260, height: 180 },
+          config: {
+            label: "System Load",
+            dataSource: "system.load",
+            min: 0,
+            max: 100,
+            unit: "%",
+            warningThreshold: 70,
+            criticalThreshold: 85,
+            icon: "⚙️"
+          },
+          zIndex: 10,
+          isLocked: false
+        }
+      ],
+      gridSize: 20,
+      snapToGrid: true,
+      theme: "dark-gaming",
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    dashboardState.update((state) => {
+      const updatedLayouts = [
+        defaultLayout,
+        ...state.layouts.filter((l) => l.id !== "default-layout")
+      ];
+      const updatedState = {
+        ...state,
+        layouts: updatedLayouts,
+        currentLayout: defaultLayout
+      };
+      currentLayout.set(defaultLayout);
+      return updatedState;
+    });
+    return defaultLayout;
+  },
+  // Widget management
+  addWidget(template, position) {
+    const newWidget = {
+      id: nanoid(),
+      templateId: template.id,
+      type: template.type,
+      title: template.name,
+      position,
+      size: template.config.size || { width: 200, height: 200 },
+      config: template.config.config || {},
+      dataSource: template.config.dataSource,
+      zIndex: 1,
+      isLocked: false
+    };
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      const updatedLayout = {
+        ...state.currentLayout,
+        widgets: [...state.currentLayout.widgets, newWidget],
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map((l) => l.id === updatedLayout.id ? updatedLayout : l)
+      };
+    });
+  },
+  removeWidget(widgetId) {
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      const updatedLayout = {
+        ...state.currentLayout,
+        widgets: state.currentLayout.widgets.filter((w) => w.id !== widgetId),
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map((l) => l.id === updatedLayout.id ? updatedLayout : l),
+        selectedWidgets: state.selectedWidgets.filter((id) => id !== widgetId)
+      };
+    });
+  },
+  updateWidget(widgetId, updates) {
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      const updatedLayout = {
+        ...state.currentLayout,
+        widgets: state.currentLayout.widgets.map((w) => w.id === widgetId ? { ...w, ...updates } : w),
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map((l) => l.id === updatedLayout.id ? updatedLayout : l)
+      };
+    });
+  },
+  selectWidget(widgetId, multiSelect = false) {
+    dashboardState.update((state) => {
+      const selectedWidgets2 = multiSelect ? state.selectedWidgets.includes(widgetId) ? state.selectedWidgets.filter((id) => id !== widgetId) : [...state.selectedWidgets, widgetId] : [widgetId];
+      return { ...state, selectedWidgets: selectedWidgets2 };
+    });
+  },
+  // Layout management
+  loadLayout(layout) {
+    dashboardState.update((state) => {
+      const updatedLayouts = state.layouts.some((l) => l.id === layout.id) ? state.layouts.map((l) => l.id === layout.id ? layout : l) : [...state.layouts, layout];
+      currentLayout.set(layout);
+      return { ...state, layouts: updatedLayouts, currentLayout: layout };
+    });
+  },
+  saveLayout() {
+    dashboardState.update((state) => {
+      if (!state.currentLayout) return state;
+      const updatedLayout = {
+        ...state.currentLayout,
+        updatedAt: /* @__PURE__ */ new Date()
+      };
+      currentLayout.set(updatedLayout);
+      return {
+        ...state,
+        currentLayout: updatedLayout,
+        layouts: state.layouts.map((l) => l.id === updatedLayout.id ? updatedLayout : l)
+      };
+    });
+  },
+  // UI state management
+  toggleGrid() {
+    dashboardState.update((state) => ({ ...state, isGridVisible: !state.isGridVisible }));
+  },
+  // Widget builder
+  openWidgetBuilder() {
+    dashboardState.update((state) => ({
+      ...state,
+      widgetBuilder: {
+        ...state.widgetBuilder,
+        isOpen: true,
+        mode: "create",
+        selectedWidget: null
+      }
+    }));
+  },
+  closeWidgetBuilder() {
+    dashboardState.update((state) => ({
+      ...state,
+      widgetBuilder: { ...state.widgetBuilder, isOpen: false, selectedWidget: null }
+    }));
+  },
+  // AI Layout Modal
+  openAILayoutModal() {
+    dashboardState.update((state) => ({ ...state, aiLayout: { ...state.aiLayout, isOpen: true } }));
+  },
+  closeAILayoutModal() {
+    dashboardState.update((state) => ({ ...state, aiLayout: { ...state.aiLayout, isOpen: false } }));
+  },
+  applyLayoutSuggestion(suggestion) {
+    console.log("Applying layout suggestion:", suggestion);
+  }
+};
+dashboardActions.createDefaultLayout();
+function generateMockSensorData() {
+  const now2 = Date.now();
+  const cpuUsage = 20 + Math.sin(now2 / 1e4) * 15 + Math.random() * 10;
+  const gpuUsage = 30 + Math.sin(now2 / 8e3) * 20 + Math.random() * 15;
+  const memoryUsage = 45 + Math.sin(now2 / 15e3) * 10 + Math.random() * 5;
+  return {
+    cpu: {
+      usage: Math.max(0, Math.min(100, cpuUsage)),
+      temperature: 35 + cpuUsage * 0.8 + Math.random() * 10,
+      frequency: 3.2 + Math.random() * 0.8,
+      voltage: 1.2 + Math.random() * 0.1,
+      cores: Array.from({ length: 8 }, (_, i) => ({
+        id: i,
+        usage: Math.max(
+          0,
+          Math.min(100, cpuUsage + (Math.random() - 0.5) * 30)
+        ),
+        temperature: 35 + cpuUsage * 0.8 + Math.random() * 15
+      }))
+    },
+    gpu: {
+      usage: Math.max(0, Math.min(100, gpuUsage)),
+      temperature: 40 + gpuUsage * 0.6 + Math.random() * 15,
+      memory: Math.max(0, Math.min(100, gpuUsage * 0.7 + Math.random() * 20)),
+      fanSpeed: Math.max(
+        30,
+        Math.min(100, gpuUsage * 0.8 + Math.random() * 20)
+      ),
+      voltage: 1.1 + Math.random() * 0.1,
+      powerUsage: Math.max(
+        50,
+        Math.min(300, gpuUsage * 2.5 + Math.random() * 50)
+      )
+    },
+    memory: {
+      usage: Math.max(0, Math.min(100, memoryUsage)),
+      available: Math.max(0, 16384 * (100 - memoryUsage) / 100),
+      total: 16384,
+      speed: 3200 + Math.random() * 400
+    },
+    storage: [
+      {
+        name: "NVMe SSD",
+        usage: 65 + Math.random() * 10,
+        temperature: 35 + Math.random() * 15,
+        readSpeed: 500 + Math.random() * 200,
+        writeSpeed: 400 + Math.random() * 150
+      },
+      {
+        name: "HDD",
+        usage: 45 + Math.random() * 10,
+        temperature: 30 + Math.random() * 10,
+        readSpeed: 120 + Math.random() * 30,
+        writeSpeed: 100 + Math.random() * 25
+      }
+    ],
+    fans: {
+      "CPU Fan": Math.max(800, 1200 + Math.random() * 400),
+      "GPU Fan 1": Math.max(600, 1e3 + Math.random() * 600),
+      "GPU Fan 2": Math.max(600, 1e3 + Math.random() * 600),
+      "Case Fan 1": Math.max(500, 800 + Math.random() * 200),
+      "Case Fan 2": Math.max(500, 800 + Math.random() * 200)
+    },
+    voltages: {
+      "CPU Core": 1.2 + Math.random() * 0.1,
+      "12V Rail": 11.9 + Math.random() * 0.2,
+      "5V Rail": 4.95 + Math.random() * 0.1,
+      "3.3V Rail": 3.28 + Math.random() * 0.05
+    },
+    motherboard: {
+      temperature: 32 + Math.random() * 8,
+      voltage: 3.3 + Math.random() * 0.1
+    },
+    network: {
+      bytesReceived: Math.random() * 1e6,
+      bytesSent: Math.random() * 5e5,
+      packetsReceived: Math.random() * 1e3,
+      packetsSent: Math.random() * 800
+    }
+  };
+}
+const sensorData = writable(generateMockSensorData());
+const sensorStore = {
+  // Export stores for reactive access
+  data: sensorData
+};
+const initialTheme = "dark";
+const themeStore = writable(initialTheme);
+const currentTheme = derived(themeStore, ($theme) => $theme);
+const alertHistory = writable([]);
+function createPathData(show, strokeWidth, stroke, fill, path) {
+  return {
+    show,
+    style: {
+      strokeWidth,
+      stroke,
+      fill
+    },
+    path
+  };
+}
+const defaultFramePaths = {
+  // Standard rectangular frame with clipped corners
+  standard: [
+    createPathData(
+      true,
+      "2",
+      "var(--color-frame-1-stroke)",
+      "var(--color-frame-1-fill)",
+      [
+        ["M", "15", "15"],
+        ["L", "85%", "15"],
+        ["L", "100% - 15", "30"],
+        ["L", "100% - 15", "85%"],
+        ["L", "85%", "100% - 15"],
+        ["L", "15", "100% - 15"],
+        ["L", "15", "15"]
+      ]
+    )
+  ],
+  // Highlighted frame for active states
+  highlighted: [
+    createPathData(
+      true,
+      "2",
+      "var(--color-frame-2-stroke)",
+      "var(--color-frame-2-fill)",
+      [
+        ["M", "10", "10"],
+        ["L", "90%", "10"],
+        ["L", "100% - 10", "25"],
+        ["L", "100% - 10", "90%"],
+        ["L", "90%", "100% - 10"],
+        ["L", "10", "100% - 10"],
+        ["L", "10", "10"]
+      ]
+    )
+  ]
+};
+function CosmicFrame($$payload, $$props) {
+  push();
+  let {
+    paths = [],
+    className = "",
+    style = "",
+    $$slots,
+    $$events,
+    ...restProps
+  } = $$props;
+  function pathToString(pathArray) {
+    return pathArray.map((segment) => segment.join(" ")).join(" ");
+  }
+  function processPath(pathString, width) {
+    return pathString.replace(/100%-(\d+)/g, (match, offset) => {
+      return `${width - parseFloat(offset)}`;
+    }).replace(/(\d+)%-(\d+)/g, (match, percent, offset) => {
+      const num = parseFloat(percent);
+      return `${num / 100 * width - parseFloat(offset)}`;
+    }).replace(/(\d+)%\+(\d+)/g, (match, percent, offset) => {
+      const num = parseFloat(percent);
+      return `${num / 100 * width + parseFloat(offset)}`;
+    }).replace(/(\d+)%/g, (match, percent) => {
+      const num = parseFloat(percent);
+      return `${num / 100 * width}`;
+    });
+  }
+  let frameWidth = 300;
+  let frameHeight = 200;
+  const processedPaths = paths.map((pathData) => ({
+    ...pathData,
+    processedPath: processPath(pathToString(pathData.path), frameWidth)
+  }));
+  const each_array = ensure_array_like(processedPaths);
+  $$payload.out.push(`<svg${spread_attributes(
+    {
+      class: `absolute inset-0 size-full ${stringify(className)}`,
+      xmlns: "http://www.w3.org/2000/svg",
+      viewBox: `0 0 ${stringify(frameWidth)} ${stringify(frameHeight)}`,
+      style,
+      ...restProps
+    },
+    null,
+    void 0,
+    void 0,
+    3
+  )}><!--[-->`);
+  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+    let pathData = each_array[$$index];
+    if (pathData.show) {
+      $$payload.out.push("<!--[-->");
+      $$payload.out.push(`<path${attr("d", pathData.processedPath)}${attr("stroke-width", pathData.style.strokeWidth)}${attr("stroke", pathData.style.stroke)}${attr("fill", pathData.style.fill)} class="transition-all duration-300"></path>`);
+    } else {
+      $$payload.out.push("<!--[!-->");
+    }
+    $$payload.out.push(`<!--]-->`);
+  }
+  $$payload.out.push(`<!--]--></svg>`);
+  pop();
 }
 function is_date(obj) {
   return Object.prototype.toString.call(obj) === "[object Date]";
@@ -157,692 +1008,6 @@ function tweened(value, defaults = {}) {
     ), opts),
     subscribe: store.subscribe
   };
-}
-const initialState = {
-  currentLayout: null,
-  layouts: [],
-  selectedWidgets: [],
-  dragState: {
-    isDragging: false,
-    draggedWidget: null,
-    dragOffset: { x: 0, y: 0 },
-    snapToGrid: true,
-    gridSize: 20
-  },
-  resizeState: { isResizing: false, resizedWidget: null, resizeHandle: null },
-  widgetBuilder: {
-    isOpen: false,
-    mode: "create",
-    selectedWidget: null,
-    previewData: null,
-    activeTab: "general"
-  },
-  isGridVisible: true,
-  zoom: 1,
-  history: [],
-  historyIndex: -1,
-  aiLayout: { isOpen: false, suggestions: [] }
-};
-const dashboardState = writable(initialState);
-const currentLayout = writable(null);
-const selectedWidgets = writable([]);
-const dragState = writable(initialState.dragState);
-const widgetBuilder = writable(initialState.widgetBuilder);
-const widgetTemplates = [
-  {
-    id: "circular-gauge-cpu",
-    name: "CPU Gauge",
-    description: "Circular gauge showing CPU usage with customizable thresholds",
-    type: "circular-gauge",
-    preview: "/templates/circular-gauge.png",
-    category: "system",
-    config: {
-      size: { width: 200, height: 200 },
-      config: {
-        min: 0,
-        max: 100,
-        unit: "%",
-        colors: ["#22c55e", "#f59e0b", "#ef4444"],
-        thresholds: [70, 90]
-      },
-      dataSource: "cpu.usage"
-    }
-  },
-  {
-    id: "gauge-gpu",
-    name: "GPU Usage",
-    description: "Simple gauge for GPU monitoring",
-    type: "gauge",
-    preview: "/templates/gauge.png",
-    category: "system",
-    config: {
-      size: { width: 200, height: 200 },
-      config: {
-        colors: ["#3b82f6", "#8b5cf6", "#ef4444"],
-        thresholds: [75, 90]
-      },
-      dataSource: "gpu.usage"
-    }
-  },
-  {
-    id: "meter-memory",
-    name: "Memory Bar",
-    description: "Linear meter showing memory usage",
-    type: "meter",
-    preview: "/templates/meter.png",
-    category: "system",
-    config: {
-      size: { width: 300, height: 80 },
-      config: {
-        colors: ["#06b6d4", "#f59e0b", "#ef4444"],
-        thresholds: [80, 95]
-      },
-      dataSource: "memory.usage"
-    }
-  },
-  {
-    id: "simple-temp",
-    name: "Temperature Display",
-    description: "Simple text display for temperature values",
-    type: "simple",
-    preview: "/templates/simple.png",
-    category: "system",
-    config: {
-      size: { width: 150, height: 100 },
-      config: { unit: "°C" },
-      dataSource: "cpu.temperature"
-    }
-  },
-  {
-    id: "speedometer-perf",
-    name: "Performance Speedometer",
-    description: "Speedometer-style gauge for performance monitoring",
-    type: "speedometer",
-    preview: "/templates/speedometer.png",
-    category: "performance",
-    config: {
-      size: { width: 250, height: 250 },
-      config: {
-        min: 0,
-        max: 100,
-        unit: "%",
-        colors: ["#10b981", "#f59e0b", "#ef4444"]
-      },
-      dataSource: "cpu.usage"
-    }
-  },
-  {
-    id: "kpi-card-overview",
-    name: "System Overview",
-    description: "KPI card showing multiple system metrics",
-    type: "kpi-card",
-    preview: "/templates/kpi-card.png",
-    category: "system",
-    config: {
-      size: { width: 280, height: 160 },
-      config: { metrics: ["cpu.usage", "memory.usage", "gpu.usage"] }
-    }
-  }
-];
-const dashboardActions = {
-  createLayout: (name, description) => {
-    const newLayout = {
-      id: nanoid(),
-      name,
-      description,
-      widgets: [],
-      gridSize: 20,
-      snapToGrid: true,
-      theme: "dark-gaming",
-      createdAt: /* @__PURE__ */ new Date(),
-      updatedAt: /* @__PURE__ */ new Date()
-    };
-    dashboardState.update((state) => ({
-      ...state,
-      layouts: [...state.layouts, newLayout],
-      currentLayout: newLayout
-    }));
-    currentLayout.set(newLayout);
-    return newLayout;
-  },
-  loadLayout: (layout) => {
-    dashboardState.update((state) => ({ ...state, currentLayout: layout }));
-    currentLayout.set(layout);
-  },
-  saveLayout: () => {
-    dashboardState.update((state) => {
-      if (!state.currentLayout) return state;
-      const updatedLayout = {
-        ...state.currentLayout,
-        updatedAt: /* @__PURE__ */ new Date()
-      };
-      const layouts = state.layouts.map((layout) => layout.id === updatedLayout.id ? updatedLayout : layout);
-      return { ...state, layouts, currentLayout: updatedLayout };
-    });
-  },
-  // Widget management
-  addWidget: (template, position) => {
-    const widget = {
-      id: nanoid(),
-      ...template.config,
-      position: position || { x: 100, y: 100 },
-      size: template.config.size || { width: 200, height: 200 }
-    };
-    dashboardState.update((state) => {
-      if (!state.currentLayout) return state;
-      const updatedLayout = {
-        ...state.currentLayout,
-        widgets: [...state.currentLayout.widgets, widget]
-      };
-      currentLayout.set(updatedLayout);
-      return { ...state, currentLayout: updatedLayout };
-    });
-    return widget;
-  },
-  updateWidget: (widgetId, updates) => {
-    dashboardState.update((state) => {
-      if (!state.currentLayout) return state;
-      const updatedLayout = {
-        ...state.currentLayout,
-        widgets: state.currentLayout.widgets.map((widget) => widget.id === widgetId ? { ...widget, ...updates } : widget)
-      };
-      currentLayout.set(updatedLayout);
-      return { ...state, currentLayout: updatedLayout };
-    });
-  },
-  removeWidget: (widgetId) => {
-    dashboardState.update((state) => {
-      if (!state.currentLayout) return state;
-      const updatedLayout = {
-        ...state.currentLayout,
-        widgets: state.currentLayout.widgets.filter((widget) => widget.id !== widgetId)
-      };
-      currentLayout.set(updatedLayout);
-      return { ...state, currentLayout: updatedLayout };
-    });
-  },
-  // Selection management
-  selectWidget: (widgetId, multiSelect = false) => {
-    dashboardState.update((state) => {
-      const newSelected = multiSelect ? [...state.selectedWidgets, widgetId] : [widgetId];
-      selectedWidgets.set(newSelected);
-      return { ...state, selectedWidgets: newSelected };
-    });
-  },
-  deselectWidget: (widgetId) => {
-    dashboardState.update((state) => {
-      const newSelected = state.selectedWidgets.filter((id) => id !== widgetId);
-      selectedWidgets.set(newSelected);
-      return { ...state, selectedWidgets: newSelected };
-    });
-  },
-  clearSelection: () => {
-    selectedWidgets.set([]);
-    dashboardState.update((state) => ({ ...state, selectedWidgets: [] }));
-  },
-  // Drag and drop
-  startDrag: (widgetId, offset) => {
-    const newDragState = {
-      isDragging: true,
-      draggedWidget: widgetId,
-      dragOffset: offset,
-      snapToGrid: true,
-      gridSize: 20
-    };
-    dragState.set(newDragState);
-    dashboardState.update((state) => ({ ...state, dragState: newDragState }));
-  },
-  updateDrag: (position) => {
-    dashboardState.update((state) => {
-      if (!state.dragState.draggedWidget || !state.currentLayout) return state;
-      const snappedPosition = state.dragState.snapToGrid ? {
-        x: Math.round(position.x / state.dragState.gridSize) * state.dragState.gridSize,
-        y: Math.round(position.y / state.dragState.gridSize) * state.dragState.gridSize
-      } : position;
-      const updatedLayout = {
-        ...state.currentLayout,
-        widgets: state.currentLayout.widgets.map((widget) => widget.id === state.dragState.draggedWidget ? { ...widget, position: snappedPosition } : widget)
-      };
-      currentLayout.set(updatedLayout);
-      return { ...state, currentLayout: updatedLayout };
-    });
-  },
-  endDrag: () => {
-    const newDragState = {
-      isDragging: false,
-      draggedWidget: null,
-      dragOffset: { x: 0, y: 0 },
-      snapToGrid: true,
-      gridSize: 20
-    };
-    dragState.set(newDragState);
-    dashboardState.update((state) => ({ ...state, dragState: newDragState }));
-  },
-  // Widget builder
-  openWidgetBuilder: (mode, widget) => {
-    const newBuilderState = {
-      isOpen: true,
-      mode,
-      selectedWidget: widget || null,
-      previewData: null,
-      activeTab: "general"
-    };
-    widgetBuilder.set(newBuilderState);
-    dashboardState.update((state) => ({ ...state, widgetBuilder: newBuilderState }));
-  },
-  closeWidgetBuilder: () => {
-    const newBuilderState = {
-      isOpen: false,
-      mode: "create",
-      selectedWidget: null,
-      previewData: null,
-      activeTab: "general"
-    };
-    widgetBuilder.set(newBuilderState);
-    dashboardState.update((state) => ({ ...state, widgetBuilder: newBuilderState }));
-  },
-  // Grid and zoom
-  toggleGrid: () => {
-    dashboardState.update((state) => ({ ...state, isGridVisible: !state.isGridVisible }));
-  },
-  setZoom: (zoom) => {
-    dashboardState.update((state) => ({ ...state, zoom: Math.max(0.25, Math.min(2, zoom)) }));
-  },
-  // History (undo/redo)
-  saveToHistory: () => {
-    dashboardState.update((state) => {
-      if (!state.currentLayout) return state;
-      const newHistory = state.history.slice(0, state.historyIndex + 1);
-      newHistory.push(JSON.parse(JSON.stringify(state.currentLayout)));
-      return {
-        ...state,
-        history: newHistory.slice(-50),
-        // Keep last 50 states
-        historyIndex: Math.min(newHistory.length - 1, 49)
-      };
-    });
-  },
-  undo: () => {
-    dashboardState.update((state) => {
-      if (state.historyIndex <= 0) return state;
-      const previousLayout = state.history[state.historyIndex - 1];
-      const restoredLayout = JSON.parse(JSON.stringify(previousLayout));
-      currentLayout.set(restoredLayout);
-      return {
-        ...state,
-        currentLayout: restoredLayout,
-        historyIndex: state.historyIndex - 1
-      };
-    });
-  },
-  redo: () => {
-    dashboardState.update((state) => {
-      if (state.historyIndex >= state.history.length - 1) return state;
-      const nextLayout = state.history[state.historyIndex + 1];
-      const restoredLayout = JSON.parse(JSON.stringify(nextLayout));
-      currentLayout.set(restoredLayout);
-      return {
-        ...state,
-        currentLayout: restoredLayout,
-        historyIndex: state.historyIndex + 1
-      };
-    });
-  },
-  // AI Layout
-  openAILayoutModal: () => {
-    dashboardState.update((state) => ({ ...state, aiLayout: { ...state.aiLayout, isOpen: true } }));
-  },
-  closeAILayoutModal: () => {
-    dashboardState.update((state) => ({ ...state, aiLayout: { ...state.aiLayout, isOpen: false } }));
-  },
-  applyLayoutSuggestion: (suggestion) => {
-    dashboardState.update((state) => {
-      if (!state.currentLayout) return state;
-      const updatedLayout = { ...state.currentLayout, widgets: suggestion.widgets };
-      currentLayout.set(updatedLayout);
-      return { ...state, currentLayout: updatedLayout };
-    });
-  }
-};
-dashboardActions.createLayout("Default Dashboard", "Your main hardware monitoring dashboard");
-function generateMockSensorData() {
-  const now2 = Date.now();
-  const cpuUsage = 20 + Math.sin(now2 / 1e4) * 15 + Math.random() * 10;
-  const gpuUsage = 30 + Math.sin(now2 / 8e3) * 20 + Math.random() * 15;
-  const memoryUsage = 45 + Math.sin(now2 / 15e3) * 10 + Math.random() * 5;
-  return {
-    cpu: {
-      usage: Math.max(0, Math.min(100, cpuUsage)),
-      temperature: 35 + cpuUsage * 0.8 + Math.random() * 10,
-      frequency: 3.2 + Math.random() * 0.8,
-      voltage: 1.2 + Math.random() * 0.1,
-      cores: Array.from({ length: 8 }, (_, i) => ({
-        id: i,
-        usage: Math.max(
-          0,
-          Math.min(100, cpuUsage + (Math.random() - 0.5) * 30)
-        ),
-        temperature: 35 + cpuUsage * 0.8 + Math.random() * 15
-      }))
-    },
-    gpu: {
-      usage: Math.max(0, Math.min(100, gpuUsage)),
-      temperature: 40 + gpuUsage * 0.6 + Math.random() * 15,
-      memory: Math.max(0, Math.min(100, gpuUsage * 0.7 + Math.random() * 20)),
-      fanSpeed: Math.max(
-        30,
-        Math.min(100, gpuUsage * 0.8 + Math.random() * 20)
-      ),
-      voltage: 1.1 + Math.random() * 0.1,
-      powerUsage: Math.max(
-        50,
-        Math.min(300, gpuUsage * 2.5 + Math.random() * 50)
-      )
-    },
-    memory: {
-      usage: Math.max(0, Math.min(100, memoryUsage)),
-      available: Math.max(0, 16384 * (100 - memoryUsage) / 100),
-      total: 16384,
-      speed: 3200 + Math.random() * 400
-    },
-    storage: [
-      {
-        name: "NVMe SSD",
-        usage: 65 + Math.random() * 10,
-        temperature: 35 + Math.random() * 15,
-        readSpeed: 500 + Math.random() * 200,
-        writeSpeed: 400 + Math.random() * 150
-      },
-      {
-        name: "HDD",
-        usage: 45 + Math.random() * 10,
-        temperature: 30 + Math.random() * 10,
-        readSpeed: 120 + Math.random() * 30,
-        writeSpeed: 100 + Math.random() * 25
-      }
-    ],
-    fans: {
-      "CPU Fan": Math.max(800, 1200 + Math.random() * 400),
-      "GPU Fan 1": Math.max(600, 1e3 + Math.random() * 600),
-      "GPU Fan 2": Math.max(600, 1e3 + Math.random() * 600),
-      "Case Fan 1": Math.max(500, 800 + Math.random() * 200),
-      "Case Fan 2": Math.max(500, 800 + Math.random() * 200)
-    },
-    voltages: {
-      "CPU Core": 1.2 + Math.random() * 0.1,
-      "12V Rail": 11.9 + Math.random() * 0.2,
-      "5V Rail": 4.95 + Math.random() * 0.1,
-      "3.3V Rail": 3.28 + Math.random() * 0.05
-    },
-    motherboard: {
-      temperature: 32 + Math.random() * 8,
-      voltage: 3.3 + Math.random() * 0.1
-    },
-    network: {
-      bytesReceived: Math.random() * 1e6,
-      bytesSent: Math.random() * 5e5,
-      packetsReceived: Math.random() * 1e3,
-      packetsSent: Math.random() * 800
-    }
-  };
-}
-const sensorData = writable(generateMockSensorData());
-const websocket = writable(null);
-const connectionStatus = writable("disconnected");
-const historicalData = writable([]);
-let _mockInterval = null;
-const sensorStore = {
-  // Export stores for reactive access
-  data: sensorData,
-  status: connectionStatus,
-  history: historicalData,
-  connect() {
-    const ws = get(websocket);
-    if (ws?.readyState === WebSocket.OPEN) return;
-    connectionStatus.set("connecting");
-    try {
-      const newWebSocket = new WebSocket("ws://localhost:8000/sensors");
-      websocket.set(newWebSocket);
-      newWebSocket.onopen = () => {
-        connectionStatus.set("connected");
-        console.log("WebSocket connected to sensor backend");
-      };
-      newWebSocket.onmessage = (event) => {
-        try {
-          const rawData = JSON.parse(event.data);
-          const parsedData = this.parseHardwareData(rawData);
-          sensorData.set(parsedData);
-          historicalData.update((history) => [
-            ...history.slice(-99),
-            parsedData
-          ]);
-        } catch (error) {
-          console.error("Failed to parse sensor data:", error);
-        }
-      };
-      newWebSocket.onclose = () => {
-        connectionStatus.set("disconnected");
-        console.log("WebSocket disconnected, attempting to reconnect...");
-        setTimeout(() => this.connect(), 5e3);
-      };
-      newWebSocket.onerror = (error) => {
-        connectionStatus.set("error");
-        console.error("WebSocket error:", error);
-      };
-    } catch (error) {
-      connectionStatus.set("error");
-      console.error("Failed to create WebSocket connection:", error);
-      this.startMockDataStream();
-    }
-  },
-  disconnect() {
-    const ws = get(websocket);
-    if (ws) {
-      ws.close();
-      websocket.set(null);
-    }
-    connectionStatus.set("disconnected");
-  },
-  startMockDataStream() {
-    console.log("Starting mock data stream for development");
-    connectionStatus.set("connected");
-    if (_mockInterval) {
-      clearInterval(_mockInterval);
-    }
-    const updateMockData = () => {
-      const mockData = generateMockSensorData();
-      sensorData.set(mockData);
-      historicalData.update((history) => [...history.slice(-99), mockData]);
-    };
-    _mockInterval = setInterval(updateMockData, 2e3);
-    updateMockData();
-  },
-  parseHardwareData(hardware) {
-    const parsed = {
-      cpu: { usage: 0, temperature: 0, frequency: 0, voltage: 0, cores: [] },
-      gpu: {
-        usage: 0,
-        temperature: 0,
-        memory: 0,
-        fanSpeed: 0,
-        voltage: 0,
-        powerUsage: 0
-      },
-      memory: { usage: 0, available: 0, total: 0, speed: 0 },
-      storage: [],
-      fans: {},
-      voltages: {},
-      motherboard: { temperature: 0, voltage: 0 },
-      network: {
-        bytesReceived: 0,
-        bytesSent: 0,
-        packetsReceived: 0,
-        packetsSent: 0
-      }
-    };
-    hardware.forEach((component) => {
-      component.sensors.forEach((sensor) => {
-        if (component.hardwareType === "Cpu") {
-          if (sensor.sensorType === "Load") parsed.cpu.usage = sensor.value;
-          if (sensor.sensorType === "Temperature")
-            parsed.cpu.temperature = sensor.value;
-          if (sensor.sensorType === "Clock")
-            parsed.cpu.frequency = sensor.value / 1e3;
-          if (sensor.sensorType === "Voltage")
-            parsed.cpu.voltage = sensor.value;
-        }
-        if (component.hardwareType.startsWith("Gpu")) {
-          if (sensor.sensorType === "Load") parsed.gpu.usage = sensor.value;
-          if (sensor.sensorType === "Temperature")
-            parsed.gpu.temperature = sensor.value;
-          if (sensor.sensorType === "Fan") parsed.gpu.fanSpeed = sensor.value;
-          if (sensor.sensorType === "Voltage")
-            parsed.gpu.voltage = sensor.value;
-        }
-        if (component.hardwareType === "Memory") {
-          if (sensor.sensorType === "Load") parsed.memory.usage = sensor.value;
-          if (sensor.sensorType === "Data") {
-            if (sensor.name.includes("Available"))
-              parsed.memory.available = sensor.value;
-            if (sensor.name.includes("Used"))
-              parsed.memory.total = sensor.value;
-          }
-        }
-        if (sensor.sensorType === "Fan") {
-          parsed.fans[sensor.name] = sensor.value;
-        }
-        if (sensor.sensorType === "Voltage") {
-          parsed.voltages[sensor.name] = sensor.value;
-        }
-      });
-    });
-    return parsed;
-  },
-  getSensorValue(path) {
-    const keys = path.split(".");
-    let value = get(sensorData);
-    for (const key of keys) {
-      if (value && typeof value === "object" && key in value) {
-        value = value[key];
-      } else {
-        return 0;
-      }
-    }
-    return typeof value === "number" ? value : 0;
-  }
-};
-const initialTheme = "dark";
-const themeStore = writable(initialTheme);
-const currentTheme = derived(themeStore, ($theme) => $theme);
-const alertHistory = writable([]);
-function createPathData(show, strokeWidth, stroke, fill, path) {
-  return {
-    show,
-    style: {
-      strokeWidth,
-      stroke,
-      fill
-    },
-    path
-  };
-}
-const defaultFramePaths = {
-  // Standard rectangular frame with clipped corners
-  standard: [
-    createPathData(
-      true,
-      "2",
-      "var(--color-frame-1-stroke)",
-      "var(--color-frame-1-fill)",
-      [
-        ["M", "15", "15"],
-        ["L", "85%", "15"],
-        ["L", "100% - 15", "30"],
-        ["L", "100% - 15", "85%"],
-        ["L", "85%", "100% - 15"],
-        ["L", "15", "100% - 15"],
-        ["L", "15", "15"]
-      ]
-    )
-  ],
-  // Highlighted frame for active states
-  highlighted: [
-    createPathData(
-      true,
-      "2",
-      "var(--color-frame-2-stroke)",
-      "var(--color-frame-2-fill)",
-      [
-        ["M", "10", "10"],
-        ["L", "90%", "10"],
-        ["L", "100% - 10", "25"],
-        ["L", "100% - 10", "90%"],
-        ["L", "90%", "100% - 10"],
-        ["L", "10", "100% - 10"],
-        ["L", "10", "10"]
-      ]
-    )
-  ]
-};
-function CosmicFrame($$payload, $$props) {
-  push();
-  let {
-    paths = [],
-    className = "",
-    style = "",
-    $$slots,
-    $$events,
-    ...restProps
-  } = $$props;
-  function pathToString(pathArray) {
-    return pathArray.map((segment) => segment.join(" ")).join(" ");
-  }
-  function processPath(pathString, width) {
-    return pathString.replace(/100%-(\d+)/g, (match, offset) => {
-      return `${width - parseFloat(offset)}`;
-    }).replace(/(\d+)%-(\d+)/g, (match, percent, offset) => {
-      const num = parseFloat(percent);
-      return `${num / 100 * width - parseFloat(offset)}`;
-    }).replace(/(\d+)%\+(\d+)/g, (match, percent, offset) => {
-      const num = parseFloat(percent);
-      return `${num / 100 * width + parseFloat(offset)}`;
-    }).replace(/(\d+)%/g, (match, percent) => {
-      const num = parseFloat(percent);
-      return `${num / 100 * width}`;
-    });
-  }
-  let frameWidth = 300;
-  let frameHeight = 200;
-  const processedPaths = paths.map((pathData) => ({
-    ...pathData,
-    processedPath: processPath(pathToString(pathData.path), frameWidth)
-  }));
-  const each_array = ensure_array_like(processedPaths);
-  $$payload.out.push(`<svg${spread_attributes(
-    {
-      class: `absolute inset-0 size-full ${stringify(className)}`,
-      xmlns: "http://www.w3.org/2000/svg",
-      viewBox: `0 0 ${stringify(frameWidth)} ${stringify(frameHeight)}`,
-      style,
-      ...restProps
-    },
-    null,
-    void 0,
-    void 0,
-    3
-  )}><!--[-->`);
-  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-    let pathData = each_array[$$index];
-    if (pathData.show) {
-      $$payload.out.push("<!--[-->");
-      $$payload.out.push(`<path${attr("d", pathData.processedPath)}${attr("stroke-width", pathData.style.strokeWidth)}${attr("stroke", pathData.style.stroke)}${attr("fill", pathData.style.fill)} class="transition-all duration-300"></path>`);
-    } else {
-      $$payload.out.push("<!--[!-->");
-    }
-    $$payload.out.push(`<!--]-->`);
-  }
-  $$payload.out.push(`<!--]--></svg>`);
-  pop();
 }
 function CosmicPanel($$payload, $$props) {
   push();
@@ -1054,24 +1219,365 @@ function CosmicSensorGauge($$payload, $$props) {
     showFrame = true,
     glowEffect = true
   } = $$props;
-  const animatedValue = tweened(0, { duration: 800, easing: cubicOut });
+  const animatedValue = tweened(0, { duration: 1200, easing: cubicOut });
   const normalizedValue = Math.max(0, Math.min(100, (value - config.min) / (config.max - config.min) * 100));
-  const angle = normalizedValue / 100 * 270 - 135;
-  const radius = size * 0.35;
+  const totalAngle = 270;
+  const startAngle = -135;
+  const radius = size * 0.32;
   const centerX = size / 2;
   const centerY = size / 2;
   const statusColor = () => {
-    if (value >= config.criticalThreshold) return "var(--color-accent)";
-    if (value >= config.warningThreshold) return "orange";
-    return "var(--color-success)";
+    if (value >= config.criticalThreshold) return "#ff0080";
+    if (value >= config.warningThreshold) return "#ffaa00";
+    return "#00ffaa";
+  };
+  const statusGlow = () => {
+    if (value >= config.criticalThreshold) return "#ff008040";
+    if (value >= config.warningThreshold) return "#ffaa0040";
+    return "#00ffaa40";
+  };
+  const segments = 24;
+  const segmentAngle = totalAngle / segments;
+  const segmentGap = 3;
+  const innerRadius = radius - 8;
+  const outerRadius = radius + 4;
+  const createSegmentedArc = () => {
+    const activeSegments = Math.floor(normalizedValue / 100 * segments);
+    const segmentPaths = [];
+    for (let i = 0; i < segments; i++) {
+      const segmentStart = startAngle + i * segmentAngle + i * segmentGap / segments;
+      const segmentEnd = segmentStart + segmentAngle - segmentGap / segments;
+      const startRad = segmentStart * Math.PI / 180;
+      const endRad = segmentEnd * Math.PI / 180;
+      const x1 = centerX + radius * Math.cos(startRad);
+      const y1 = centerY + radius * Math.sin(startRad);
+      const x2 = centerX + radius * Math.cos(endRad);
+      const y2 = centerY + radius * Math.sin(endRad);
+      const ix1 = centerX + innerRadius * Math.cos(startRad);
+      const iy1 = centerY + innerRadius * Math.sin(startRad);
+      const ix2 = centerX + innerRadius * Math.cos(endRad);
+      const iy2 = centerY + innerRadius * Math.sin(endRad);
+      const ox1 = centerX + outerRadius * Math.cos(startRad);
+      const oy1 = centerY + outerRadius * Math.sin(startRad);
+      const ox2 = centerX + outerRadius * Math.cos(endRad);
+      const oy2 = centerY + outerRadius * Math.sin(endRad);
+      const isActive = i < activeSegments;
+      const isNearActive = i === activeSegments;
+      let opacity, strokeColor, glowOpacity;
+      if (isActive) {
+        opacity = 1;
+        strokeColor = statusColor();
+        glowOpacity = 0.8;
+      } else if (isNearActive) {
+        opacity = 0.4;
+        strokeColor = statusColor();
+        glowOpacity = 0.3;
+      } else {
+        opacity = 0.12;
+        strokeColor = "#334155";
+        glowOpacity = 0;
+      }
+      segmentPaths.push({
+        // Main segment
+        path: `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`,
+        // Inner depth segment
+        innerPath: `M ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 0 1 ${ix2} ${iy2}`,
+        // Outer glow segment
+        outerPath: `M ${ox1} ${oy1} A ${outerRadius} ${outerRadius} 0 0 1 ${ox2} ${oy2}`,
+        opacity,
+        strokeColor,
+        glowOpacity,
+        isActive,
+        isNearActive
+      });
+    }
+    return segmentPaths;
   };
   const gaugeFramePaths = [
     {
       show: true,
       style: {
+        strokeWidth: "1",
+        stroke: "rgba(0, 255, 255, 0.3)",
+        fill: "rgba(0, 20, 40, 0.8)"
+      },
+      path: [
+        ["M", "20", "20"],
+        ["L", "80%", "20"],
+        ["L", "100%-20", "35"],
+        ["L", "100%-20", "80%"],
+        ["L", "85%", "100%-20"],
+        ["L", "20", "100%-20"],
+        ["L", "20", "20"]
+      ]
+    },
+    {
+      show: showFrame,
+      style: { strokeWidth: "2", stroke: statusColor(), fill: "transparent" },
+      path: [
+        ["M", "15", "15"],
+        ["L", "85%", "15"],
+        ["L", "100%-15", "30"],
+        ["L", "100%-15", "85%"],
+        ["L", "85%", "100%-15"],
+        ["L", "15", "100%-15"],
+        ["L", "15", "15"]
+      ]
+    }
+  ];
+  const createTickMarks = () => {
+    const ticks = [];
+    const tickCount = 11;
+    const tickRadius = radius + 15;
+    for (let i = 0; i < tickCount; i++) {
+      const angle = startAngle + i / (tickCount - 1) * totalAngle;
+      const rad = angle * Math.PI / 180;
+      const x1 = centerX + (tickRadius - 8) * Math.cos(rad);
+      const y1 = centerY + (tickRadius - 8) * Math.sin(rad);
+      const x2 = centerX + tickRadius * Math.cos(rad);
+      const y2 = centerY + tickRadius * Math.sin(rad);
+      ticks.push({
+        x1,
+        y1,
+        x2,
+        y2,
+        value: i / (tickCount - 1) * 100,
+        isMajor: i % 2 === 0
+      });
+    }
+    return ticks;
+  };
+  const each_array = ensure_array_like(createTickMarks());
+  const each_array_1 = ensure_array_like(createSegmentedArc());
+  $$payload.out.push(`<div class="relative inline-block gauge-container svelte-oo0sga"${attr_style(`width: ${stringify(size)}px; height: ${stringify(size)}px;`)}>`);
+  if (showFrame) {
+    $$payload.out.push("<!--[-->");
+    CosmicFrame($$payload, {
+      paths: gaugeFramePaths,
+      className: "gauge-frame",
+      style: `filter: ${stringify(glowEffect ? `drop-shadow(0 0 20px ${statusGlow()}) drop-shadow(0 0 40px ${statusGlow()})` : "none")}`
+    });
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> <div class="absolute inset-6 flex items-center justify-center svelte-oo0sga"><svg${attr("width", size - 48)}${attr("height", size - 48)}${attr("viewBox", `0 0 ${stringify(size)} ${stringify(size)}`)} class="overflow-visible gauge-svg svelte-oo0sga"><defs class="svelte-oo0sga"><pattern${attr("id", `grid-${stringify(size)}`)} width="20" height="20" patternUnits="userSpaceOnUse" class="svelte-oo0sga"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0, 255, 255, 0.1)" stroke-width="0.5" class="svelte-oo0sga"></path></pattern><radialGradient${attr("id", `center-glow-${stringify(size)}`)} cx="50%" cy="50%" r="50%" class="svelte-oo0sga"><stop offset="0%"${attr_style(`stop-color:${stringify(statusColor())};stop-opacity:0.8`)} class="svelte-oo0sga"></stop><stop offset="70%"${attr_style(`stop-color:${stringify(statusColor())};stop-opacity:0.3`)} class="svelte-oo0sga"></stop><stop offset="100%"${attr_style(`stop-color:${stringify(statusColor())};stop-opacity:0`)} class="svelte-oo0sga"></stop></radialGradient></defs><circle${attr("cx", centerX)}${attr("cy", centerY)}${attr("r", radius + 25)}${attr("fill", `url(#grid-${stringify(size)})`)} opacity="0.3" class="svelte-oo0sga"></circle><!--[-->`);
+  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+    let tick = each_array[$$index];
+    $$payload.out.push(`<line${attr("x1", tick.x1)}${attr("y1", tick.y1)}${attr("x2", tick.x2)}${attr("y2", tick.y2)}${attr("stroke", tick.isMajor ? "rgba(0, 255, 255, 0.6)" : "rgba(0, 255, 255, 0.3)")}${attr("stroke-width", tick.isMajor ? "2" : "1")} stroke-linecap="round" class="svelte-oo0sga"></line>`);
+  }
+  $$payload.out.push(`<!--]--><!--[-->`);
+  for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
+    let segment = each_array_1[$$index_1];
+    if (segment.glowOpacity > 0 && glowEffect) {
+      $$payload.out.push("<!--[-->");
+      $$payload.out.push(`<path${attr("d", segment.outerPath)}${attr("stroke", segment.strokeColor)} stroke-width="2" fill="none" stroke-linecap="round"${attr("opacity", segment.glowOpacity * 0.3)} class="gauge-segment-glow svelte-oo0sga" style="filter: blur(2px)"></path>`);
+    } else {
+      $$payload.out.push("<!--[!-->");
+    }
+    $$payload.out.push(`<!--]--><path${attr("d", segment.path)}${attr("stroke", segment.strokeColor)} stroke-width="8" fill="none" stroke-linecap="round"${attr("opacity", segment.opacity)} class="gauge-segment svelte-oo0sga"${attr_style(`filter: ${stringify(segment.isActive && glowEffect ? `drop-shadow(0 0 6px ${segment.strokeColor}) drop-shadow(0 0 12px ${segment.strokeColor}40)` : "none")}`)}></path><path${attr("d", segment.innerPath)}${attr("stroke", segment.isActive ? "#ffffff" : "#1e293b")} stroke-width="2" fill="none" stroke-linecap="round"${attr("opacity", segment.isActive ? 0.6 : 0.2)} class="gauge-segment-inner svelte-oo0sga"></path>`);
+  }
+  $$payload.out.push(`<!--]--><circle${attr("cx", centerX)}${attr("cy", centerY)} r="20"${attr("fill", `url(#center-glow-${stringify(size)})`)}${attr("stroke", statusColor())} stroke-width="2" class="center-circle svelte-oo0sga"></circle><circle${attr("cx", centerX)}${attr("cy", centerY)} r="12" fill="rgba(0, 20, 40, 0.9)"${attr("stroke", statusColor())} stroke-width="1" class="svelte-oo0sga"></circle><text${attr("x", centerX)}${attr("y", centerY - 12)} text-anchor="middle"${attr("fill", statusColor())} font-size="28" font-weight="bold" font-family="'Orbitron', monospace" class="value-text svelte-oo0sga"${attr_style(`filter: drop-shadow(0 0 8px ${stringify(statusColor())}40)`)}>${escape_html(Math.round(store_get($$store_subs ??= {}, "$animatedValue", animatedValue)))}</text><text${attr("x", centerX)}${attr("y", centerY + 8)} text-anchor="middle" fill="rgba(0, 255, 255, 0.8)" font-size="12" font-weight="500" font-family="'Orbitron', monospace" class="unit-text svelte-oo0sga">${escape_html(config.unit)}</text><text${attr("x", centerX)}${attr("y", centerY + 24)} text-anchor="middle" fill="rgba(156, 163, 175, 0.6)" font-size="8" font-family="'Orbitron', monospace" class="percentage-text svelte-oo0sga">${escape_html(Math.round(normalizedValue))}% of max</text></svg></div> <div class="absolute bottom-4 left-0 right-0 text-center svelte-oo0sga"><div class="text-sm font-medium text-cyan-200 flex items-center justify-center gap-2 font-orbitron svelte-oo0sga">`);
+  if (config.icon) {
+    $$payload.out.push("<!--[-->");
+    $$payload.out.push(`<span class="text-lg svelte-oo0sga">${escape_html(config.icon)}</span>`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> <span class="tracking-wide svelte-oo0sga">${escape_html(label)}</span></div></div> <div class="absolute top-4 right-4 flex items-center gap-2 svelte-oo0sga"><div${attr_class(
+    `status-indicator w-3 h-3 rounded-full ${stringify(value >= config.criticalThreshold ? "bg-red-400 critical-pulse" : value >= config.warningThreshold ? "bg-yellow-400 warning-pulse" : "bg-green-400 normal-pulse")}`,
+    "svelte-oo0sga"
+  )}></div> <div class="text-xs font-orbitron text-cyan-300 opacity-80 svelte-oo0sga">${escape_html(value >= config.criticalThreshold ? "CRITICAL" : value >= config.warningThreshold ? "WARNING" : "NORMAL")}</div></div> <div class="absolute bottom-12 left-4 right-4 svelte-oo0sga"><div class="flex justify-between text-xs font-mono text-cyan-400 opacity-60 svelte-oo0sga"><span class="svelte-oo0sga">0</span> <span class="svelte-oo0sga">50</span> <span class="svelte-oo0sga">100</span></div> <div class="w-full h-1 bg-gray-800 rounded-full mt-1 overflow-hidden svelte-oo0sga"><div class="h-full rounded-full transition-all duration-1000 ease-out svelte-oo0sga"${attr_style(`width: ${stringify(normalizedValue)}%; background: linear-gradient(90deg, ${stringify(statusColor())}, ${stringify(statusColor())}80);`)}></div></div></div></div>`);
+  if ($$store_subs) unsubscribe_stores($$store_subs);
+  pop();
+}
+function CosmicLinearMeter($$payload, $$props) {
+  push();
+  var $$store_subs;
+  let {
+    value = 0,
+    label = "Metric",
+    config = {
+      min: 0,
+      max: 100,
+      warningThreshold: 70,
+      criticalThreshold: 90,
+      unit: "%",
+      icon: "📊"
+    },
+    width = 300,
+    height = 120,
+    showFrame = true,
+    glowEffect = true
+  } = $$props;
+  const animatedValue = tweened(0, { duration: 1e3, easing: cubicOut });
+  const normalizedValue = Math.max(0, Math.min(100, (value - config.min) / (config.max - config.min) * 100));
+  const statusColor = () => {
+    if (value >= config.criticalThreshold) return "#ff0080";
+    if (value >= config.warningThreshold) return "#ffaa00";
+    return "#00ffaa";
+  };
+  const statusGlow = () => {
+    if (value >= config.criticalThreshold) return "#ff008040";
+    if (value >= config.warningThreshold) return "#ffaa0040";
+    return "#00ffaa40";
+  };
+  const meterFramePaths = [
+    {
+      show: true,
+      style: {
+        strokeWidth: "1",
+        stroke: "rgba(0, 255, 255, 0.3)",
+        fill: "rgba(0, 20, 40, 0.8)"
+      },
+      path: [
+        ["M", "15", "15"],
+        ["L", "85%", "15"],
+        ["L", "100%-15", "25"],
+        ["L", "100%-15", "85%"],
+        ["L", "85%", "100%-15"],
+        ["L", "15", "100%-15"],
+        ["L", "15", "15"]
+      ]
+    },
+    {
+      show: showFrame,
+      style: { strokeWidth: "2", stroke: statusColor(), fill: "transparent" },
+      path: [
+        ["M", "10", "10"],
+        ["L", "90%", "10"],
+        ["L", "100%-10", "20"],
+        ["L", "100%-10", "90%"],
+        ["L", "90%", "100%-10"],
+        ["L", "10", "100%-10"],
+        ["L", "10", "10"]
+      ]
+    }
+  ];
+  const segments = 20;
+  const segmentWidth = (width - 80) / segments;
+  const segmentGap = 2;
+  const createSegmentedMeter = () => {
+    const activeSegments = Math.floor(normalizedValue / 100 * segments);
+    const segmentBars = [];
+    for (let i = 0; i < segments; i++) {
+      const x = 40 + i * (segmentWidth + segmentGap);
+      const isActive = i < activeSegments;
+      const opacity = isActive ? 1 : 0.2;
+      const fillColor = isActive ? statusColor() : "#ffffff";
+      segmentBars.push({
+        x,
+        width: segmentWidth - segmentGap,
+        opacity,
+        fillColor,
+        isActive
+      });
+    }
+    return segmentBars;
+  };
+  const each_array = ensure_array_like(createSegmentedMeter());
+  $$payload.out.push(`<div class="relative inline-block meter-container svelte-1bejwu7"${attr_style(`width: ${stringify(width)}px; height: ${stringify(height)}px;`)}>`);
+  if (showFrame) {
+    $$payload.out.push("<!--[-->");
+    CosmicFrame($$payload, {
+      paths: meterFramePaths,
+      className: "meter-frame",
+      style: `filter: ${stringify(glowEffect ? `drop-shadow(0 0 15px ${statusGlow()})` : "none")}`
+    });
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> <div class="absolute inset-4 flex flex-col justify-between p-4 svelte-1bejwu7"><div class="flex items-center justify-between mb-3 svelte-1bejwu7"><div class="flex items-center gap-2 svelte-1bejwu7">`);
+  if (config.icon) {
+    $$payload.out.push("<!--[-->");
+    $$payload.out.push(`<span class="text-lg svelte-1bejwu7">${escape_html(config.icon)}</span>`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> <span class="text-sm font-orbitron text-cyan-200 tracking-wide svelte-1bejwu7">${escape_html(label)}</span></div> <div class="text-right svelte-1bejwu7"><div class="text-xl font-bold font-orbitron text-white svelte-1bejwu7">${escape_html(Math.round(store_get($$store_subs ??= {}, "$animatedValue", animatedValue)))}<span class="text-sm text-cyan-400 ml-1 svelte-1bejwu7">${escape_html(config.unit)}</span></div> <div class="text-xs font-orbitron text-cyan-300 opacity-80 svelte-1bejwu7">${escape_html(value >= config.criticalThreshold ? "CRITICAL" : value >= config.warningThreshold ? "WARNING" : "NORMAL")}</div></div></div> <div class="relative svelte-1bejwu7"><div class="w-full h-6 bg-gray-800 rounded-full overflow-hidden border border-cyan-900 svelte-1bejwu7"><div class="absolute inset-0 opacity-20 svelte-1bejwu7" style="background-image: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(0, 255, 255, 0.1) 10px, rgba(0, 255, 255, 0.1) 11px);"></div> <svg width="100%" height="100%" class="absolute inset-0 svelte-1bejwu7"><!--[-->`);
+  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+    let segment = each_array[$$index];
+    $$payload.out.push(`<rect${attr("x", segment.x)} y="4"${attr("width", segment.width)} height="16"${attr("fill", segment.fillColor)}${attr("opacity", segment.opacity)} rx="2" class="meter-segment transition-all duration-300 svelte-1bejwu7"${attr_style(`filter: ${stringify(segment.isActive && glowEffect ? `drop-shadow(0 0 4px ${segment.fillColor})` : "none")}`)}></rect>`);
+  }
+  $$payload.out.push(`<!--]--></svg> <div class="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden svelte-1bejwu7"${attr_style(`width: ${stringify(normalizedValue)}%; background: linear-gradient(90deg, ${stringify(statusColor())}, ${stringify(statusColor())}80);`)}><div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 w-8 animate-scan svelte-1bejwu7"></div></div></div> <div class="absolute -bottom-2 left-0 right-0 flex justify-between text-xs font-mono text-cyan-400 opacity-60 svelte-1bejwu7"><span class="svelte-1bejwu7">0</span> <span${attr_style(`position: absolute; left: ${stringify(config.warningThreshold)}%;`)} class="transform -translate-x-1/2 svelte-1bejwu7">${escape_html(config.warningThreshold)}</span> <span${attr_style(`position: absolute; left: ${stringify(config.criticalThreshold)}%;`)} class="transform -translate-x-1/2 svelte-1bejwu7">${escape_html(config.criticalThreshold)}</span> <span class="svelte-1bejwu7">100</span></div></div> <div class="absolute top-2 right-2 svelte-1bejwu7"><div${attr_class(
+    `status-indicator w-2 h-2 rounded-full ${stringify(value >= config.criticalThreshold ? "bg-red-400 critical-pulse" : value >= config.warningThreshold ? "bg-yellow-400 warning-pulse" : "bg-green-400 normal-pulse")}`,
+    "svelte-1bejwu7"
+  )}></div></div></div></div>`);
+  if ($$store_subs) unsubscribe_stores($$store_subs);
+  pop();
+}
+function CosmicKPICard($$payload, $$props) {
+  push();
+  let {
+    config = {
+      title: "System Overview",
+      metrics: [
+        {
+          label: "CPU",
+          value: 65,
+          unit: "%",
+          icon: "🔥",
+          threshold: { warning: 70, critical: 90 }
+        },
+        {
+          label: "Memory",
+          value: 74,
+          unit: "%",
+          icon: "💾",
+          threshold: { warning: 75, critical: 90 }
+        },
+        {
+          label: "GPU",
+          value: 82,
+          unit: "%",
+          icon: "⚡",
+          threshold: { warning: 80, critical: 95 }
+        },
+        {
+          label: "Temp",
+          value: 68,
+          unit: "°C",
+          icon: "🌡️",
+          threshold: { warning: 70, critical: 85 }
+        }
+      ]
+    },
+    width = 320,
+    height = 200,
+    showFrame = true,
+    glowEffect = true
+  } = $$props;
+  let animatedValues = config.metrics.map(() => 0);
+  const systemStatus = () => {
+    const criticalCount = config.metrics.filter((m) => m.value >= m.threshold.critical).length;
+    const warningCount = config.metrics.filter((m) => m.value >= m.threshold.warning).length;
+    if (criticalCount > 0) return { level: "critical", color: "#ff0080", text: "CRITICAL" };
+    if (warningCount > 0) return { level: "warning", color: "#ffaa00", text: "WARNING" };
+    return { level: "normal", color: "#00ffaa", text: "OPTIMAL" };
+  };
+  const cardFramePaths = [
+    {
+      show: true,
+      style: {
+        strokeWidth: "1",
+        stroke: "rgba(0, 255, 255, 0.3)",
+        fill: "rgba(0, 20, 40, 0.8)"
+      },
+      path: [
+        ["M", "20", "20"],
+        ["L", "80%", "20"],
+        ["L", "100%-20", "35"],
+        ["L", "100%-20", "80%"],
+        ["L", "85%", "100%-20"],
+        ["L", "20", "100%-20"],
+        ["L", "20", "20"]
+      ]
+    },
+    {
+      show: showFrame,
+      style: {
         strokeWidth: "2",
-        stroke: "var(--color-frame-1-stroke)",
-        fill: "var(--color-frame-1-fill)"
+        stroke: systemStatus().color,
+        fill: "transparent"
       },
       path: [
         ["M", "15", "15"],
@@ -1082,63 +1588,40 @@ function CosmicSensorGauge($$payload, $$props) {
         ["L", "15", "100%-15"],
         ["L", "15", "15"]
       ]
-    },
-    {
-      show: showFrame,
-      style: { strokeWidth: "1", stroke: statusColor(), fill: "transparent" },
-      path: [
-        ["M", "10", "10"],
-        ["L", "90%", "10"],
-        ["L", "100%-10", "25"],
-        ["L", "100%-10", "90%"],
-        ["L", "90%", "100%-10"],
-        ["L", "10", "100%-10"],
-        ["L", "10", "10"]
-      ]
     }
   ];
-  function createArcPath(startAngle, endAngle, radius2, cx, cy) {
-    const start = {
-      x: cx + radius2 * Math.cos(startAngle * Math.PI / 180),
-      y: cy + radius2 * Math.sin(startAngle * Math.PI / 180)
-    };
-    const end = {
-      x: cx + radius2 * Math.cos(endAngle * Math.PI / 180),
-      y: cy + radius2 * Math.sin(endAngle * Math.PI / 180)
-    };
-    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-    return `M ${start.x} ${start.y} A ${radius2} ${radius2} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
-  }
-  const backgroundArc = createArcPath(-135, 135, radius, centerX, centerY);
-  const valueArc = createArcPath(-135, angle, radius, centerX, centerY);
-  $$payload.out.push(`<div class="relative inline-block svelte-1in9g11"${attr_style(`width: ${stringify(size)}px; height: ${stringify(size)}px;`)}>`);
+  const getMetricStatus = (metric) => {
+    if (metric.value >= metric.threshold.critical) return { color: "#ff0080", level: "critical" };
+    if (metric.value >= metric.threshold.warning) return { color: "#ffaa00", level: "warning" };
+    return { color: "#00ffaa", level: "normal" };
+  };
+  const each_array = ensure_array_like(config.metrics);
+  $$payload.out.push(`<div class="relative inline-block kpi-container svelte-8vvtmq"${attr_style(`width: ${stringify(width)}px; height: ${stringify(height)}px;`)}>`);
   if (showFrame) {
     $$payload.out.push("<!--[-->");
     CosmicFrame($$payload, {
-      paths: gaugeFramePaths,
-      className: glowEffect ? "drop-shadow-xl" : "",
-      style: `filter: ${stringify(glowEffect ? `drop-shadow(0 0 20px ${statusColor()}40)` : "none")}`
+      paths: cardFramePaths,
+      className: "kpi-frame",
+      style: `filter: ${stringify(glowEffect ? `drop-shadow(0 0 20px ${systemStatus().color}40)` : "none")}`
     });
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]--> <div class="absolute inset-4 flex items-center justify-center svelte-1in9g11"><svg${attr("width", size - 32)}${attr("height", size - 32)}${attr("viewBox", `0 0 ${stringify(size)} ${stringify(size)}`)} class="overflow-visible svelte-1in9g11"><path${attr("d", backgroundArc)} stroke="rgba(255, 255, 255, 0.1)" stroke-width="8" fill="none" stroke-linecap="round" class="svelte-1in9g11"></path><path${attr("d", valueArc)}${attr("stroke", statusColor())} stroke-width="8" fill="none" stroke-linecap="round" class="transition-all duration-800 ease-out svelte-1in9g11"${attr_style(`filter: ${stringify(glowEffect ? `drop-shadow(0 0 8px ${statusColor()})` : "none")}`)}></path><circle${attr("cx", centerX)}${attr("cy", centerY)} r="12" fill="var(--color-background)"${attr("stroke", statusColor())} stroke-width="2" class="svelte-1in9g11"></circle><text${attr("x", centerX)}${attr("y", centerY - 10)} text-anchor="middle" fill="var(--color-foreground)" font-size="18" font-weight="bold" font-family="monospace" class="svelte-1in9g11">${escape_html(Math.round(store_get($$store_subs ??= {}, "$animatedValue", animatedValue)))}</text><text${attr("x", centerX)}${attr("y", centerY + 8)} text-anchor="middle" fill="var(--color-foreground)" font-size="10" opacity="0.7" font-family="monospace" class="svelte-1in9g11">${escape_html(config.unit)}</text></svg></div> <div class="absolute bottom-2 left-0 right-0 text-center svelte-1in9g11"><div class="text-xs font-medium text-white/80 flex items-center justify-center gap-1 font-orbitron svelte-1in9g11">`);
-  if (config.icon) {
-    $$payload.out.push("<!--[-->");
-    $$payload.out.push(`<span class="svelte-1in9g11">${escape_html(config.icon)}</span>`);
-  } else {
-    $$payload.out.push("<!--[!-->");
+  $$payload.out.push(`<!--]--> <div class="absolute inset-6 flex flex-col svelte-8vvtmq"><div class="flex items-center justify-between mb-4 svelte-8vvtmq"><h3 class="text-lg font-orbitron font-bold text-white tracking-wide svelte-8vvtmq">${escape_html(config.title)}</h3> <div class="flex items-center gap-2 svelte-8vvtmq"><div${attr_class(
+    `status-indicator w-3 h-3 rounded-full ${stringify(systemStatus().level === "critical" ? "bg-red-400 critical-pulse" : systemStatus().level === "warning" ? "bg-yellow-400 warning-pulse" : "bg-green-400 normal-pulse")}`,
+    "svelte-8vvtmq"
+  )}></div> <span class="text-xs font-orbitron text-cyan-300 opacity-80 svelte-8vvtmq">${escape_html(systemStatus().text)}</span></div></div> <div class="grid grid-cols-2 gap-4 flex-1 svelte-8vvtmq"><!--[-->`);
+  for (let index = 0, $$length = each_array.length; index < $$length; index++) {
+    let metric = each_array[index];
+    const status = getMetricStatus(metric);
+    $$payload.out.push(`<div class="metric-item bg-gray-900/50 rounded-lg p-3 border border-cyan-900/30 hover:border-cyan-600/50 transition-all duration-300 svelte-8vvtmq"><div class="flex items-center justify-between mb-2 svelte-8vvtmq"><div class="flex items-center gap-2 svelte-8vvtmq"><span class="text-sm svelte-8vvtmq">${escape_html(metric.icon)}</span> <span class="text-xs font-orbitron text-cyan-200 svelte-8vvtmq">${escape_html(metric.label)}</span></div> <div class="w-2 h-2 rounded-full svelte-8vvtmq"${attr_style(`background-color: ${stringify(status.color)}; box-shadow: 0 0 6px ${stringify(status.color)};`)}></div></div> <div class="flex items-baseline gap-1 svelte-8vvtmq"><span class="text-xl font-bold font-orbitron svelte-8vvtmq"${attr_style(`color: ${stringify(status.color)};`)}>${escape_html(Math.round(animatedValues[index]))}</span> <span class="text-xs text-cyan-400 opacity-80 svelte-8vvtmq">${escape_html(metric.unit)}</span></div> <div class="mt-2 w-full h-1 bg-gray-800 rounded-full overflow-hidden svelte-8vvtmq"><div class="h-full rounded-full transition-all duration-1000 ease-out svelte-8vvtmq"${attr_style(`width: ${stringify(metric.value)}%; background: linear-gradient(90deg, ${stringify(status.color)}, ${stringify(status.color)}80);`)}></div></div> <div class="flex justify-between mt-1 text-xs font-mono text-gray-500 svelte-8vvtmq"><span class="svelte-8vvtmq">0</span> <span class="text-yellow-400 svelte-8vvtmq"${attr("title", `Warning: ${stringify(metric.threshold.warning)}${stringify(metric.unit)}`)}>⚠</span> <span class="text-red-400 svelte-8vvtmq"${attr("title", `Critical: ${stringify(metric.threshold.critical)}${stringify(metric.unit)}`)}>🚨</span> <span class="svelte-8vvtmq">100</span></div></div>`);
   }
-  $$payload.out.push(`<!--]--> ${escape_html(label)}</div></div> <div class="absolute top-2 right-2 svelte-1in9g11"><div${attr_class(
-    `w-2 h-2 rounded-full ${stringify(value >= config.criticalThreshold ? "bg-red-400 critical-glow" : value >= config.warningThreshold ? "bg-yellow-400" : "bg-green-400")}`,
-    "svelte-1in9g11"
-  )}></div></div></div>`);
-  if ($$store_subs) unsubscribe_stores($$store_subs);
+  $$payload.out.push(`<!--]--></div> <div class="mt-4 pt-3 border-t border-cyan-900/30 svelte-8vvtmq"><div class="flex items-center justify-between text-xs svelte-8vvtmq"><div class="flex items-center gap-4 svelte-8vvtmq"><span class="text-cyan-400 font-orbitron svelte-8vvtmq">SYSTEM STATUS</span> <span class="text-gray-400 svelte-8vvtmq">Last Update: ${escape_html((/* @__PURE__ */ new Date()).toLocaleTimeString())}</span></div> <div class="flex items-center gap-2 svelte-8vvtmq"><div class="w-1 h-1 bg-cyan-400 rounded-full animate-pulse svelte-8vvtmq"></div> <span class="text-cyan-300 font-orbitron svelte-8vvtmq">MONITORING</span></div></div></div></div> <div class="absolute inset-0 opacity-5 pointer-events-none svelte-8vvtmq"><svg width="100%" height="100%" class="svelte-8vvtmq"><defs class="svelte-8vvtmq"><pattern${attr("id", `kpi-grid-${stringify(width)}`)} width="20" height="20" patternUnits="userSpaceOnUse" class="svelte-8vvtmq"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(0, 255, 255, 0.3)" stroke-width="0.5" class="svelte-8vvtmq"></path></pattern></defs><rect width="100%" height="100%"${attr("fill", `url(#kpi-grid-${stringify(width)})`)} class="svelte-8vvtmq"></rect></svg></div></div>`);
   pop();
 }
 function CircularGauge($$payload, $$props) {
   push();
-  let { config, value } = $$props;
+  let { config: userConfig = {}, value } = $$props;
   const defaults = {
     min: 0,
     max: 100,
@@ -1148,9 +1631,9 @@ function CircularGauge($$payload, $$props) {
     showValue: true,
     showTitle: true,
     strokeWidth: 12,
-    size: 160
+    size: { width: 160, height: 160 }
   };
-  let gaugeConfig = { ...defaults, ...config.config };
+  let gaugeConfig = { ...defaults, ...userConfig };
   let displayValue = value ?? 0;
   let percentage = Math.max(0, Math.min(100, (displayValue - gaugeConfig.min) / (gaugeConfig.max - gaugeConfig.min) * 100));
   let currentColor = () => {
@@ -1163,7 +1646,7 @@ function CircularGauge($$payload, $$props) {
     }
     return colors[colors.length - 1] || colors[0];
   };
-  let size = Math.min(config.size.width, config.size.height) - 20;
+  let size = Math.min(gaugeConfig.size?.width || 160, gaugeConfig.size?.height || 160) - 20;
   let center = size / 2;
   let radius = (size - gaugeConfig.strokeWidth) / 2;
   let circumference = 2 * Math.PI * radius;
@@ -1389,7 +1872,7 @@ function Speedometer($$payload, $$props) {
     });
     return segmentData;
   };
-  const each_array_1 = ensure_array_like(tickMarks);
+  const each_array_1 = ensure_array_like(tickMarks());
   $$payload.out.push(`<div class="speedometer flex flex-col items-center justify-center h-full p-4 svelte-1v4zcuw">`);
   if (speedometerConfig.showTitle) {
     $$payload.out.push("<!--[-->");
@@ -1400,7 +1883,7 @@ function Speedometer($$payload, $$props) {
   $$payload.out.push(`<!--]--> <div class="speedometer-container relative svelte-1v4zcuw"><svg${attr("width", size)}${attr("height", size * 0.7)} class="overflow-visible"><path${attr("d", `M ${stringify(center - radius)} ${stringify(center)} A ${stringify(radius)} ${stringify(radius)} 0 0 1 ${stringify(center + radius)} ${stringify(center)}`)} fill="none"${attr("stroke", speedometerConfig.colors.background)} stroke-width="20" stroke-linecap="round"></path>`);
   if (speedometerConfig.showZones) {
     $$payload.out.push("<!--[-->");
-    const each_array = ensure_array_like(segments);
+    const each_array = ensure_array_like(segments());
     $$payload.out.push(`<!--[-->`);
     for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
       let segment = each_array[$$index];
@@ -1550,7 +2033,6 @@ function KpiCard($$payload, $$props) {
 }
 function SimpleWidget($$payload, $$props) {
   push();
-  var $$store_subs;
   let { config, value } = $$props;
   const widgetConfig = {
     min: config.min ?? 0,
@@ -1561,7 +2043,7 @@ function SimpleWidget($$payload, $$props) {
     ...config
   };
   const sensorValue = () => {
-    return value ?? store_get($$store_subs ??= {}, "$sensorStore", sensorStore).data?.cpu?.usage ?? 0;
+    return value ?? get(sensorStore.data)?.cpu?.usage ?? 0;
   };
   const currentColor = () => {
     const val = sensorValue();
@@ -1586,8 +2068,7 @@ function SimpleWidget($$payload, $$props) {
       fontWeight: baseStyle.fontWeight || "normal"
     };
   };
-  $$payload.out.push(`<div class="simple-widget relative h-full w-full overflow-hidden group svelte-1jm7o5g"${attr_style(`border-radius: ${stringify(dynamicStyle().borderRadius)}px;`)}><div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 svelte-1jm7o5g"></div> <div class="absolute inset-0 opacity-20 transition-opacity duration-1000 svelte-1jm7o5g"${attr_style(`background: radial-gradient(circle at center, ${stringify(currentColor())} 0%, transparent 70%);`)}></div> <div class="absolute inset-0 rounded-lg opacity-60 svelte-1jm7o5g"${attr_style(`border: ${stringify(dynamicStyle().borderWidth)}px solid ${stringify(currentColor())}; box-shadow: 0 0 10px ${stringify(currentColor())}40;`)}></div> <div class="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center svelte-1jm7o5g"><div class="text-2xl font-bold transition-all duration-300 font-orbitron svelte-1jm7o5g"${attr_style(`color: ${stringify(currentColor())}; font-size: ${stringify(dynamicStyle().fontSize)}; font-weight: ${stringify(dynamicStyle().fontWeight)};`)}>${escape_html(sensorValue())}</div> <div class="text-sm text-gray-400 font-medium uppercase tracking-wider mt-1 svelte-1jm7o5g">${escape_html(widgetConfig.unit)}</div> <div class="absolute w-full h-px opacity-30 animate-scan svelte-1jm7o5g"${attr_style(`background: linear-gradient(90deg, transparent 0%, ${stringify(currentColor())} 50%, transparent 100%);`)}></div></div> <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 rounded-tl-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div> <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 rounded-tr-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div> <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 rounded-bl-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div> <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 rounded-br-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div></div>`);
-  if ($$store_subs) unsubscribe_stores($$store_subs);
+  $$payload.out.push(`<div class="simple-widget relative h-full w-full overflow-hidden group svelte-1jm7o5g"${attr_style(`border-radius: ${stringify(dynamicStyle().borderRadius)}px;`)}><div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 svelte-1jm7o5g"></div> <div class="absolute inset-0 opacity-20 transition-opacity duration-1000 svelte-1jm7o5g"${attr_style(`background: radial-gradient(circle at center, ${stringify(currentColor())} 0%, transparent 70%);`)}></div> <div class="absolute inset-0 rounded-lg opacity-60 svelte-1jm7o5g"${attr_style(`border: ${stringify(dynamicStyle().borderWidth)}px solid ${stringify(currentColor())}; box-shadow: 0 0 10px ${stringify(currentColor())}40;`)}></div> <div class="relative z-10 h-full flex flex-col items-center justify-center p-4 text-center svelte-1jm7o5g"><div class="text-2xl font-bold transition-all duration-300 font-orbitron svelte-1jm7o5g"${attr_style(`color: ${stringify(currentColor())}; font-size: ${stringify(dynamicStyle().fontSize)}; font-weight: ${stringify(dynamicStyle().fontWeight)};`)}>${escape_html(sensorValue)}</div> <div class="text-sm text-gray-400 font-medium uppercase tracking-wider mt-1 svelte-1jm7o5g">${escape_html(widgetConfig.unit)}</div> <div class="absolute w-full h-px opacity-30 animate-scan svelte-1jm7o5g"${attr_style(`background: linear-gradient(90deg, transparent 0%, ${stringify(currentColor())} 50%, transparent 100%);`)}></div></div> <div class="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 rounded-tl-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div> <div class="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 rounded-tr-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div> <div class="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 rounded-bl-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div> <div class="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 rounded-br-lg opacity-60 svelte-1jm7o5g"${attr_style(`border-color: ${stringify(currentColor())};`)}></div></div>`);
   pop();
 }
 function ArcMeter($$payload, $$props) {
@@ -1738,37 +2219,37 @@ function WidgetRenderer($$payload, $$props) {
   $$payload.out.push(`<div class="widget-container w-full h-full svelte-16kr09y">`);
   if (config.type === "circular-gauge") {
     $$payload.out.push("<!--[-->");
-    CircularGauge($$payload, { config, value: sensorValue });
+    CircularGauge($$payload, { config, value: sensorValue ?? 0 });
   } else {
     $$payload.out.push("<!--[!-->");
     if (config.type === "linear-gauge") {
       $$payload.out.push("<!--[-->");
-      LinearGauge($$payload, { config, value: sensorValue });
+      LinearGauge($$payload, { config, value: sensorValue ?? 0 });
     } else {
       $$payload.out.push("<!--[!-->");
       if (config.type === "gauge") {
         $$payload.out.push("<!--[-->");
-        CircularGauge($$payload, { config, value: sensorValue });
+        CircularGauge($$payload, { config, value: sensorValue ?? 0 });
       } else {
         $$payload.out.push("<!--[!-->");
         if (config.type === "meter") {
           $$payload.out.push("<!--[-->");
-          LinearGauge($$payload, { config, value: sensorValue });
+          LinearGauge($$payload, { config, value: sensorValue ?? 0 });
         } else {
           $$payload.out.push("<!--[!-->");
           if (config.type === "speedometer") {
             $$payload.out.push("<!--[-->");
-            Speedometer($$payload, { config, value: sensorValue });
+            Speedometer($$payload, { config, value: sensorValue ?? 0 });
           } else {
             $$payload.out.push("<!--[!-->");
             if (config.type === "kpi-card") {
               $$payload.out.push("<!--[-->");
-              KpiCard($$payload, { config, value: sensorValue });
+              KpiCard($$payload, { config, value: sensorValue ?? 0 });
             } else {
               $$payload.out.push("<!--[!-->");
               if (config.type === "simple") {
                 $$payload.out.push("<!--[-->");
-                SimpleWidget($$payload, { config, value: sensorValue });
+                SimpleWidget($$payload, { config, value: sensorValue ?? 0 });
               } else {
                 $$payload.out.push("<!--[!-->");
                 if (config.type === "arc-meter") {
@@ -1778,10 +2259,75 @@ function WidgetRenderer($$payload, $$props) {
                   $$payload.out.push("<!--[!-->");
                   if (config.type === "cosmic-sensor") {
                     $$payload.out.push("<!--[-->");
-                    CosmicSensorGauge($$payload, { config, value: sensorValue });
+                    CosmicSensorGauge($$payload, {
+                      value: sensorValue || 0,
+                      label: config.config?.label || "Sensor",
+                      config: {
+                        min: config.config?.min || 0,
+                        max: config.config?.max || 100,
+                        warningThreshold: config.config?.warningThreshold || 70,
+                        criticalThreshold: config.config?.criticalThreshold || 90,
+                        unit: config.config?.unit || "%",
+                        icon: config.config?.icon
+                      },
+                      size: Math.min(config.size.width, config.size.height)
+                    });
                   } else {
                     $$payload.out.push("<!--[!-->");
-                    $$payload.out.push(`<div class="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600"><div class="text-center text-gray-500 dark:text-gray-400"><div class="text-2xl mb-2">⚠️</div> <div class="font-medium">Unknown Widget Type</div> <div class="text-sm">${escape_html(config.type)}</div></div></div>`);
+                    if (config.type === "cosmic-gauge") {
+                      $$payload.out.push("<!--[-->");
+                      CosmicSensorGauge($$payload, {
+                        value: sensorValue || 0,
+                        label: config.config?.label || "Sensor",
+                        config: {
+                          min: config.config?.min || 0,
+                          max: config.config?.max || 100,
+                          warningThreshold: config.config?.warningThreshold || 70,
+                          criticalThreshold: config.config?.criticalThreshold || 90,
+                          unit: config.config?.unit || "%",
+                          icon: config.config?.icon
+                        },
+                        size: Math.min(config.size.width, config.size.height)
+                      });
+                    } else {
+                      $$payload.out.push("<!--[!-->");
+                      if (config.type === "cosmic-linear") {
+                        $$payload.out.push("<!--[-->");
+                        CosmicLinearMeter($$payload, {
+                          value: sensorValue || 0,
+                          label: config.config?.label || "Meter",
+                          config: {
+                            min: config.config?.min || 0,
+                            max: config.config?.max || 100,
+                            warningThreshold: config.config?.warningThreshold || 70,
+                            criticalThreshold: config.config?.criticalThreshold || 90,
+                            unit: config.config?.unit || "%",
+                            icon: config.config?.icon
+                          },
+                          width: config.size.width,
+                          height: config.size.height
+                        });
+                      } else {
+                        $$payload.out.push("<!--[!-->");
+                        if (config.type === "cosmic-kpi") {
+                          $$payload.out.push("<!--[-->");
+                          CosmicKPICard($$payload, {
+                            config: {
+                              title: config.config?.title || "KPI Card",
+                              metrics: config.config?.metrics || []
+                            },
+                            width: config.size.width,
+                            height: config.size.height
+                          });
+                        } else {
+                          $$payload.out.push("<!--[!-->");
+                          $$payload.out.push(`<div class="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600"><div class="text-center text-gray-500 dark:text-gray-400"><div class="text-2xl mb-2">⚠️</div> <div class="font-medium">Unknown Widget Type</div> <div class="text-sm">${escape_html(config.type)}</div></div></div>`);
+                        }
+                        $$payload.out.push(`<!--]-->`);
+                      }
+                      $$payload.out.push(`<!--]-->`);
+                    }
+                    $$payload.out.push(`<!--]-->`);
                   }
                   $$payload.out.push(`<!--]-->`);
                 }
@@ -2098,42 +2644,151 @@ function WidgetBuilder($$payload, $$props) {
 function DashboardCanvas($$payload, $$props) {
   push();
   var $$store_subs;
-  const demoSensors = [
+  const sensorData2 = {
+    cpu: { value: 65 },
+    gpu: { value: 82 },
+    memory: { value: 74 },
+    cpuTemp: { value: 68 },
+    gpuTemp: { value: 71 },
+    diskUsage: { value: 45 }
+  };
+  const defaultWidgets = [
+    // Top row - Main gauges
     {
+      type: "gauge",
       label: "CPU Usage",
-      value: 65,
-      unit: "%",
-      icon: "🔥",
-      critical: 90,
-      warning: 70
+      value: sensorData2.cpu.value,
+      config: {
+        min: 0,
+        max: 100,
+        warningThreshold: 70,
+        criticalThreshold: 90,
+        unit: "%",
+        icon: "🔥"
+      },
+      position: { x: 40, y: 40 },
+      size: 200
     },
     {
+      type: "gauge",
       label: "GPU Usage",
-      value: 82,
-      unit: "%",
-      icon: "⚡",
-      critical: 95,
-      warning: 80
+      value: sensorData2.gpu.value,
+      config: {
+        min: 0,
+        max: 100,
+        warningThreshold: 80,
+        criticalThreshold: 95,
+        unit: "%",
+        icon: "⚡"
+      },
+      position: { x: 280, y: 40 },
+      size: 200
     },
     {
-      label: "Memory",
-      value: 74,
-      unit: "%",
-      icon: "💾",
-      critical: 90,
-      warning: 75
+      type: "gauge",
+      label: "Memory Usage",
+      value: sensorData2.memory.value,
+      config: {
+        min: 0,
+        max: 100,
+        warningThreshold: 75,
+        criticalThreshold: 90,
+        unit: "%",
+        icon: "💾"
+      },
+      position: { x: 520, y: 40 },
+      size: 200
     },
     {
-      label: "CPU Temp",
-      value: 68,
-      unit: "°C",
-      icon: "🌡️",
-      critical: 85,
-      warning: 70
+      type: "gauge",
+      label: "CPU Temperature",
+      value: sensorData2.cpuTemp.value,
+      config: {
+        min: 0,
+        max: 100,
+        warningThreshold: 70,
+        criticalThreshold: 85,
+        unit: "°C",
+        icon: "🌡️"
+      },
+      position: { x: 760, y: 40 },
+      size: 200
+    },
+    // Second row - Linear meters
+    {
+      type: "linear",
+      label: "Disk Usage",
+      value: sensorData2.diskUsage.value,
+      config: {
+        min: 0,
+        max: 100,
+        warningThreshold: 80,
+        criticalThreshold: 95,
+        unit: "%",
+        icon: "💿"
+      },
+      position: { x: 40, y: 280 },
+      width: 300,
+      height: 120
+    },
+    {
+      type: "linear",
+      label: "GPU Temperature",
+      value: sensorData2.gpuTemp.value,
+      config: {
+        min: 0,
+        max: 100,
+        warningThreshold: 75,
+        criticalThreshold: 90,
+        unit: "°C",
+        icon: "🌡️"
+      },
+      position: { x: 380, y: 280 },
+      width: 300,
+      height: 120
+    },
+    // Third row - KPI Card and additional metrics
+    {
+      type: "kpi",
+      position: { x: 720, y: 280 },
+      width: 320,
+      height: 200,
+      config: {
+        title: "System Overview",
+        metrics: [
+          {
+            label: "CPU",
+            value: sensorData2.cpu.value,
+            unit: "%",
+            icon: "🔥",
+            threshold: { warning: 70, critical: 90 }
+          },
+          {
+            label: "Memory",
+            value: sensorData2.memory.value,
+            unit: "%",
+            icon: "💾",
+            threshold: { warning: 75, critical: 90 }
+          },
+          {
+            label: "GPU",
+            value: sensorData2.gpu.value,
+            unit: "%",
+            icon: "⚡",
+            threshold: { warning: 80, critical: 95 }
+          },
+          {
+            label: "Temp",
+            value: sensorData2.cpuTemp.value,
+            unit: "°C",
+            icon: "🌡️",
+            threshold: { warning: 70, critical: 85 }
+          }
+        ]
+      }
     }
   ];
-  const each_array = ensure_array_like(demoSensors);
-  $$payload.out.push(`<div class="relative w-full h-full overflow-hidden" style="background: radial-gradient(ellipse at center, rgba(20, 160, 230, 0.05) 0%, transparent 70%)">`);
+  $$payload.out.push(`<div class="relative w-full h-full overflow-hidden dashboard-canvas svelte-16vg5v9" style="background: radial-gradient(ellipse at center, rgba(0, 255, 255, 0.03) 0%, transparent 70%)">`);
   if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).isGridVisible) {
     $$payload.out.push("<!--[-->");
     GridOverlay($$payload, {
@@ -2143,70 +2798,77 @@ function DashboardCanvas($$payload, $$props) {
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]--> <div class="absolute inset-0 p-8">`);
-  CosmicPanel($$payload, {
-    variant: "highlighted",
-    title: "SenseCanvas Dashboard",
-    subtitle: "Real-time Hardware Monitoring with Cosmic UI",
-    className: "w-full max-w-2xl mx-auto mb-8",
-    showGlow: true,
-    children: ($$payload2) => {
-      $$payload2.out.push(`<div class="text-center space-y-4"><p class="text-gray-300 font-orbitron">Welcome to the enhanced SenseCanvas dashboard featuring the new Cosmic UI design system.</p> <p class="text-sm text-gray-400">Sci-fi inspired components with SVG-first design and real-time hardware monitoring.</p></div>`);
-    },
-    $$slots: { default: true }
-  });
-  $$payload.out.push(`<!----> <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto svelte-16wspn5"><!--[-->`);
-  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-    let sensor = each_array[$$index];
-    $$payload.out.push(`<div class="flex justify-center svelte-16wspn5">`);
-    CosmicSensorGauge($$payload, {
-      value: sensor.value,
-      label: sensor.label,
-      config: {
-        min: 0,
-        max: 100,
-        warningThreshold: sensor.warning,
-        criticalThreshold: sensor.critical,
-        unit: sensor.unit,
-        icon: sensor.icon
+  $$payload.out.push(`<!--]--> <div class="absolute inset-0 p-6 svelte-16vg5v9">`);
+  if (!store_get($$store_subs ??= {}, "$currentLayout", currentLayout) || store_get($$store_subs ??= {}, "$currentLayout", currentLayout).widgets.length === 0) {
+    $$payload.out.push("<!--[-->");
+    $$payload.out.push(`<div class="mb-8 text-center svelte-16vg5v9">`);
+    CosmicPanel($$payload, {
+      variant: "highlighted",
+      title: "SenseCanvas Dashboard",
+      subtitle: "Real-time Hardware Monitoring",
+      className: "w-full max-w-3xl mx-auto",
+      showGlow: true,
+      children: ($$payload2) => {
+        $$payload2.out.push(`<div class="text-center space-y-3 svelte-16vg5v9"><p class="text-cyan-200 font-orbitron text-lg svelte-16vg5v9">Enhanced Cosmic UI Design System</p> <p class="text-sm text-cyan-400 opacity-80 svelte-16vg5v9">Futuristic monitoring with segmented gauges, real-time updates, and intelligent alerts</p></div>`);
       },
-      size: 180,
-      showFrame: true,
-      glowEffect: true
+      $$slots: { default: true }
     });
     $$payload.out.push(`<!----></div>`);
-  }
-  $$payload.out.push(`<!--]--></div> `);
-  CosmicPanel($$payload, {
-    variant: "default",
-    className: "w-full max-w-4xl mx-auto mt-8",
-    title: "System Status",
-    children: ($$payload2) => {
-      $$payload2.out.push(`<div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center svelte-16wspn5"><div class="space-y-2 svelte-16wspn5"><div class="text-2xl font-orbitron text-green-400">ONLINE</div> <div class="text-sm text-gray-400">Connection Status</div></div> <div class="space-y-2 svelte-16wspn5"><div class="text-2xl font-orbitron text-blue-400">${escape_html(demoSensors.length)}</div> <div class="text-sm text-gray-400">Active Sensors</div></div> <div class="space-y-2 svelte-16wspn5"><div class="text-2xl font-orbitron text-purple-400">COSMIC UI</div> <div class="text-sm text-gray-400">Design System</div></div></div>`);
-    },
-    $$slots: { default: true }
-  });
-  $$payload.out.push(`<!----></div> `);
-  if (store_get($$store_subs ??= {}, "$currentLayout", currentLayout)) {
-    $$payload.out.push("<!--[-->");
-    const each_array_1 = ensure_array_like(store_get($$store_subs ??= {}, "$currentLayout", currentLayout).widgets);
-    $$payload.out.push(`<!--[-->`);
-    for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
-      let widget = each_array_1[$$index_1];
-      DraggableWidget($$payload, { widget });
-    }
-    $$payload.out.push(`<!--]-->`);
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]-->  `);
+  $$payload.out.push(`<!--]--> `);
+  if (store_get($$store_subs ??= {}, "$currentLayout", currentLayout) && store_get($$store_subs ??= {}, "$currentLayout", currentLayout).widgets.length > 0) {
+    $$payload.out.push("<!--[-->");
+    const each_array = ensure_array_like(store_get($$store_subs ??= {}, "$currentLayout", currentLayout).widgets);
+    $$payload.out.push(`<div class="widget-grid relative svelte-16vg5v9"><!--[-->`);
+    for (let index = 0, $$length = each_array.length; index < $$length; index++) {
+      let widget = each_array[index];
+      DraggableWidget($$payload, { widget });
+    }
+    $$payload.out.push(`<!--]--></div>`);
+  } else {
+    $$payload.out.push("<!--[!-->");
+    const each_array_1 = ensure_array_like(defaultWidgets);
+    $$payload.out.push(`<div class="widget-grid relative svelte-16vg5v9"><!--[-->`);
+    for (let index = 0, $$length = each_array_1.length; index < $$length; index++) {
+      let widget = each_array_1[index];
+      $$payload.out.push(`<div class="absolute widget-item svelte-16vg5v9"${attr_style(`left: ${stringify(widget.position.x)}px; top: ${stringify(widget.position.y)}px; z-index: ${stringify(10 + index)};`)}>`);
+      if (widget.type === "gauge") {
+        $$payload.out.push("<!--[-->");
+        CosmicSensorGauge($$payload, {
+          value: widget.value || 0,
+          label: widget.label || "Sensor",
+          config: widget.config,
+          size: widget.size || 200,
+          showFrame: true,
+          glowEffect: true
+        });
+      } else {
+        $$payload.out.push("<!--[!-->");
+      }
+      $$payload.out.push(`<!--]--></div>`);
+    }
+    $$payload.out.push(`<!--]--></div>`);
+  }
+  $$payload.out.push(`<!--]--> <div class="absolute bottom-6 left-6 right-6 svelte-16vg5v9">`);
+  CosmicPanel($$payload, {
+    variant: "default",
+    className: "w-full",
+    title: "System Status",
+    children: ($$payload2) => {
+      $$payload2.out.push(`<div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center svelte-16vg5v9"><div class="space-y-2 svelte-16vg5v9"><div class="text-2xl font-orbitron text-green-400 svelte-16vg5v9">ONLINE</div> <div class="text-sm text-cyan-400 opacity-80 svelte-16vg5v9">Connection Status</div></div> <div class="space-y-2 svelte-16vg5v9"><div class="text-2xl font-orbitron text-blue-400 svelte-16vg5v9">${escape_html(defaultWidgets.length)}</div> <div class="text-sm text-cyan-400 opacity-80 svelte-16vg5v9">Active Widgets</div></div> <div class="space-y-2 svelte-16vg5v9"><div class="text-2xl font-orbitron text-purple-400 svelte-16vg5v9">COSMIC</div> <div class="text-sm text-cyan-400 opacity-80 svelte-16vg5v9">UI Framework</div></div> <div class="space-y-2 svelte-16vg5v9"><div class="text-2xl font-orbitron text-cyan-400 svelte-16vg5v9">${escape_html(Math.max(...defaultWidgets.filter((w) => w.type === "gauge").map((w) => w.value)).toFixed(0))}%</div> <div class="text-sm text-cyan-400 opacity-80 svelte-16vg5v9">Peak Usage</div></div></div>`);
+    },
+    $$slots: { default: true }
+  });
+  $$payload.out.push(`<!----></div></div> `);
   if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).widgetBuilder.isOpen) {
     $$payload.out.push("<!--[-->");
     WidgetBuilder($$payload);
   } else {
     $$payload.out.push("<!--[!-->");
   }
-  $$payload.out.push(`<!--]--></div>`);
+  $$payload.out.push(`<!--]--> <div class="absolute inset-0 pointer-events-none overflow-hidden svelte-16vg5v9"><div class="absolute top-1/4 left-1/6 w-1 h-1 bg-cyan-400 rounded-full opacity-40 animate-float-slow svelte-16vg5v9"></div> <div class="absolute top-3/4 right-1/4 w-1.5 h-1.5 bg-blue-400 rounded-full opacity-30 animate-float-medium svelte-16vg5v9"></div> <div class="absolute top-1/2 left-3/4 w-0.5 h-0.5 bg-purple-400 rounded-full opacity-50 animate-float-fast svelte-16vg5v9"></div> <div class="absolute inset-0 opacity-20 svelte-16vg5v9"><div class="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent animate-scan-horizontal svelte-16vg5v9"></div> <div class="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-400/30 to-transparent animate-scan-vertical svelte-16vg5v9"></div></div></div></div>`);
   if ($$store_subs) unsubscribe_stores($$store_subs);
   pop();
 }
@@ -2223,14 +2885,33 @@ function AILayoutModal($$payload, $$props) {
 function Dashboard($$payload, $$props) {
   push();
   var $$store_subs;
-  $$payload.out.push(`<div class="dashboard h-screen flex flex-col bg-surface-50-900-token svelte-18txp9r">`);
+  $$payload.out.push(`<div class="dashboard h-screen flex flex-col bg-surface-50-900-token svelte-1a8b7n5">`);
   {
     let left = function($$payload2) {
-      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-18txp9r"><h1 class="font-orbitron font-bold text-xl text-white svelte-18txp9r">SenseCanvas</h1> <div class="text-xs text-blue-400/80 font-orbitron svelte-18txp9r">Real-time Monitoring</div></div>`);
+      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-1a8b7n5"><h1 class="font-orbitron font-bold text-xl text-white svelte-1a8b7n5">SenseCanvas</h1> <div class="text-xs text-cyan-400/80 font-orbitron svelte-1a8b7n5">Real-time Monitoring</div></div>`);
     }, center = function($$payload2) {
-      $$payload2.out.push(`<div class="flex items-center gap-4 svelte-18txp9r"><button class="cosmic-button px-4 py-2 text-sm font-orbitron text-blue-200 border border-blue-400/30 hover:border-blue-400 transition-colors rounded svelte-18txp9r">+ Add Widget</button> <button class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-colors rounded svelte-18txp9r">AI Layouts</button></div>`);
+      $$payload2.out.push(`<div class="flex items-center gap-3 svelte-1a8b7n5"><div class="relative svelte-1a8b7n5"><button class="cosmic-button px-4 py-2 text-sm font-orbitron text-cyan-200 border border-cyan-400/30 hover:border-cyan-400 transition-all duration-300 rounded flex items-center gap-2 svelte-1a8b7n5"><span class="text-cyan-400 svelte-1a8b7n5">+</span> Add Widget <span class="text-xs opacity-60 svelte-1a8b7n5">▼</span></button> `);
+      {
+        $$payload2.out.push("<!--[!-->");
+      }
+      $$payload2.out.push(`<!--]--></div> <div class="relative svelte-1a8b7n5"><button class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-all duration-300 rounded flex items-center gap-2 svelte-1a8b7n5"><span class="text-purple-400 svelte-1a8b7n5">⚡</span> Layouts <span class="text-xs opacity-60 svelte-1a8b7n5">▼</span></button> `);
+      {
+        $$payload2.out.push("<!--[!-->");
+      }
+      $$payload2.out.push(`<!--]--></div> <button${attr_class("cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-all duration-300 rounded flex items-center gap-2 svelte-1a8b7n5", void 0, {
+        "border-cyan-400": store_get($$store_subs ??= {}, "$dashboardState", dashboardState).isGridVisible,
+        "text-cyan-200": store_get($$store_subs ??= {}, "$dashboardState", dashboardState).isGridVisible
+      })}><span class="text-yellow-400 svelte-1a8b7n5">⚏</span> Grid `);
+      if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).isGridVisible) {
+        $$payload2.out.push("<!--[-->");
+        $$payload2.out.push(`<span class="text-xs text-cyan-400 svelte-1a8b7n5">ON</span>`);
+      } else {
+        $$payload2.out.push("<!--[!-->");
+        $$payload2.out.push(`<span class="text-xs opacity-60 svelte-1a8b7n5">OFF</span>`);
+      }
+      $$payload2.out.push(`<!--]--></button></div>`);
     }, right = function($$payload2) {
-      $$payload2.out.push(`<div class="flex items-center gap-4 text-xs text-gray-300 svelte-18txp9r"><span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Connected</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Theme: ${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span></div>`);
+      $$payload2.out.push(`<div class="flex items-center gap-4 text-xs text-gray-300 svelte-1a8b7n5"><span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Connected</span></span> <span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Theme: ${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span> <span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-purple-400 rounded-full svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">v2.0</span></span></div>`);
     };
     CosmicToolbar($$payload, {
       left,
@@ -2239,13 +2920,17 @@ function Dashboard($$payload, $$props) {
       $$slots: { left: true, center: true, right: true }
     });
   }
-  $$payload.out.push(`<!----> <div class="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 svelte-18txp9r"><div class="absolute inset-0 overflow-hidden pointer-events-none svelte-18txp9r"><div class="absolute inset-0 opacity-10 svelte-18txp9r" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0); background-size: 20px 20px;"></div> <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full opacity-30 animate-float-1 svelte-18txp9r"></div> <div class="absolute top-3/4 right-1/4 w-1 h-1 bg-green-400 rounded-full opacity-40 animate-float-2 svelte-18txp9r"></div> <div class="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-20 animate-float-3 svelte-18txp9r"></div> <div class="absolute inset-0 svelte-18txp9r"><div class="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-scan-horizontal svelte-18txp9r"></div> <div class="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent animate-scan-vertical svelte-18txp9r"></div></div></div> `);
+  $$payload.out.push(`<!----> <div class="flex-1 relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 svelte-1a8b7n5"><div class="absolute inset-0 overflow-hidden pointer-events-none svelte-1a8b7n5"><div class="absolute inset-0 opacity-10 svelte-1a8b7n5" style="background-image: radial-gradient(circle at 1px 1px, rgba(0,255,255,0.3) 1px, transparent 0); background-size: 20px 20px;"></div> <div class="absolute top-1/4 left-1/4 w-2 h-2 bg-cyan-400 rounded-full opacity-30 animate-float-1 svelte-1a8b7n5"></div> <div class="absolute top-3/4 right-1/4 w-1 h-1 bg-blue-400 rounded-full opacity-40 animate-float-2 svelte-1a8b7n5"></div> <div class="absolute top-1/2 left-3/4 w-1.5 h-1.5 bg-purple-400 rounded-full opacity-20 animate-float-3 svelte-1a8b7n5"></div> <div class="absolute top-1/6 right-1/3 w-1 h-1 bg-green-400 rounded-full opacity-35 animate-float-1 svelte-1a8b7n5"></div> <div class="absolute inset-0 svelte-1a8b7n5"><div class="absolute w-full h-px bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent animate-scan-horizontal svelte-1a8b7n5"></div> <div class="absolute h-full w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent animate-scan-vertical svelte-1a8b7n5"></div></div></div> `);
   DashboardCanvas($$payload);
-  $$payload.out.push(`<!----></div> <div class="status-bar bg-gray-900/80 border-t border-gray-700/50 px-4 py-2 text-xs text-gray-300 backdrop-blur-sm svelte-18txp9r"><div class="flex items-center justify-between svelte-18txp9r"><div class="flex items-center gap-4 svelte-18txp9r"><span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Widgets:</span> <span class="font-mono svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.widgets?.length || 0)}</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Layout:</span> <span class="font-orbitron svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.name || "Default")}</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-purple-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Grid:</span> <span class="font-mono svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.gridSize || 20)}px</span></span></div> <div class="flex items-center gap-4 svelte-18txp9r"><span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-yellow-400 rounded-full svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Theme:</span> <span class="capitalize font-orbitron svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span> <span class="flex items-center gap-1 svelte-18txp9r"><div class="w-1 h-1 bg-red-400 rounded-full animate-pulse svelte-18txp9r"></div> <span class="font-orbitron svelte-18txp9r">Alerts:</span> <span class="font-mono svelte-18txp9r">${escape_html(store_get($$store_subs ??= {}, "$alertHistory", alertHistory)?.length || 0)}</span></span></div></div></div> `);
+  $$payload.out.push(`<!----></div> <div class="status-bar bg-gray-900/80 border-t border-gray-700/50 px-4 py-2 text-xs text-gray-300 backdrop-blur-sm svelte-1a8b7n5"><div class="flex items-center justify-between svelte-1a8b7n5"><div class="flex items-center gap-4 svelte-1a8b7n5"><span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-green-400 rounded-full animate-pulse svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Widgets:</span> <span class="font-mono text-cyan-400 svelte-1a8b7n5">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.widgets?.length || 0)}</span></span> <span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-blue-400 rounded-full svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Layout:</span> <span class="font-orbitron text-cyan-400 svelte-1a8b7n5">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.name || "Default")}</span></span> <span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-purple-400 rounded-full svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Grid:</span> <span class="font-mono text-cyan-400 svelte-1a8b7n5">${escape_html(store_get($$store_subs ??= {}, "$currentLayout", currentLayout)?.gridSize || 20)}px</span></span> <span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-yellow-400 rounded-full svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Zoom:</span> <span class="font-mono text-cyan-400 svelte-1a8b7n5">${escape_html(Math.round(store_get($$store_subs ??= {}, "$dashboardState", dashboardState).zoom * 100))}%</span></span></div> <div class="flex items-center gap-4 svelte-1a8b7n5"><span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-cyan-400 rounded-full svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Theme:</span> <span class="capitalize font-orbitron text-cyan-400 svelte-1a8b7n5">${escape_html(store_get($$store_subs ??= {}, "$currentTheme", currentTheme))}</span></span> <span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-red-400 rounded-full animate-pulse svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Alerts:</span> <span class="font-mono text-cyan-400 svelte-1a8b7n5">${escape_html(store_get($$store_subs ??= {}, "$alertHistory", alertHistory)?.length || 0)}</span></span> <span class="flex items-center gap-1 svelte-1a8b7n5"><div class="w-1 h-1 bg-green-400 rounded-full svelte-1a8b7n5"></div> <span class="font-orbitron svelte-1a8b7n5">Status:</span> <span class="font-orbitron text-green-400 svelte-1a8b7n5">OPTIMAL</span></span></div></div></div> `);
   if (store_get($$store_subs ??= {}, "$dashboardState", dashboardState).aiLayout.isOpen) {
     $$payload.out.push("<!--[-->");
     AILayoutModal($$payload);
   } else {
+    $$payload.out.push("<!--[!-->");
+  }
+  $$payload.out.push(`<!--]--> `);
+  {
     $$payload.out.push("<!--[!-->");
   }
   $$payload.out.push(`<!--]--></div>`);

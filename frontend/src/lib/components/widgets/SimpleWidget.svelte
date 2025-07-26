@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { sensorStore } from '$lib/stores/sensorStore';
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	
 	interface Props {
 		config: {
@@ -27,9 +28,9 @@
 	};
 
 	// Get sensor value reactively (fallback if no value provided)
-	const sensorValue = () => {
-		return value ?? $sensorStore.data?.cpu?.usage ?? 0;
-	};
+	const sensorValue = $derived(() => {
+		return value ?? get(sensorStore.data)?.cpu?.usage ?? 0;
+	});
 
 	// Color based on current value and thresholds
 	const currentColor = $derived(() => {
@@ -93,7 +94,7 @@
 			class="text-2xl font-bold transition-all duration-300 font-orbitron"
 			style="color: {currentColor()}; font-size: {dynamicStyle().fontSize}; font-weight: {dynamicStyle().fontWeight};"
 		>
-			{sensorValue()}
+			{sensorValue}
 		</div>
 		
 		<!-- Unit display -->

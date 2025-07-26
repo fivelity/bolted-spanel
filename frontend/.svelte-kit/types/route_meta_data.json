@@ -2,5 +2,6 @@
 	"/": [],
 	"/api/ai-layout": [
 		"src/routes/api/ai-layout/+server.ts"
-	]
+	],
+	"/test-layerchart": []
 }

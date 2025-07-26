@@ -1,5 +1,5 @@
 import { clsx as clsx$1 } from "clsx";
-const BROWSER = false;
+const DEV = false;
 var is_array = Array.isArray;
 var index_of = Array.prototype.indexOf;
 var array_from = Array.from;
@@ -275,13 +275,14 @@ function dequeue() {
 let queued_root_effects = [];
 let last_scheduled_effect = null;
 let is_flushing = false;
+let is_flushing_sync = false;
 class Batch {
   /**
    * The current values of any sources that are updated in this batch
    * They keys of this map are identical to `this.#previous`
    * @type {Map<Source, any>}
    */
-  #current = /* @__PURE__ */ new Map();
+  current = /* @__PURE__ */ new Map();
   /**
    * The values of any sources that are updated in this batch _before_ those updates took place.
    * They keys of this map are identical to `this.#current`
@@ -340,6 +341,16 @@ class Batch {
    */
   #block_effects = [];
   /**
+   * Deferred effects (which run after async work has completed) that are DIRTY
+   * @type {Effect[]}
+   */
+  #dirty_effects = [];
+  /**
+   * Deferred effects that are MAYBE_DIRTY
+   * @type {Effect[]}
+   */
+  #maybe_dirty_effects = [];
+  /**
    * A set of branches that still exist, but will be destroyed when this batch
    * is committed — we skip over these during `process`
    * @type {Set<Effect>}
@@ -349,13 +360,13 @@ class Batch {
    *
    * @param {Effect[]} root_effects
    */
-  #process(root_effects) {
+  process(root_effects) {
     queued_root_effects = [];
     var current_values = null;
     if (batches.size > 1) {
       current_values = /* @__PURE__ */ new Map();
       batch_deriveds = /* @__PURE__ */ new Map();
-      for (const [source2, current] of this.#current) {
+      for (const [source2, current] of this.current) {
         current_values.set(source2, { v: source2.v, wv: source2.wv });
         source2.v = current;
       }
@@ -373,19 +384,25 @@ class Batch {
       this.#traverse_effect_tree(root);
     }
     if (this.#async_effects.length === 0 && this.#pending === 0) {
+      this.#commit();
       var render_effects = this.#render_effects;
       var effects = this.#effects;
       this.#render_effects = [];
       this.#effects = [];
       this.#block_effects = [];
-      this.#commit();
+      current_batch = null;
       flush_queued_effects(render_effects);
       flush_queued_effects(effects);
+      if (current_batch === null) {
+        current_batch = this;
+      } else {
+        batches.delete(this);
+      }
       this.#deferred?.resolve();
     } else {
-      for (const e of this.#render_effects) set_signal_status(e, CLEAN);
-      for (const e of this.#effects) set_signal_status(e, CLEAN);
-      for (const e of this.#block_effects) set_signal_status(e, CLEAN);
+      this.#defer_effects(this.#render_effects);
+      this.#defer_effects(this.#effects);
+      this.#defer_effects(this.#block_effects);
     }
     if (current_values) {
       for (const [source2, { v, wv }] of current_values) {
@@ -420,13 +437,13 @@ class Batch {
       if (!skip && effect.fn !== null) {
         if (is_branch) {
           effect.f ^= CLEAN;
-        } else if ((flags & EFFECT) !== 0) {
-          this.#effects.push(effect);
-        } else if (is_dirty(effect)) {
-          if ((flags & ASYNC) !== 0) {
+        } else if ((flags & CLEAN) === 0) {
+          if ((flags & EFFECT) !== 0) {
+            this.#effects.push(effect);
+          } else if ((flags & ASYNC) !== 0) {
             var effects = effect.b?.pending ? this.#boundary_async_effects : this.#async_effects;
             effects.push(effect);
-          } else {
+          } else if (is_dirty(effect)) {
             if ((effect.f & BLOCK_EFFECT) !== 0) this.#block_effects.push(effect);
             update_effect(effect);
           }
@@ -446,6 +463,17 @@ class Batch {
     }
   }
   /**
+   * @param {Effect[]} effects
+   */
+  #defer_effects(effects) {
+    for (const e of effects) {
+      const target = (e.f & DIRTY) !== 0 ? this.#dirty_effects : this.#maybe_dirty_effects;
+      target.push(e);
+      set_signal_status(e, CLEAN);
+    }
+    effects.length = 0;
+  }
+  /**
    * Associate a change to a given source with the current
    * batch, noting its previous and current values
    * @param {Source} source
@@ -455,7 +483,7 @@ class Batch {
     if (!this.#previous.has(source2)) {
       this.#previous.set(source2, value);
     }
-    this.#current.set(source2, source2.v);
+    this.current.set(source2, source2.v);
   }
   activate() {
     current_batch = this;
@@ -475,7 +503,7 @@ class Batch {
   }
   flush() {
     if (queued_root_effects.length > 0) {
-      this.flush_effects();
+      flush_effects();
     } else {
       this.#commit();
     }
@@ -486,27 +514,6 @@ class Batch {
       batches.delete(this);
     }
     this.deactivate();
-  }
-  flush_effects() {
-    var was_updating_effect = is_updating_effect;
-    is_flushing = true;
-    try {
-      var flush_count = 0;
-      set_is_updating_effect(true);
-      while (queued_root_effects.length > 0) {
-        if (flush_count++ > 1e3) {
-          var updates, entry;
-          if (BROWSER) ;
-          infinite_loop_guard();
-        }
-        this.#process(queued_root_effects);
-        old_values.clear();
-      }
-    } finally {
-      is_flushing = false;
-      set_is_updating_effect(was_updating_effect);
-      last_scheduled_effect = null;
-    }
   }
   /**
    * Append and remove branches to/from the DOM
@@ -525,16 +532,12 @@ class Batch {
   decrement() {
     this.#pending -= 1;
     if (this.#pending === 0) {
-      for (const e of this.#render_effects) {
+      for (const e of this.#dirty_effects) {
         set_signal_status(e, DIRTY);
         schedule_effect(e);
       }
-      for (const e of this.#effects) {
-        set_signal_status(e, DIRTY);
-        schedule_effect(e);
-      }
-      for (const e of this.#block_effects) {
-        set_signal_status(e, DIRTY);
+      for (const e of this.#maybe_dirty_effects) {
+        set_signal_status(e, MAYBE_DIRTY);
         schedule_effect(e);
       }
       this.#render_effects = [];
@@ -551,11 +554,11 @@ class Batch {
   settled() {
     return (this.#deferred ??= deferred()).promise;
   }
-  static ensure(autoflush = true) {
+  static ensure() {
     if (current_batch === null) {
       const batch = current_batch = new Batch();
       batches.add(current_batch);
-      if (autoflush) {
+      if (!is_flushing_sync) {
         Batch.enqueue(() => {
           if (current_batch !== batch) {
             return;
@@ -575,21 +578,49 @@ class Batch {
   }
 }
 function flushSync(fn) {
-  var result;
-  const batch = Batch.ensure(false);
-  while (true) {
-    flush_tasks();
-    if (queued_root_effects.length === 0) {
-      if (batch === current_batch) {
-        batch.flush();
+  var was_flushing_sync = is_flushing_sync;
+  is_flushing_sync = true;
+  try {
+    var result;
+    if (fn) ;
+    while (true) {
+      flush_tasks();
+      if (queued_root_effects.length === 0) {
+        current_batch?.flush();
+        if (queued_root_effects.length === 0) {
+          last_scheduled_effect = null;
+          return (
+            /** @type {T} */
+            result
+          );
+        }
       }
-      last_scheduled_effect = null;
-      return (
-        /** @type {T} */
-        result
-      );
+      flush_effects();
     }
-    batch.flush_effects();
+  } finally {
+    is_flushing_sync = was_flushing_sync;
+  }
+}
+function flush_effects() {
+  var was_updating_effect = is_updating_effect;
+  is_flushing = true;
+  try {
+    var flush_count = 0;
+    set_is_updating_effect(true);
+    while (queued_root_effects.length > 0) {
+      var batch = Batch.ensure();
+      if (flush_count++ > 1e3) {
+        var updates, entry;
+        if (DEV) ;
+        infinite_loop_guard();
+      }
+      batch.process(queued_root_effects);
+      old_values.clear();
+    }
+  } finally {
+    is_flushing = false;
+    set_is_updating_effect(was_updating_effect);
+    last_scheduled_effect = null;
   }
 }
 function infinite_loop_guard() {
@@ -602,27 +633,26 @@ function infinite_loop_guard() {
 function flush_queued_effects(effects) {
   var length = effects.length;
   if (length === 0) return;
-  for (var i = 0; i < length; i++) {
-    var effect = effects[i];
-    if ((effect.f & (DESTROYED | INERT)) === 0) {
-      if (is_dirty(effect)) {
-        var wv = write_version;
-        update_effect(effect);
-        if (effect.deps === null && effect.first === null && effect.nodes_start === null) {
-          if (effect.teardown === null && effect.ac === null) {
-            unlink_effect(effect);
-          } else {
-            effect.fn = null;
-          }
+  var i = 0;
+  while (i < length) {
+    var effect = effects[i++];
+    if ((effect.f & (DESTROYED | INERT)) === 0 && is_dirty(effect)) {
+      var n = current_batch ? current_batch.current.size : 0;
+      update_effect(effect);
+      if (effect.deps === null && effect.first === null && effect.nodes_start === null) {
+        if (effect.teardown === null && effect.ac === null) {
+          unlink_effect(effect);
+        } else {
+          effect.fn = null;
         }
-        if (write_version > wv && (effect.f & USER_EFFECT) !== 0) {
-          break;
-        }
+      }
+      if (current_batch !== null && current_batch.current.size > n && (effect.f & USER_EFFECT) !== 0) {
+        break;
       }
     }
   }
-  for (; i < length; i += 1) {
-    schedule_effect(effects[i]);
+  while (i < length) {
+    schedule_effect(effects[i++]);
   }
 }
 function schedule_effect(signal) {
@@ -685,7 +715,7 @@ function internal_set(source2, value) {
       old_values.set(source2, old_value);
     }
     source2.v = value;
-    const batch = Batch.ensure();
+    var batch = Batch.ensure();
     batch.capture(source2, old_value);
     if ((source2.f & DERIVED) !== 0) {
       if ((source2.f & DIRTY) !== 0) {
@@ -718,7 +748,8 @@ function mark_reactions(signal, status) {
   for (var i = 0; i < length; i++) {
     var reaction = reactions[i];
     var flags = reaction.f;
-    if ((flags & DIRTY) === 0) {
+    var not_dirty = (flags & DIRTY) === 0;
+    if (not_dirty) {
       set_signal_status(reaction, status);
     }
     if ((flags & DERIVED) !== 0) {
@@ -727,7 +758,7 @@ function mark_reactions(signal, status) {
         reaction,
         MAYBE_DIRTY
       );
-    } else if ((flags & DIRTY) === 0) {
+    } else if (not_dirty) {
       schedule_effect(
         /** @type {Effect} */
         reaction
@@ -1012,7 +1043,7 @@ function create_effect(type, fn, sync, push2 = true) {
     if (parent !== null) {
       push_effect(effect, parent);
     }
-    if (active_reaction !== null && (active_reaction.f & DERIVED) !== 0) {
+    if (active_reaction !== null && (active_reaction.f & DERIVED) !== 0 && (type & ROOT_EFFECT) === 0) {
       var derived = (
         /** @type {Derived} */
         active_reaction
@@ -1449,7 +1480,7 @@ function update_effect(effect) {
     effect.teardown = typeof teardown === "function" ? teardown : null;
     effect.wv = write_version;
     var dep;
-    if (BROWSER && tracing_mode_flag && (effect.f & DIRTY) !== 0 && effect.deps !== null) ;
+    if (DEV && tracing_mode_flag && (effect.f & DIRTY) !== 0 && effect.deps !== null) ;
   } finally {
     is_updating_effect = was_updating_effect;
     active_effect = previous_effect;
@@ -1765,7 +1796,7 @@ function render(component, options = {}) {
     on_destroy = [];
     payload.out.push(BLOCK_OPEN);
     let reset_reset_element;
-    if (BROWSER) ;
+    if (DEV) ;
     if (options.context) {
       push();
       current_component.c = options.context;
@@ -1879,26 +1910,26 @@ function ensure_array_like(array_like_or_iterator) {
 }
 export {
   push as A,
-  BROWSER as B,
+  setContext as B,
   COMMENT_NODE as C,
-  setContext as D,
+  DEV as D,
   pop as E,
-  getContext as F,
-  head as G,
+  slot as F,
+  noop as G,
   HYDRATION_ERROR as H,
-  slot as I,
-  noop as J,
-  escape_html as K,
+  getContext as I,
+  escape_html as J,
+  ensure_array_like as K,
   LEGACY_PROPS as L,
-  ensure_array_like as M,
-  spread_attributes as N,
-  attr as O,
-  stringify as P,
-  attr_class as Q,
-  attr_style as R,
-  store_get as S,
-  unsubscribe_stores as T,
-  bind_props as U,
+  spread_attributes as M,
+  attr as N,
+  stringify as O,
+  attr_class as P,
+  attr_style as Q,
+  store_get as R,
+  unsubscribe_stores as S,
+  bind_props as T,
+  head as U,
   safe_not_equal as V,
   subscribe_to_store as W,
   run_all as X,

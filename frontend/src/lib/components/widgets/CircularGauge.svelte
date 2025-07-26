@@ -12,9 +12,20 @@
 		showValue?: boolean;
 		unit?: string;
 		label?: string;
+		config?: {
+			min?: number;
+			max?: number;
+			unit?: string;
+			colors?: string[];
+			thresholds?: number[];
+			showValue?: boolean;
+			showTitle?: boolean;
+			strokeWidth?: number;
+			size?: { width: number; height: number };
+		};
 	}
 
-	let { config, value }: Props = $props()
+	let { config: userConfig = {}, value }: Props = $props()
 
 	// Default configuration
 	const defaults = {
@@ -26,11 +37,11 @@
 		showValue: true,
 		showTitle: true,
 		strokeWidth: 12,
-		size: 160
+		size: { width: 160, height: 160 }
 	}
 
 	// Merge config with defaults
-	let gaugeConfig = $derived({ ...defaults, ...config.config })
+	let gaugeConfig = $derived({ ...defaults, ...userConfig })
 	let displayValue = $derived(value ?? 0)
 	let percentage = $derived(Math.max(0, Math.min(100, ((displayValue - gaugeConfig.min) / (gaugeConfig.max - gaugeConfig.min)) * 100)))
 
@@ -49,7 +60,7 @@
 	})
 
 	// SVG dimensions
-	let size = $derived(Math.min(config.size.width, config.size.height) - 20)
+	let size = $derived(Math.min(gaugeConfig.size?.width || 160, gaugeConfig.size?.height || 160) - 20)
 	let center = $derived(size / 2)
 	let radius = $derived((size - gaugeConfig.strokeWidth) / 2)
 

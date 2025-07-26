@@ -30,10 +30,10 @@
       "_index.js"
     ]
   },
-  "node_modules/.pnpm/@sveltejs+kit@2.25.1_@svelt_aa0fc36eb2bb80c35f051e1e63c656fd/node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte": {
+  "node_modules/.pnpm/@sveltejs+kit@2.26.1_@svelt_30f884c4773a1a8b2d695a3b09f0e41b/node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte": {
     "file": "entries/fallbacks/error.svelte.js",
     "name": "entries/fallbacks/error.svelte",
-    "src": "node_modules/.pnpm/@sveltejs+kit@2.25.1_@svelt_aa0fc36eb2bb80c35f051e1e63c656fd/node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte",
+    "src": "node_modules/.pnpm/@sveltejs+kit@2.26.1_@svelt_30f884c4773a1a8b2d695a3b09f0e41b/node_modules/@sveltejs/kit/src/runtime/components/svelte-5/error.svelte",
     "isEntry": true,
     "imports": [
       "_index.js",
@@ -41,10 +41,10 @@
       "_index2.js"
     ]
   },
-  "node_modules/.pnpm/@sveltejs+kit@2.25.1_@svelt_aa0fc36eb2bb80c35f051e1e63c656fd/node_modules/@sveltejs/kit/src/runtime/server/index.js": {
+  "node_modules/.pnpm/@sveltejs+kit@2.26.1_@svelt_30f884c4773a1a8b2d695a3b09f0e41b/node_modules/@sveltejs/kit/src/runtime/server/index.js": {
     "file": "index.js",
     "name": "index",
-    "src": "node_modules/.pnpm/@sveltejs+kit@2.25.1_@svelt_aa0fc36eb2bb80c35f051e1e63c656fd/node_modules/@sveltejs/kit/src/runtime/server/index.js",
+    "src": "node_modules/.pnpm/@sveltejs+kit@2.26.1_@svelt_30f884c4773a1a8b2d695a3b09f0e41b/node_modules/@sveltejs/kit/src/runtime/server/index.js",
     "isEntry": true,
     "imports": [
       "_index.js",
@@ -59,11 +59,10 @@
     "src": "src/routes/+layout.svelte",
     "isEntry": true,
     "imports": [
-      "_index.js",
-      "_index2.js"
+      "_index.js"
     ],
     "css": [
-      "_app/immutable/assets/_layout.BMCQM-ac.css"
+      "_app/immutable/assets/_layout.RAg4bG92.css"
     ]
   },
   "src/routes/+page.svelte": {
@@ -76,7 +75,7 @@
       "_index2.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.DQCdJvap.css"
+      "_app/immutable/assets/_page.D2qh_4Yy.css"
     ]
   },
   "src/routes/api/ai-layout/+server.ts": {

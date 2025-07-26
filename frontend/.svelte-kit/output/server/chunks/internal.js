@@ -1,4 +1,4 @@
-import { H as HYDRATION_ERROR, g as get_next_sibling, d as define_property, s as set_active_reaction, a as set_active_effect, i as is_array, b as active_effect, c as active_reaction, e as init_operations, f as get_first_child, C as COMMENT_NODE, h as HYDRATION_START, j as HYDRATION_END, k as hydration_failed, l as clear_text_content, m as array_from, n as component_root, o as is_passive_event, p as create_text, q as branch, r as push, t as component_context, u as pop, v as set, L as LEGACY_PROPS, w as get, x as flushSync, y as mutable_source, z as render, A as push$1, D as setContext, E as pop$1 } from "./index.js";
+import { H as HYDRATION_ERROR, g as get_next_sibling, d as define_property, s as set_active_reaction, a as set_active_effect, i as is_array, b as active_effect, c as active_reaction, e as init_operations, f as get_first_child, C as COMMENT_NODE, h as HYDRATION_START, j as HYDRATION_END, k as hydration_failed, l as clear_text_content, m as array_from, n as component_root, o as is_passive_event, p as create_text, q as branch, r as push, t as component_context, u as pop, v as set, L as LEGACY_PROPS, w as get, x as flushSync, y as mutable_source, z as render, A as push$1, B as setContext, E as pop$1 } from "./index.js";
 import "clsx";
 let base = "";
 let assets = base;
@@ -477,7 +477,7 @@ const options = {
   root,
   service_worker: false,
   templates: {
-    app: ({ head, body, assets: assets2, nonce, env }) => '<!doctype html>\n<html lang="en" class="%sveltekit.theme%">\n  <head>\n    <meta charset="utf-8" />\n    <link rel="icon" href="' + assets2 + '/favicon.png" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <link rel="preconnect" href="https://fonts.googleapis.com" />\n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n    <link\n      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap"\n      rel="stylesheet"\n    />\n    <title>SenseCanvas - PC Sensor Dashboard</title>\n    <meta\n      name="description"\n      content="Real-time PC hardware monitoring dashboard with AI-powered layout suggestions"\n    />\n    ' + head + '\n  </head>\n  <body data-sveltekit-preload-data="hover" class="bg-surface-50-900-token">\n    <div style="display: contents" class="%sveltekit.theme%">\n      ' + body + "\n    </div>\n  </body>\n</html>\n",
+    app: ({ head, body, assets: assets2, nonce, env }) => '<!doctype html>\n<html lang="en" class="%sveltekit.theme%" data-theme="cerberus">\n  <head>\n    <meta charset="utf-8" />\n    <link rel="icon" href="' + assets2 + '/favicon.png" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <link rel="preconnect" href="https://fonts.googleapis.com" />\n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />\n    <link\n      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap"\n      rel="stylesheet"\n    />\n    <title>SenseCanvas - PC Sensor Dashboard</title>\n    <meta\n      name="description"\n      content="Real-time PC hardware monitoring dashboard with AI-powered layout suggestions"\n    />\n    ' + head + '\n  </head>\n  <body data-sveltekit-preload-data="hover" class="bg-surface-50-900-token">\n    <div style="display: contents" class="%sveltekit.theme%">\n      ' + body + "\n    </div>\n  </body>\n</html>\n",
     error: ({ status, message }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' + message + `</title>
 
 		<style>
@@ -549,7 +549,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1vjw12x"
+  version_hash: "8xx5kt"
 };
 async function get_hooks() {
   let handle;

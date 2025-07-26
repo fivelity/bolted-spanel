@@ -50,15 +50,31 @@
   } = $props();
 
   // Animated values for smooth transitions
-  const animatedValues = config.metrics.map(() => tweened(0, {
-    duration: 1200,
-    easing: cubicOut
-  }));
+  let animatedValues = $state(config.metrics.map(() => 0));
 
   // Update animated values when data changes
   $effect(() => {
     config.metrics.forEach((metric, index) => {
-      animatedValues[index].set(metric.value);
+      // Animate to new value
+      const startValue = animatedValues[index];
+      const targetValue = metric.value;
+      const duration = 1200;
+      const startTime = performance.now();
+      
+      function animate(currentTime: number) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Cubic ease-out function
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        animatedValues[index] = startValue + (targetValue - startValue) * easeOut;
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      }
+      
+      requestAnimationFrame(animate);
     });
   });
 
@@ -160,7 +176,7 @@
           <!-- Value Display -->
           <div class="flex items-baseline gap-1">
             <span class="text-xl font-bold font-orbitron" style="color: {status.color};">
-              {Math.round($animatedValues[index])}
+              {Math.round(animatedValues[index])}
             </span>
             <span class="text-xs text-cyan-400 opacity-80">{metric.unit}</span>
           </div>

@@ -73,7 +73,7 @@
 	});
 
 	// Generate tick marks
-	const tickMarks = $derived(() => {
+	const tickMarks = $derived((): Array<{angle: number; value: number; x: number; y: number; isMajor: boolean}> => {
 		const marks = [];
 		for (let i = 0; i <= 10; i++) {
 			const angle = -90 + (i / 10) * 180;
@@ -92,7 +92,7 @@
 	});
 
 	// Generate segments for colored backgrounds
-	const segments = $derived(() => {
+	const segments = $derived((): Array<{start: number; end: number; color: string}> => {
 		if (!speedometerConfig.showZones) return [];
 		
 		const segmentData = [];
@@ -148,7 +148,7 @@
 
 			<!-- Zone arcs -->
 			{#if speedometerConfig.showZones}
-				{#each segments as segment}
+				{#each segments() as segment}
 					<path
 						d={`M ${center + segment.start * Math.PI / 180 * radius} ${center + segment.start * Math.PI / 180 * radius} A ${radius} ${radius} 0 0 1 ${center + segment.end * Math.PI / 180 * radius} ${center + segment.end * Math.PI / 180 * radius}`}
 						fill="none"
@@ -160,7 +160,7 @@
 			{/if}
 
 			<!-- Tick marks -->
-			{#each tickMarks as mark}
+			{#each tickMarks() as mark}
 				{@const angleRad = (mark.angle * Math.PI) / 180}
 				{@const tickLength = mark.isMajor ? 15 : 8}
 				{@const x1 = center + (radius - 30) * Math.cos(angleRad)}
