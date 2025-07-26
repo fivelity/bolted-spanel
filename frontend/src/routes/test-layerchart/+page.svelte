@@ -14,22 +14,29 @@
   import WidgetConfigurator from '$lib/components/WidgetConfigurator.svelte';
   import { sensorStore } from '$lib/stores/sensorStore';
   import { get } from 'svelte/store';
+  import { onMount, onDestroy } from 'svelte';
   
-  // Test data
+  type ThemeType = 'gaming' | 'rgb' | 'neon' | 'cyberpunk' | 'default' | 'minimal';
+  
+  // Test data with optimized updates
   let testValue = $state(45);
-  let testTheme = $state('gaming');
+  let testTheme = $state<ThemeType>('gaming');
   let showConfigurator = $state(false);
+  let updateInterval: NodeJS.Timeout;
   
-  // Get real sensor data
-  let sensorData = $derived(get(sensorStore.data));
+  // Cache sensor data to reduce updates
+  let cpuTemp = $state(65);
+  let memoryUsage = $state(45);
+  let gpuUsage = $state(30);
   
-  // Update test value periodically
+  // Update sensor data less frequently
   $effect(() => {
-    const interval = setInterval(() => {
-      testValue = Math.random() * 100;
-    }, 3000);
-    
-    return () => clearInterval(interval);
+    const data = get(sensorStore.data);
+    if (data) {
+      cpuTemp = data.cpu?.temperature || cpuTemp;
+      memoryUsage = data.memory?.usage || memoryUsage;
+      gpuUsage = data.gpu?.usage || gpuUsage;
+    }
   });
 
   // Available SVG backgrounds for demonstration
@@ -103,6 +110,19 @@
     }
   ];
 
+  // Update test value less frequently
+  onMount(() => {
+    updateInterval = setInterval(() => {
+      testValue = Math.random() * 100;
+    }, 3000);
+  });
+
+  onDestroy(() => {
+    if (updateInterval) {
+      clearInterval(updateInterval);
+    }
+  });
+
   function handleConfiguratorSave(event: CustomEvent) {
     console.log('Widget configuration saved:', event.detail);
     showConfigurator = false;
@@ -110,6 +130,42 @@
 
   function handleConfiguratorCancel() {
     showConfigurator = false;
+  }
+
+  // Memoized sensor data for display
+  interface SensorDisplayData {
+    cpu: {
+      usage: string;
+      temperature: string;
+    };
+    memory: {
+      usage: string;
+    };
+    gpu: {
+      usage: string;
+    };
+  }
+
+  let sensorDataDisplay: SensorDisplayData;
+  $effect(() => {
+    const data = get(sensorStore.data);
+    sensorDataDisplay = {
+      cpu: {
+        usage: data?.cpu?.usage?.toFixed(1) || 'N/A',
+        temperature: data?.cpu?.temperature?.toFixed(1) || 'N/A'
+      },
+      memory: {
+        usage: data?.memory?.usage?.toFixed(1) || 'N/A'
+      },
+      gpu: {
+        usage: data?.gpu?.usage?.toFixed(1) || 'N/A'
+      }
+    };
+  });
+
+  // Theme cycling
+  function cycleTheme() {
+    testTheme = testTheme === 'gaming' ? 'rgb' : testTheme === 'rgb' ? 'neon' : 'gaming';
   }
 </script>
 
@@ -165,7 +221,7 @@
       </button>
       <button 
         class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors"
-        on:click={() => testTheme = testTheme === 'gaming' ? 'rgb' : testTheme === 'rgb' ? 'neon' : 'gaming'}
+        on:click={cycleTheme}
       >
         🎭 Switch Theme ({testTheme})
       </button>
@@ -201,7 +257,7 @@
         <h3 class="text-lg font-semibold text-cyan-300 mb-4">LayerChart + Hexagonal Frame</h3>
         <div class="flex justify-center">
           <LayerChartGauge
-            value={sensorData?.cpu?.temperature || 65}
+            value={cpuTemp}
             label="CPU Temp"
             config={{ min: 0, max: 100, warningThreshold: 75, criticalThreshold: 85, unit: "°C" }}
             size={180}
@@ -223,7 +279,7 @@
         <h3 class="text-lg font-semibold text-cyan-300 mb-4">LayerChart + Minimal Frame</h3>
         <div class="flex justify-center">
           <LayerChartGauge
-            value={sensorData?.memory?.usage || 45}
+            value={memoryUsage}
             label="Memory"
             config={{ min: 0, max: 100, warningThreshold: 80, criticalThreshold: 90, unit: "%" }}
             size={180}
@@ -245,7 +301,7 @@
         <h3 class="text-lg font-semibold text-cyan-300 mb-4">LayerChart (No Frame)</h3>
         <div class="flex justify-center">
           <LayerChartGauge
-                         value={sensorData?.gpu?.usage || 30}
+            value={gpuUsage}
             label="GPU Usage"
             config={{ min: 0, max: 100, warningThreshold: 80, criticalThreshold: 95, unit: "%" }}
             size={180}
@@ -268,19 +324,19 @@
         <div class="space-y-3 text-sm">
           <div class="flex justify-between">
             <span class="text-gray-300">CPU Usage:</span>
-            <span class="text-cyan-400">{sensorData?.cpu?.usage?.toFixed(1) || 'N/A'}%</span>
+            <span class="text-cyan-400">{sensorDataDisplay.cpu.usage}%</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-300">CPU Temp:</span>
-            <span class="text-cyan-400">{sensorData?.cpu?.temperature?.toFixed(1) || 'N/A'}°C</span>
+            <span class="text-cyan-400">{sensorDataDisplay.cpu.temperature}°C</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-300">Memory:</span>
-            <span class="text-cyan-400">{sensorData?.memory?.usage?.toFixed(1) || 'N/A'}%</span>
+            <span class="text-cyan-400">{sensorDataDisplay.memory.usage}%</span>
           </div>
           <div class="flex justify-between">
             <span class="text-gray-300">GPU Usage:</span>
-                         <span class="text-cyan-400">{sensorData?.gpu?.usage?.toFixed(1) || 'N/A'}%</span>
+            <span class="text-cyan-400">{sensorDataDisplay.gpu.usage}%</span>
           </div>
         </div>
         <p class="text-sm text-gray-400 mt-4 text-center">
