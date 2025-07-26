@@ -6,8 +6,7 @@
 -->
 
 <script lang="ts">
-  import { tweened } from 'svelte/motion';
-  import { cubicOut } from 'svelte/easing';
+  import { Chart, Rect, Text } from 'layerchart';
   import { CosmicFrame } from '$lib/components/cosmic';
   
   interface MeterConfig {
@@ -19,42 +18,35 @@
     icon?: string;
   }
 
-  // Props
-  let { 
-    value = 0,
-    label = "Metric",
-    config = {
-      min: 0,
-      max: 100,
-      warningThreshold: 70,
-      criticalThreshold: 90,
-      unit: "%",
-      icon: "📊"
-    } as MeterConfig,
-    width = 300,
-    height = 120,
-    showFrame = true,
-    glowEffect = true
-  }: {
-    value: number;
-    label: string;
+  // Props with Svelte 5 runes
+  const props = $props<{
+    value?: number;
+    label?: string;
     config?: MeterConfig;
     width?: number;
     height?: number;
     showFrame?: boolean;
     glowEffect?: boolean;
-  } = $props();
+  }>();
 
-  // Animated value for smooth transitions
-  const animatedValue = tweened(0, {
-    duration: 1000,
-    easing: cubicOut
+  // Derived values from props
+  const value = $derived(props.value ?? 0);
+  const label = $derived(props.label ?? "Meter");
+  const config = $derived(props.config ?? {
+    min: 0,
+    max: 100,
+    warningThreshold: 70,
+    criticalThreshold: 90,
+    unit: "%",
+    icon: "📊"
   });
+  const width = $derived(props.width ?? 320);
+  const height = $derived(props.height ?? 140);
+  const showFrame = $derived(props.showFrame ?? true);
+  const glowEffect = $derived(props.glowEffect ?? true);
 
-  // Update animated value when data changes
-  $effect(() => {
-    animatedValue.set(value);
-  });
+  // State
+  let animatedValue = $state(value);
 
   // Meter calculations
   const normalizedValue = $derived(
@@ -63,9 +55,9 @@
 
   // Status-based colors
   const statusColor = $derived(() => {
-    if (value >= config.criticalThreshold) return '#ff0080';
-    if (value >= config.warningThreshold) return '#ffaa00';
-    return '#00ffaa';
+    if (value >= config.criticalThreshold) return '#ff0080'; // Bright red
+    if (value >= config.warningThreshold) return '#ffaa00'; // Orange
+    return '#00ffaa'; // Cyan green
   });
 
   const statusGlow = $derived(() => {
@@ -74,7 +66,7 @@
     return '#00ffaa40';
   });
 
-  // Frame paths for linear meter
+  // Enhanced frame paths with futuristic styling
   const meterFramePaths = $derived([
     {
       show: true,
@@ -84,13 +76,13 @@
         fill: "rgba(0, 20, 40, 0.8)"
       },
       path: [
-        ["M", "15", "15"],
-        ["L", "85%", "15"],
-        ["L", "100%-15", "25"],
-        ["L", "100%-15", "85%"],
-        ["L", "85%", "100%-15"],
-        ["L", "15", "100%-15"],
-        ["L", "15", "15"]
+        ["M", "20", "20"],
+        ["L", "80%", "20"], 
+        ["L", "100%-20", "35"],
+        ["L", "100%-20", "80%"],
+        ["L", "85%", "100%-20"],
+        ["L", "20", "100%-20"],
+        ["L", "20", "20"]
       ]
     },
     {
@@ -101,135 +93,147 @@
         fill: "transparent"
       },
       path: [
-        ["M", "10", "10"],
-        ["L", "90%", "10"],
-        ["L", "100%-10", "20"],
-        ["L", "100%-10", "90%"],
-        ["L", "90%", "100%-10"],
-        ["L", "10", "100%-10"],
-        ["L", "10", "10"]
+        ["M", "15", "15"],
+        ["L", "85%", "15"],
+        ["L", "100%-15", "30"],
+        ["L", "100%-15", "85%"],
+        ["L", "85%", "100%-15"],
+        ["L", "15", "100%-15"],
+        ["L", "15", "15"]
       ]
     }
   ]);
 
-  // Create segmented meter bars
-  const segments = 20;
-  const segmentWidth = $derived((width - 80) / segments);
-  const segmentGap = 2;
+  // Animation effect
+  $effect(() => {
+    const duration = 800;
+    const startValue = animatedValue;
+    const targetValue = value;
+    const startTime = performance.now();
 
-  const createSegmentedMeter = $derived(() => {
-    const activeSegments = Math.floor((normalizedValue / 100) * segments);
-    const segmentBars = [];
-    
-    for (let i = 0; i < segments; i++) {
-      const x = 40 + (i * (segmentWidth + segmentGap));
-      const isActive = i < activeSegments;
-      const opacity = isActive ? 1 : 0.2;
-      const fillColor = isActive ? statusColor() : '#ffffff';
+    function animate(currentTime: number) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
       
-      segmentBars.push({
-        x,
-        width: segmentWidth - segmentGap,
-        opacity,
-        fillColor,
-        isActive
-      });
+      // Cubic easing
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      
+      animatedValue = startValue + (targetValue - startValue) * easeProgress;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
     }
     
-    return segmentBars;
+    requestAnimationFrame(animate);
   });
 </script>
 
-<!-- Linear Meter Container -->
 <div 
   class="relative inline-block meter-container"
   style="width: {width}px; height: {height}px;"
 >
-  <!-- Cosmic UI Frame -->
+  <!-- Cosmic UI Frame with enhanced glow -->
   {#if showFrame}
     <CosmicFrame 
       paths={meterFramePaths}
       className="meter-frame"
-      style="filter: {glowEffect ? `drop-shadow(0 0 15px ${statusGlow()})` : 'none'}"
+      style="filter: {glowEffect ? `drop-shadow(0 0 20px ${statusGlow()}) drop-shadow(0 0 40px ${statusGlow()})` : 'none'}"
     />
   {/if}
 
-  <!-- Main Content -->
-  <div class="absolute inset-4 flex flex-col justify-between p-4">
-    <!-- Header with label and value -->
-    <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-2">
-        {#if config.icon}
-          <span class="text-lg">{config.icon}</span>
-        {/if}
-        <span class="text-sm font-orbitron text-cyan-200 tracking-wide">{label}</span>
-      </div>
-      <div class="text-right">
-        <div class="text-xl font-bold font-orbitron text-white">
-          {Math.round($animatedValue)}<span class="text-sm text-cyan-400 ml-1">{config.unit}</span>
-        </div>
-        <div class="text-xs font-orbitron text-cyan-300 opacity-80">
-          {value >= config.criticalThreshold ? 'CRITICAL' : value >= config.warningThreshold ? 'WARNING' : 'NORMAL'}
-        </div>
-      </div>
+  <!-- Main Meter using LayerChart -->
+  <div class="absolute inset-6 flex items-center justify-center">
+    <Chart>
+      <!-- Background bar -->
+      <Rect
+        x={0}
+        y={height * 0.3}
+        width={width * 0.8}
+        height={height * 0.2}
+        fill="rgba(255, 255, 255, 0.1)"
+        stroke="rgba(255, 255, 255, 0.2)"
+        strokeWidth={2}
+        rx={4}
+      />
+      
+      <!-- Progress bar -->
+      <Rect
+        x={0}
+        y={height * 0.3}
+        width={width * 0.8 * (normalizedValue / 100)}
+        height={height * 0.2}
+        fill={statusColor()}
+        rx={4}
+        class="transition-colors duration-300"
+        style={glowEffect ? `filter: drop-shadow(0 0 10px ${statusColor()}40);` : ''}
+      />
+      
+      <!-- Value text -->
+      <Text
+        x={width * 0.4}
+        y={height * 0.4}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        class="text-2xl font-bold font-orbitron"
+        fill={statusColor()}
+        style={glowEffect ? `text-shadow: 0 0 10px ${statusColor()}80;` : ''}
+      >
+        {Math.round(animatedValue)}
+      </Text>
+      
+      <!-- Unit text -->
+      <Text
+        x={width * 0.4}
+        y={height * 0.6}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        class="text-sm font-medium"
+        fill={statusColor()}
+        opacity={0.8}
+      >
+        {config.unit}
+      </Text>
+    </Chart>
+  </div>
+
+  <!-- Label with icon -->
+  <div class="absolute bottom-4 left-0 right-0 text-center">
+    <div class="text-sm font-medium text-cyan-200 flex items-center justify-center gap-2 font-orbitron">
+      {#if config.icon}
+        <span class="text-lg">{config.icon}</span>
+      {/if}
+      <span class="tracking-wide">{label}</span>
     </div>
-
-    <!-- Meter Bar -->
-    <div class="relative">
-      <!-- Background track -->
-      <div class="w-full h-6 bg-gray-800 rounded-full overflow-hidden border border-cyan-900">
-        <!-- Grid pattern overlay -->
-        <div class="absolute inset-0 opacity-20" style="background-image: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(0, 255, 255, 0.1) 10px, rgba(0, 255, 255, 0.1) 11px);"></div>
-        
-        <!-- Segmented meter bars -->
-        <svg width="100%" height="100%" class="absolute inset-0">
-          {#each createSegmentedMeter() as segment}
-            <rect
-              x={segment.x}
-              y="4"
-              width={segment.width}
-              height="16"
-              fill={segment.fillColor}
-              opacity={segment.opacity}
-              rx="2"
-              class="meter-segment transition-all duration-300"
-              style="filter: {segment.isActive && glowEffect ? `drop-shadow(0 0 4px ${segment.fillColor})` : 'none'}"
-            />
-          {/each}
-        </svg>
-
-        <!-- Animated fill bar -->
-        <div 
-          class="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
-          style="width: {normalizedValue}%; background: linear-gradient(90deg, {statusColor()}, {statusColor()}80);"
-        >
-          <!-- Scanning line effect -->
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 w-8 animate-scan"></div>
-        </div>
-      </div>
-
-      <!-- Threshold markers -->
-      <div class="absolute -bottom-2 left-0 right-0 flex justify-between text-xs font-mono text-cyan-400 opacity-60">
-        <span>0</span>
-        <span style="position: absolute; left: {config.warningThreshold}%;" class="transform -translate-x-1/2">
-          {config.warningThreshold}
-        </span>
-        <span style="position: absolute; left: {config.criticalThreshold}%;" class="transform -translate-x-1/2">
-          {config.criticalThreshold}
-        </span>
-        <span>100</span>
-      </div>
+  </div>
+  
+  <!-- Status indicator -->
+  <div class="absolute top-4 right-4 flex items-center gap-2">
+    <div class="status-indicator w-3 h-3 rounded-full {value >= config.criticalThreshold ? 'bg-red-400 critical-pulse' : value >= config.warningThreshold ? 'bg-yellow-400 warning-pulse' : 'bg-green-400 normal-pulse'}"></div>
+    <div class="text-xs font-orbitron text-cyan-300 opacity-80">
+      {value >= config.criticalThreshold ? 'CRITICAL' : value >= config.warningThreshold ? 'WARNING' : 'NORMAL'}
     </div>
+  </div>
 
-    <!-- Status indicator -->
-    <div class="absolute top-2 right-2">
-      <div class="status-indicator w-2 h-2 rounded-full {value >= config.criticalThreshold ? 'bg-red-400 critical-pulse' : value >= config.warningThreshold ? 'bg-yellow-400 warning-pulse' : 'bg-green-400 normal-pulse'}"></div>
+  <!-- Performance scale -->
+  <div class="absolute bottom-12 left-4 right-4">
+    <div class="flex justify-between text-xs font-mono text-cyan-400 opacity-60">
+      <span>{config.min}</span>
+      <span>{Math.round((config.max - config.min) / 2)}</span>
+      <span>{config.max}</span>
+    </div>
+    <div class="w-full h-1 bg-gray-800 rounded-full mt-1 overflow-hidden">
+      <div 
+        class="h-full rounded-full transition-all duration-1000 ease-out"
+        style="width: {normalizedValue}%; background: linear-gradient(90deg, {statusColor()}, {statusColor()}80);"
+      ></div>
     </div>
   </div>
 </div>
 
 <style>
   .meter-container {
+    position: relative;
     transition: transform 0.3s ease;
   }
 
@@ -241,65 +245,75 @@
     transition: filter 0.3s ease;
   }
 
-  .meter-segment {
-    transition: all 0.3s ease;
-  }
-
+  /* Status indicator animations */
   .status-indicator {
     transition: all 0.3s ease;
   }
 
   .critical-pulse {
     animation: critical-pulse 1s ease-in-out infinite;
-    box-shadow: 0 0 8px #ff0080;
+    box-shadow: 0 0 10px #ff0080;
   }
 
   .warning-pulse {
     animation: warning-pulse 2s ease-in-out infinite;
-    box-shadow: 0 0 6px #ffaa00;
+    box-shadow: 0 0 8px #ffaa00;
   }
 
   .normal-pulse {
     animation: normal-pulse 3s ease-in-out infinite;
-    box-shadow: 0 0 4px #00ffaa;
+    box-shadow: 0 0 6px #00ffaa;
   }
 
   @keyframes critical-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(1.1); }
+    0%, 100% { 
+      opacity: 1; 
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.6; 
+      transform: scale(1.2);
+    }
   }
 
   @keyframes warning-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.05); }
+    0%, 100% { 
+      opacity: 1; 
+      transform: scale(1);
+    }
+    50% { 
+      opacity: 0.7; 
+      transform: scale(1.1);
+    }
   }
 
   @keyframes normal-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    0%, 100% { 
+      opacity: 1; 
+    }
+    50% { 
+      opacity: 0.8; 
+    }
   }
 
-  @keyframes scan {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(400%); }
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .meter-container {
+      transform: scale(0.9);
+    }
   }
 
-  .animate-scan {
-    animation: scan 3s ease-in-out infinite;
-  }
-
+  /* Accessibility */
   @media (prefers-reduced-motion: reduce) {
     .meter-container,
     .meter-frame,
-    .meter-segment,
     .status-indicator {
       transition: none;
     }
     
     .critical-pulse,
     .warning-pulse,
-    .normal-pulse,
-    .animate-scan {
+    .normal-pulse {
       animation: none;
     }
   }

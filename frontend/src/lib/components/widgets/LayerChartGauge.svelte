@@ -44,27 +44,7 @@
 
   type ThemeType = 'gaming' | 'rgb' | 'neon' | 'cyberpunk' | 'default' | 'minimal';
 
-  // Props with defaults
-  let { 
-    value = 0,
-    label = "Sensor",
-    config = {
-      min: 0,
-      max: 100,
-      warningThreshold: 70,
-      criticalThreshold: 90,
-      unit: "%"
-    } as GaugeConfig,
-    size = 200,
-    theme = "gaming" as ThemeType,
-    animated = true,
-    showValue = true,
-    showLabel = true,
-    glowEffect = true,
-    svgBackground = null as SVGBackground | null
-  } = $props();
-
-  // Cached theme colors to reduce recalculations
+  // Theme colors map
   const themeColorMap: Record<Exclude<ThemeType, 'minimal'>, ThemeColors> = {
     gaming: {
       primary: '#00ff88',
@@ -74,7 +54,7 @@
       text: '#00ffff'
     },
     rgb: {
-      primary: '#00ff88', // Will be dynamically updated
+      primary: '#00ff88',
       warning: '#ffaa00',
       critical: '#ff0080',
       background: 'rgba(0, 20, 40, 0.8)',
@@ -103,28 +83,69 @@
     }
   };
 
-  // Reactive state with reduced computations
+  // Props with defaults using Svelte 5 runes
+  const props = $props<{
+    value?: number;
+    label?: string;
+    config?: GaugeConfig;
+    size?: number;
+    theme?: ThemeType;
+    animated?: boolean;
+    showValue?: boolean;
+    showLabel?: boolean;
+    glowEffect?: boolean;
+    svgBackground?: SVGBackground | null;
+  }>();
+
+  const value = $derived(props.value ?? 0);
+  const label = $derived(props.label ?? "Sensor");
+  const config = $derived(props.config ?? {
+    min: 0,
+    max: 100,
+    warningThreshold: 70,
+    criticalThreshold: 90,
+    unit: "%"
+  } as GaugeConfig);
+  const size = $derived(props.size ?? 200);
+  const theme = $derived(props.theme ?? "gaming" as ThemeType);
+  const animated = $derived(props.animated ?? true);
+  const showValue = $derived(props.showValue ?? true);
+  const showLabel = $derived(props.showLabel ?? true);
+  const glowEffect = $derived(props.glowEffect ?? true);
+  const svgBackground = $derived(props.svgBackground ?? null);
+
+  // State using Svelte 5 runes
   let animatedValue = $state(value);
   let isAnimating = $state(false);
-  let animationFrame: number;
+  let animationFrame = $state<number | undefined>(undefined);
+  let currentThemeColors = $state<ThemeColors>(themeColorMap['default']);
+  let currentStatusColor = $state(themeColorMap['default'].primary);
+  let currentArcAngle = $state(0);
+
+  // Initialize theme colors
+  $effect(() => {
+    const themeKey = theme === 'minimal' ? 'default' : theme;
+    currentThemeColors = themeColorMap[themeKey as keyof typeof themeColorMap];
+  });
 
   // Cached calculations
   const radius = size * 0.35;
   const center = size / 2;
 
-  // Optimized theme color calculation
-  let currentThemeColors: ThemeColors;
+  // Effects using Svelte 5 syntax
   $effect(() => {
-    const baseColors = { ...themeColorMap[theme === 'minimal' ? 'default' : theme] };
+    const themeKey = theme === 'minimal' ? 'default' : theme;
+    const baseColors = { ...themeColorMap[themeKey as keyof typeof themeColorMap] };
     if (theme === 'rgb') {
       baseColors.primary = `hsl(${240 + (120 * (value / config.max))}, 80%, 60%)`;
     }
     currentThemeColors = baseColors;
   });
 
-  // Optimized status color calculation with caching
-  let currentStatusColor: string;
   $effect(() => {
+    const themeKey = theme === 'minimal' ? 'default' : theme;
+    currentThemeColors = themeColorMap[themeKey as keyof typeof themeColorMap];
+    
     const normalizedValue = (value - config.min) / (config.max - config.min) * 100;
     if (normalizedValue >= config.criticalThreshold) {
       currentStatusColor = currentThemeColors.critical;
@@ -135,14 +156,12 @@
     }
   });
 
-  // Pre-calculated arc angle
-  let currentArcAngle: number;
   $effect(() => {
     const normalizedValue = (animatedValue - config.min) / (config.max - config.min);
     currentArcAngle = normalizedValue * Math.PI * 1.5; // 270 degrees
   });
 
-  // Optimized animation with RAF and cleanup
+  // Animation function
   function startAnimation(targetValue: number) {
     if (!animated || isAnimating) return;
     

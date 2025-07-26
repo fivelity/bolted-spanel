@@ -250,18 +250,18 @@ class HardwareMonitor:
                     ):
                         usage = sensor.Value
                     if (
-                        sensor.SensorType == Hardware.SensorType.Available
-                        and "Memory" in sensor.Name
+                        sensor.SensorType == Hardware.SensorType.Data
+                        and "Available" in sensor.Name
                     ):
                         available = sensor.Value
                     if (
-                        sensor.SensorType == Hardware.SensorType.Cached
-                        and "Memory" in sensor.Name
+                        sensor.SensorType == Hardware.SensorType.Data
+                        and "Used" in sensor.Name
                     ):
                         cached = sensor.Value
                     if (
                         sensor.SensorType == Hardware.SensorType.Load
-                        and "Swap" in sensor.Name
+                        and "Virtual" in sensor.Name
                     ):
                         swap_usage = sensor.Value
                 return MemoryData(
@@ -285,17 +285,17 @@ class HardwareMonitor:
                 for sensor in hardware_item.Sensors:
                     if (
                         sensor.SensorType == Hardware.SensorType.Load
-                        and "Storage" in sensor.Name
+                        and "Used" in sensor.Name
                     ):
                         usage = sensor.Value
                     if (
-                        sensor.SensorType == Hardware.SensorType.Read
-                        and "Storage" in sensor.Name
+                        sensor.SensorType == Hardware.SensorType.Throughput
+                        and "Read" in sensor.Name
                     ):
                         read_speed = sensor.Value
                     if (
-                        sensor.SensorType == Hardware.SensorType.Write
-                        and "Storage" in sensor.Name
+                        sensor.SensorType == Hardware.SensorType.Throughput
+                        and "Write" in sensor.Name
                     ):
                         write_speed = sensor.Value
                     if (

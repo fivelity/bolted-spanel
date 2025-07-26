@@ -5,6 +5,19 @@
 
 <!-- <ThemeInit /> -->
 
-<main class="min-h-screen bg-gray-900 text-white">
+<main class="h-screen w-screen overflow-hidden bg-gray-900 text-white">
 	<slot />
 </main>
+
+<style>
+	:global(body) {
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+	}
+
+	:global(html, body) {
+		height: 100%;
+		width: 100%;
+	}
+</style>
