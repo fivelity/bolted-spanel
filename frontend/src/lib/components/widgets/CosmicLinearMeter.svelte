@@ -8,6 +8,7 @@
 <script lang="ts">
   import { Chart, Rect, Text } from 'layerchart';
   import { CosmicFrame } from '$lib/components/cosmic';
+  import { onMount } from 'svelte';
   
   interface MeterConfig {
     min: number;
@@ -46,25 +47,41 @@
   const glowEffect = $derived(props.glowEffect ?? true);
 
   // State
-  let animatedValue = $state(value);
+  let animatedValue = $state(0);
 
   // Meter calculations
   const normalizedValue = $derived(
     Math.max(0, Math.min(100, ((value - config.min) / (config.max - config.min)) * 100))
   );
 
-  // Status-based colors
-  const statusColor = $derived(() => {
-    if (value >= config.criticalThreshold) return '#ff0080'; // Bright red
-    if (value >= config.warningThreshold) return '#ffaa00'; // Orange
-    return '#00ffaa'; // Cyan green
+  // Animated normalized value
+  const animatedNormalizedValue = $derived(
+    Math.max(0, Math.min(100, ((animatedValue - config.min) / (config.max - config.min)) * 100))
+  );
+
+  // Status-based colors  
+  const statusColor = $derived(
+    value >= config.criticalThreshold ? '#ff0080' : // Bright red
+    value >= config.warningThreshold ? '#ffaa00' : // Orange  
+    '#00ffaa' // Cyan green
+  );
+
+  const statusGlow = $derived(
+    value >= config.criticalThreshold ? '#ff008040' :
+    value >= config.warningThreshold ? '#ffaa0040' :
+    '#00ffaa40'
+  );
+
+  // Frame configuration  
+  const frameConfig = $derived({
+    width: width,
+    height: height,
+    padding: 15
   });
 
-  const statusGlow = $derived(() => {
-    if (value >= config.criticalThreshold) return '#ff008040';
-    if (value >= config.warningThreshold) return '#ffaa0040';
-    return '#00ffaa40';
-  });
+  // Bar dimensions
+  const barWidth = $derived(frameConfig.width - frameConfig.padding * 4);
+  const barHeight = $derived(frameConfig.height * 0.3);
 
   // Enhanced frame paths with futuristic styling
   const meterFramePaths = $derived([
@@ -76,35 +93,39 @@
         fill: "rgba(0, 20, 40, 0.8)"
       },
       path: [
-        ["M", "20", "20"],
-        ["L", "80%", "20"], 
-        ["L", "100%-20", "35"],
-        ["L", "100%-20", "80%"],
-        ["L", "85%", "100%-20"],
-        ["L", "20", "100%-20"],
-        ["L", "20", "20"]
+        ["M", "10", "10"],
+        ["L", "95%", "10"],
+        ["L", "100%-10", "20"],
+        ["L", "100%-10", "80%"],
+        ["L", "95%", "100%-10"],
+        ["L", "10", "100%-10"],
+        ["L", "10", "10"]
       ]
     },
     {
       show: showFrame,
       style: {
         strokeWidth: "2",
-        stroke: statusColor(),
+        stroke: statusColor,
         fill: "transparent"
       },
       path: [
-        ["M", "15", "15"],
-        ["L", "85%", "15"],
-        ["L", "100%-15", "30"],
-        ["L", "100%-15", "85%"],
-        ["L", "85%", "100%-15"],
-        ["L", "15", "100%-15"],
-        ["L", "15", "15"]
+        ["M", "5", "5"],
+        ["L", "95%", "5"],
+        ["L", "100%-5", "15"],
+        ["L", "100%-5", "85%"],
+        ["L", "95%", "100%-5"],
+        ["L", "5", "100%-5"],
+        ["L", "5", "5"]
       ]
     }
   ]);
 
   // Animation effect
+  onMount(() => {
+    animatedValue = value;
+  });
+
   $effect(() => {
     const duration = 800;
     const startValue = animatedValue;
@@ -138,7 +159,7 @@
     <CosmicFrame 
       paths={meterFramePaths}
       className="meter-frame"
-      style="filter: {glowEffect ? `drop-shadow(0 0 20px ${statusGlow()}) drop-shadow(0 0 40px ${statusGlow()})` : 'none'}"
+      style="filter: {glowEffect ? `drop-shadow(0 0 20px ${statusGlow}) drop-shadow(0 0 40px ${statusGlow})` : 'none'}"
     />
   {/if}
 
@@ -163,10 +184,10 @@
         y={height * 0.3}
         width={width * 0.8 * (normalizedValue / 100)}
         height={height * 0.2}
-        fill={statusColor()}
+        fill={statusColor}
         rx={4}
         class="transition-colors duration-300"
-        style={glowEffect ? `filter: drop-shadow(0 0 10px ${statusColor()}40);` : ''}
+        style={glowEffect ? `filter: drop-shadow(0 0 10px ${statusColor}40);` : ''}
       />
       
       <!-- Value text -->
@@ -176,8 +197,8 @@
         textAnchor="middle"
         dominantBaseline="middle"
         class="text-2xl font-bold font-orbitron"
-        fill={statusColor()}
-        style={glowEffect ? `text-shadow: 0 0 10px ${statusColor()}80;` : ''}
+        fill={statusColor}
+        style={glowEffect ? `text-shadow: 0 0 10px ${statusColor}80;` : ''}
       >
         {Math.round(animatedValue)}
       </Text>
@@ -189,7 +210,7 @@
         textAnchor="middle"
         dominantBaseline="middle"
         class="text-sm font-medium"
-        fill={statusColor()}
+        fill={statusColor}
         opacity={0.8}
       >
         {config.unit}

@@ -89,7 +89,7 @@
 				<div class="relative">
 					<button 
 						class="cosmic-button px-4 py-2 text-sm font-orbitron text-cyan-200 border border-cyan-400/30 hover:border-cyan-400 transition-all duration-300 rounded flex items-center gap-2"
-						on:click={handleAddWidget}
+						onclick={handleAddWidget}
 					>
 						<span class="text-cyan-400">+</span>
 						Add Widget
@@ -103,7 +103,7 @@
 								{#each widgetTemplates.slice(0, 6) as template}
 									<button
 										class="w-full text-left px-3 py-2 text-sm text-cyan-200 hover:bg-cyan-400/10 rounded transition-colors flex items-center gap-2"
-										on:click={() => handleAddSpecificWidget(template.id)}
+										onclick={() => handleAddSpecificWidget(template.id)}
 									>
 										<span class="w-2 h-2 bg-cyan-400 rounded-full"></span>
 										{template.name}
@@ -118,7 +118,7 @@
 				<div class="relative">
 					<button 
 						class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-all duration-300 rounded flex items-center gap-2"
-						on:click={handleLayoutMenu}
+						onclick={handleLayoutMenu}
 					>
 						<span class="text-purple-400">⚡</span>
 						Layouts
@@ -131,25 +131,25 @@
 								<div class="text-xs font-orbitron text-purple-300 mb-2 px-2">LAYOUT OPTIONS</div>
 								<button
 									class="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-purple-400/10 rounded transition-colors"
-									on:click={handleLoadDefaultLayout}
+									onclick={handleLoadDefaultLayout}
 								>
 									🏠 Load Default Layout
 								</button>
 								<button
 									class="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-purple-400/10 rounded transition-colors"
-									on:click={handleCreateNewLayout}
+									onclick={handleCreateNewLayout}
 								>
 									➕ Create New Layout
 								</button>
 								<button
 									class="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-purple-400/10 rounded transition-colors"
-									on:click={handleSaveLayout}
+									onclick={handleSaveLayout}
 								>
 									💾 Save Current Layout
 								</button>
 								<button
 									class="w-full text-left px-3 py-2 text-sm text-gray-200 hover:bg-purple-400/10 rounded transition-colors"
-									on:click={() => $dashboardState.aiLayout.isOpen = true}
+									onclick={() => $dashboardState.aiLayout.isOpen = true}
 								>
 									🤖 AI Layout Suggestions
 								</button>
@@ -161,7 +161,7 @@
 				<!-- Grid Toggle Button -->
 				<button 
 					class="cosmic-button px-4 py-2 text-sm font-orbitron text-gray-200 border border-gray-500/30 hover:border-gray-400 transition-all duration-300 rounded flex items-center gap-2"
-					on:click={handleToggleGrid}
+					onclick={handleToggleGrid}
 					class:border-cyan-400={$dashboardState.isGridVisible}
 					class:text-cyan-200={$dashboardState.isGridVisible}
 				>
@@ -268,13 +268,22 @@
 
 	<!-- Click outside handler for dropdowns -->
 	{#if showWidgetMenu || showLayoutMenu}
-		<div 
-			class="fixed inset-0 z-40" 
-			on:click={() => {
+		<button 
+			type="button"
+			class="fixed inset-0 z-40 bg-transparent cursor-default" 
+			onclick={() => {
 				showWidgetMenu = false;
 				showLayoutMenu = false;
 			}}
-		></div>
+			onkeydown={(e) => {
+				if (e.key === 'Escape') {
+					showWidgetMenu = false;
+					showLayoutMenu = false;
+				}
+			}}
+			aria-label="Close dropdown menu"
+			tabindex="-1"
+		/>
 	{/if}
 </div>
 

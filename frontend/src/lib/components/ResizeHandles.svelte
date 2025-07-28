@@ -3,10 +3,11 @@
 
 	interface Props {
 		visible: boolean;
-		onResize?: (handle: string, deltaX: number, deltaY: number) => void;
+		onResize?: (size: { width: number; height: number }) => void;
+		onResizeEnd?: () => void;
 	}
 
-	let { onResize, onResizeEnd }: Props = $props()
+	let { visible, onResize, onResizeEnd }: Props = $props()
 
 	let isResizing = $state(false)
 	let resizeHandle = $state<string | null>(null)
@@ -73,14 +74,14 @@
 				break
 		}
 
-		onResize({ width: newWidth, height: newHeight })
+		onResize?.({ width: newWidth, height: newHeight }) 
 	}
 
 	function handleMouseUp() {
 		if (isResizing) {
 			isResizing = false
 			resizeHandle = null
-			onResizeEnd()
+			onResizeEnd?.()
 			
 			document.removeEventListener('mousemove', handleMouseMove)
 			document.removeEventListener('mouseup', handleMouseUp)

@@ -1,6 +1,6 @@
 // WidgetPreview.svelte
 <script lang="ts">
-	import WidgetRenderer from './WidgetRenderer.svelte';
+	import WidgetRenderer from '../WidgetRenderer.svelte';
 	import { MockDataService } from '$lib/services/mock-data';
 	import type { WidgetConfig } from '$lib/types/dashboard';
 	const mockDataService = MockDataService.getInstance();
@@ -21,4 +21,4 @@
 			<button class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" onclick={onclose}>Cancel</button>
 		</div>
 	</div>
-</div> 
+</div>

@@ -13,7 +13,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { CosmicFrame } from '$lib/components/cosmic';
-  import LayerChartGauge from './widgets/LayerChartGauge.svelte';
+  import LayerChartGauge from '../widgets/LayerChartGauge.svelte';
   
   interface SVGBackground {
     id: string;
@@ -134,45 +134,6 @@
       ]
     },
     {
-      id: 'circuit-frame',
-      name: 'Circuit Frame',
-      description: 'Electronic circuit pattern',
-      paths: [
-        {
-          show: true,
-          style: {
-            strokeWidth: "1",
-            stroke: "#00ff88",
-            fill: "transparent"
-          },
-          path: [
-            ["M", "10", "50%"],
-            ["L", "30%", "50%"],
-            ["L", "30%", "20%"],
-            ["L", "70%", "20%"],
-            ["L", "70%", "80%"],
-            ["L", "90%", "80%"]
-          ]
-        },
-        {
-          show: true,
-          style: {
-            strokeWidth: "1",
-            stroke: "#00ff88",
-            fill: "transparent"
-          },
-          path: [
-            ["M", "10", "50%"],
-            ["L", "30%", "50%"],
-            ["L", "30%", "80%"],
-            ["L", "70%", "80%"],
-            ["L", "70%", "20%"],
-            ["L", "90%", "20%"]
-          ]
-        }
-      ]
-    },
-    {
       id: 'none',
       name: 'No Frame',
       description: 'Clean gauge without background frame',
@@ -184,43 +145,38 @@
   const availableThemes = [
     { id: 'gaming', name: 'Gaming', description: 'Classic green sci-fi' },
     { id: 'rgb', name: 'RGB', description: 'Dynamic color shifting' },
-    { id: 'neon', name: 'Neon', description: 'Bright cyan aesthetic' },
-    { id: 'cyberpunk', name: 'Cyberpunk', description: 'Purple and gold' },
-    { id: 'minimal', name: 'Minimal', description: 'Clean professional' }
+    { id: 'blue', name: 'Blue', description: 'Cool blue tones' },
+    { id: 'red', name: 'Red', description: 'Alert red theme' }
   ];
 
-  // Default widget configuration
-  const defaultWidget: WidgetConfig = {
-    id: 'new-widget',
+  // Current configuration state
+  let currentConfig = $state<WidgetConfig>({
+    id: widget?.id || 'new-widget',
     type: 'gauge',
-    label: 'Sensor',
+    label: widget?.label || 'New Gauge',
     config: {
-      min: 0,
-      max: 100,
-      warningThreshold: 70,
-      criticalThreshold: 90,
-      unit: '%'
+      min: widget?.config?.min || 0,
+      max: widget?.config?.max || 100,
+      warningThreshold: widget?.config?.warningThreshold || 70,
+      criticalThreshold: widget?.config?.criticalThreshold || 90,
+      unit: widget?.config?.unit || '%'
     },
-    size: 200,
-    theme: 'gaming',
-    animated: true,
-    showValue: true,
-    showLabel: true,
-    glowEffect: true,
-    svgBackground: availableSVGBackgrounds[0]
-  };
+    size: widget?.size || 200,
+    theme: widget?.theme || 'gaming',
+    animated: widget?.animated ?? true,
+    showValue: widget?.showValue ?? true,
+    showLabel: widget?.showLabel ?? true,
+    glowEffect: widget?.glowEffect ?? true,
+    svgBackground: widget?.svgBackground || availableSVGBackgrounds[0]
+  });
 
-  // Current configuration
-  let currentConfig = $state(widget || { ...defaultWidget });
+  // Test value for preview (animated)
+  let testValue = $state(45);
 
-  // Test value for preview
-  let testValue = $state(65);
-
-  // Update test value periodically
   $effect(() => {
     if (isOpen) {
       const interval = setInterval(() => {
-        testValue = Math.random() * 100;
+        testValue = Math.random() * (currentConfig.config.max - currentConfig.config.min) + currentConfig.config.min;
       }, 2000);
       
       return () => clearInterval(interval);
@@ -283,10 +239,10 @@
                 </div>
                 
                 <div>
-                  <label class="block text-sm font-medium text-gray-300 mb-2">Size</label>
+                  <label class="block text-sm font-medium text-gray-300 mb-2">Size: {currentConfig.size}px</label>
                   <input 
                     type="range" 
-                    min="100" 
+                    min="150" 
                     max="400" 
                     bind:value={currentConfig.size}
                     class="w-full"
@@ -302,17 +258,18 @@
               <div class="grid grid-cols-2 gap-3">
                 {#each availableSVGBackgrounds as background}
                   <button
-                    class="p-3 border rounded-lg text-left transition-all {currentConfig.svgBackground?.id === background.id ? 'border-cyan-500 bg-cyan-500/10' : 'border-gray-600 hover:border-gray-500'}"
+                    class="p-3 border rounded-lg text-left transition-colors {currentConfig.svgBackground?.id === background.id ? 'border-cyan-500 bg-cyan-500/10' : 'border-gray-600 hover:border-gray-500'}"
                     on:click={() => currentConfig.svgBackground = background}
                   >
                     <div class="text-sm font-medium text-white">{background.name}</div>
                     <div class="text-xs text-gray-400">{background.description}</div>
                     {#if background.paths.length > 0}
-                      <div class="mt-2 h-12 flex items-center justify-center">
-                        <CosmicFrame 
-                          paths={background.paths}
-                          className="w-full h-full"
-                        />
+                      <div class="mt-2">
+                        <svg width="40" height="30" viewBox="0 0 100 100" class="opacity-60">
+                          {#each background.paths as pathData}
+                            <path d={pathData.path.map(p => p.join(' ')).join(' ')} {...pathData.style} />
+                          {/each}
+                        </svg>
                       </div>
                     {/if}
                   </button>
@@ -326,7 +283,7 @@
               <div class="grid grid-cols-2 gap-3">
                 {#each availableThemes as theme}
                   <button
-                    class="p-3 border rounded-lg text-left transition-all {currentConfig.theme === theme.id ? 'border-cyan-500 bg-cyan-500/10' : 'border-gray-600 hover:border-gray-500'}"
+                    class="p-3 border rounded-lg text-left transition-colors {currentConfig.theme === theme.id ? 'border-cyan-500 bg-cyan-500/10' : 'border-gray-600 hover:border-gray-500'}"
                     on:click={() => currentConfig.theme = theme.id}
                   >
                     <div class="text-sm font-medium text-white">{theme.name}</div>
@@ -349,6 +306,7 @@
                       class="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
                     />
                   </div>
+                  
                   <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Max Value</label>
                     <input 
@@ -368,6 +326,7 @@
                       class="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white"
                     />
                   </div>
+                  
                   <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">Critical Threshold</label>
                     <input 
@@ -495,4 +454,4 @@
   .overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background: #6b7280;
   }
-</style> 
+</style>

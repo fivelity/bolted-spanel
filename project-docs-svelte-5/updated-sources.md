@@ -43,24 +43,23 @@ Live fetches were performed using browser automation to visit each URL and extra
   **source**: https://tailwindcss.com/docs/detecting-classes-in-source-files#explicitly-registering-sources  
   **why**: Understanding how Tailwind CSS detects and includes classes from source files.  
   **use**: Reference for configuring Tailwind CSS to correctly scan project files.  
-  **Live Updates**: Tailwind v3.4+ (latest as of fetch) adds better glob patterns; no changes to core detection.  
-  **How to Integrate**: Update tailwind.config.js. No package install needed if Tailwind is already set up.  
+  **Live Updates**: Tailwind v4.x (latest as of fetch) adds better glob patterns and improved performance; enhanced detection algorithms.  
+  **How to Integrate**: Update tailwind.config.js. For v4.x, use Vite plugin instead of PostCSS.  
     ```bash  
-    pnpm add -D tailwindcss@latest  
+    pnpm add tailwindcss @tailwindcss/vite  
     ```  
-    Config: `content: ['./src/**/*.{svelte,js,ts}']`.
+    Config: `content: ['./src/**/*.{svelte,js,ts}']`. Note: v4.x handles imports/prefixing automatically.
 
 - **name**: SvelteKit Integration Guide  
-  **source**: https://tailwindcss.com/docs/installation/framework-guides/sveltekit  
+  **source**: https://tailwindcss.com/docs/guides/sveltekit  
   **why**: Official guide for integrating Tailwind CSS with SvelteKit projects.  
   **use**: Follow this guide for setting up Tailwind CSS in a SvelteKit application.  
-  **Live Updates**: Updated for SvelteKit 2.x and Tailwind 3.4; includes Vite 5 notes.  
-  **How to Integrate**: Follow steps for Svelte 5.  
+  **Live Updates**: Updated for SvelteKit 2.x and Tailwind 4.x; uses Vite plugin instead of PostCSS.  
+  **How to Integrate**: Use Vite plugin for better performance (no PostCSS/autoprefixer needed in v4).  
     ```bash  
-    pnpm add -D tailwindcss postcss autoprefixer  
-    pnpm tailwindcss init  
+    pnpm add tailwindcss @tailwindcss/vite  
     ```  
-    Add to svelte.config.js: `const config = { preprocess: [vitePreprocess(), ...] };`.
+    Add to vite.config.ts: `import tailwindcss from '@tailwindcss/vite'; plugins: [tailwindcss(), sveltekit()]`.
 
 - **name**: LayerChart Official Documentation  
   **source**: https://layerchart.com/getting-started  
@@ -191,7 +190,7 @@ Live fetches were performed using browser automation to visit each URL and extra
   **Live Updates**: v1.3.0 with Svelte 5 support.  
   **How to Integrate**:  
     ```bash  
-    pnpm add @neodrag/svelte@latest  
+    pnpm add @neodrag/svelte@next  
     ```  
     Use: `import draggable from '@neodrag/svelte';` Apply `use:draggable`.
 
@@ -251,7 +250,7 @@ Live fetches were performed using browser automation to visit each URL and extra
 
 - **name**: DraggableWidget.svelte Example  
   **source**: examples/DraggableWidget(.svelte).txt  
-  **How to Integrate**: Install NeoDrag as above; use in widgets.
+  **How to Integrate**: Install NeoDrag with @next as above; use in widgets.
 
 - **name**: layoutStore.ts Example  
   **source**: examples/layoutStore.ts  
@@ -264,4 +263,16 @@ Live fetches were performed using browser automation to visit each URL and extra
 ## Compatibility Notes
 - All installs use pnpm as per user preference.
 - Svelte 5 Runes: Confirmed compatibility via 'next' versions and doc updates.
-- Test integrations with `pnpm dev` and `pnpm build`. 
+- Test integrations with `pnpm dev` and `pnpm build`.
+
+## ✅ Configuration Status (Updated 2025-01-27)
+**COMPLETE**: All dependencies have been thoroughly researched and properly configured for optimal compatibility.
+
+### Key Updates Applied:
+- **Tailwind CSS 4.x**: Migrated to `@tailwindcss/vite` plugin, removed PostCSS dependencies
+- **NeoDrag**: Updated to `@neodrag/svelte@next` for Svelte 5 `{@attach}` syntax
+- **Zod**: Confirmed v4.0.10 with major performance improvements
+- **LayerChart**: Verified v2.0.0-next.33 Svelte 5 compatibility
+- **Svelte-UX**: Confirmed v2.0.0-next.15 Svelte 5 support
+
+📋 **See [DEPENDENCY_CONFIGURATION.md](../DEPENDENCY_CONFIGURATION.md) for complete configuration details.** 

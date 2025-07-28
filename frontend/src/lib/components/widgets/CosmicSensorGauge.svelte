@@ -63,10 +63,10 @@
     '#00ffaa40'
   );
 
-  // Chart dimensions
-  const chartSize = size - 40; // Account for padding
-  const radius = chartSize / 2 - 30;
-  const innerRadius = radius - 20;
+  // Chart dimensions - use getter to avoid stale reference
+  const getChartSize = () => size - 40; // Account for padding
+  const getRadius = () => getChartSize() / 2 - 30;
+  const getInnerRadius = () => getRadius() - 20;
 
   // Angle calculations (convert degrees to radians)
   const startAngle = -135 * Math.PI / 180; // Start from bottom-left
@@ -122,15 +122,15 @@
   
   <div class="gauge-content">
     <!-- LayerChart gauge visualization -->
-    <Chart data={{ value: animatedValue }}>
-      <Svg width={chartSize} height={chartSize}>
+    <Chart flatData={[{ value: animatedValue }]}>
+      <Svg width={getChartSize()} height={getChartSize()}>
         <Group center>
           <!-- Background arc -->
           <Arc
             startAngle={startAngle}
             endAngle={endAngle}
-            innerRadius={innerRadius}
-            outerRadius={radius}
+            innerRadius={getInnerRadius()}
+            outerRadius={getRadius()}
             fill="rgba(0, 20, 40, 0.3)"
             stroke="rgba(0, 255, 170, 0.2)"
             stroke-width={1}
@@ -144,8 +144,8 @@
             <Arc
               startAngle={segmentStart}
               endAngle={segmentEnd}
-              innerRadius={innerRadius + 2}
-              outerRadius={radius - 2}
+              innerRadius={getInnerRadius() + 2}
+              outerRadius={getRadius() - 2}
               fill="rgba(0, 40, 80, 0.2)"
               stroke="rgba(0, 255, 170, 0.1)"
               stroke-width={0.5}
@@ -158,8 +158,8 @@
           <Arc
             startAngle={startAngle}
             endAngle={animatedAngle}
-            innerRadius={innerRadius}
-            outerRadius={radius}
+            innerRadius={getInnerRadius()}
+            outerRadius={getRadius()}
             fill={statusColor}
             opacity={0.8}
             class="progress-arc"
@@ -170,7 +170,7 @@
           <Circle
             cx={0}
             cy={0}
-            r={innerRadius - 10}
+            r={getInnerRadius() - 10}
             fill="rgba(0, 20, 40, 0.9)"
             stroke={statusColor}
             stroke-width={2}
@@ -217,18 +217,21 @@
       <div 
         class="status-dot" 
         style="background-color: {statusColor}; box-shadow: 0 0 10px {statusGlow};"
-      />
+      ></div>
       <div class="status-bar">
         <div 
           class="status-bar-fill" 
           style="width: {normalizedValue}%; background: linear-gradient(90deg, {statusColor}, {statusColor}80);"
-        />
+        ></div>
       </div>
     </div>
   </div>
 </div>
 
 <style>
+  /* Font imports must be first */
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@300;400;500;700;900&display=swap');
+
   .cosmic-sensor-gauge {
     position: relative;
     display: flex;
@@ -344,7 +347,4 @@
       transform: scale(1.2);
     }
   }
-
-  /* Font imports */
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@300;400;500;700;900&display=swap');
 </style>

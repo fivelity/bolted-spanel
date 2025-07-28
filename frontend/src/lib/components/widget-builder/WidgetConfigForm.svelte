@@ -52,4 +52,4 @@
 			<div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400"><p class="text-lg">Select a widget template to begin configuration</p></div>
 		{/if}
 	</div>
-</div> 
+</div>
